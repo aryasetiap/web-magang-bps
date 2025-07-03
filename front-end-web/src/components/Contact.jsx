@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 function Contact() {
   return (
@@ -11,23 +11,34 @@ function Contact() {
           <div>
             <h3 className="text-xl font-semibold text-bps-blue mb-3">Alamat</h3>
             <p className="text-gray-700">
-              Jl. Raya Gading Rejo KM.33,<br />
-              Wonodadi, Gading Rejo,<br />
+              Jl. Raya Gading Rejo KM.33,
+              <br />
+              Wonodadi, Gading Rejo,
+              <br />
               Kabupaten Pringsewu, Lampung, 35372
             </p>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-bps-blue mb-3">Kontak</h3>
             <p className="text-gray-700">
-              <strong>Telepon:</strong> (62-729) 7330811<br />
-              <strong>E-mail:</strong> bps1810@bps.go.id<br />
-              <strong>Website:</strong> <a href="https://pringsewukab.bps.go.id/" className="text-blue-500 hover:underline">https://pringsewukab.bps.go.id/</a>
+              <strong>Telepon:</strong> (62-729) 7330811
+              <br />
+              <strong>E-mail:</strong> bps1810@bps.go.id
+              <br />
+              <strong>Website:</strong>{" "}
+              <a
+                href="https://pringsewukab.bps.go.id/"
+                className="text-blue-500 hover:underline"
+              >
+                https://pringsewukab.bps.go.id/
+              </a>
             </p>
           </div>
         </div>
         <div className="text-center mt-12">
           <p className="text-gray-700">
-            Untuk pertanyaan lebih lanjut mengenai program magang, silakan hubungi kami melalui informasi di atas.
+            Untuk pertanyaan lebih lanjut mengenai program magang, silakan
+            hubungi kami melalui informasi di atas.
           </p>
         </div>
       </div>

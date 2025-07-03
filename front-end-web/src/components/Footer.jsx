@@ -1,11 +1,16 @@
-import React from 'react';
+import React from "react";
 
 function Footer() {
   return (
     <footer className="bg-gray-800 text-white py-10 px-4">
       <div className="container mx-auto text-center text-sm">
-        <p>&copy; {new Date().getFullYear()} BPS Kabupaten Pringsewu. Hak Cipta Dilindungi Undang-Undang.</p>
-        <p className="mt-2">Dikembangkan oleh Tim Magang BPS Kabupaten Pringsewu.</p>
+        <p>
+          &copy; {new Date().getFullYear()} BPS Kabupaten Pringsewu. Hak Cipta
+          Dilindungi Undang-Undang.
+        </p>
+        <p className="mt-2">
+          Dikembangkan oleh Tim Magang BPS Kabupaten Pringsewu.
+        </p>
       </div>
     </footer>
   );

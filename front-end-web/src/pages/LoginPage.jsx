@@ -1,10 +1,10 @@
-import React, { useState } from 'react'; // Import useState
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import BPSLogo from '../assets/logo-sistem-magang.png';
+import React, { useState } from "react"; // Import useState
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import BPSLogo from "../assets/logo-sistem-magang.png";
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate(); // Inisialisasi useNavigate
 
   const handleEmailLogin = (e) => {
@@ -13,9 +13,10 @@ function LoginPage() {
     // Di aplikasi nyata, Anda akan mengirim email dan password ke API backend
     // dan menunggu respons autentikasi.
 
-    if (email === 'user@example.com' && password === 'password123') { // Contoh kredensial dummy
+    if (email === "user@example.com" && password === "password123") {
+      // Contoh kredensial dummy
       alert("Login Berhasil!");
-      navigate('/dashboard'); // Redirect ke halaman dashboard
+      navigate("/dashboard"); // Redirect ke halaman dashboard
     } else {
       alert("Email atau password salah. Silakan coba lagi.");
     }
@@ -38,18 +39,31 @@ function LoginPage() {
             stroke="currentColor"
             strokeWidth="2"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11 17l-5-5m0 0l5-5m-5 5h12"
+            />
           </svg>
         </a>
 
         <div className="text-center mb-8 mt-4">
-          <img src={BPSLogo} alt="Logo BPS Pringsewu" className="h-auto mx-auto mb-4" />
+          <img
+            src={BPSLogo}
+            alt="Logo BPS Pringsewu"
+            className="h-auto mx-auto mb-4"
+          />
           <h2 className="text-2xl font-bold text-gray-800">Masuk</h2>
         </div>
 
         <form onSubmit={handleEmailLogin}>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+            <label
+              htmlFor="email"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Email:
+            </label>
             <input
               type="email"
               id="email"
@@ -61,7 +75,12 @@ function LoginPage() {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+            <label
+              htmlFor="password"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Password:
+            </label>
             <input
               type="password"
               id="password"
@@ -81,10 +100,18 @@ function LoginPage() {
         </form>
 
         <p className="text-center text-gray-600 text-sm mt-6">
-          Belum punya akun? <a href="/register" className="text-bps-blue hover:underline font-semibold">Daftar di sini</a>
+          Belum punya akun?{" "}
+          <a
+            href="/register"
+            className="text-bps-blue hover:underline font-semibold"
+          >
+            Daftar di sini
+          </a>
         </p>
         <p className="text-center text-gray-600 text-sm mt-2">
-          <a href="/lupa-password" className="text-bps-blue hover:underline">Lupa Password?</a>
+          <a href="/lupa-password" className="text-bps-blue hover:underline">
+            Lupa Password?
+          </a>
         </p>
       </div>
     </div>

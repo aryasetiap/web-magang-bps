@@ -4,7 +4,6 @@ import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 import Registration from "./pages/Registration";
 
-
 function App() {
   return (
     <Routes>
@@ -12,7 +11,6 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Registration />} />
     </Routes>
-    
   );
 }
 
