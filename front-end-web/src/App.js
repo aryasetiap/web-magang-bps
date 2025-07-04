@@ -70,7 +70,7 @@ function App() {
         {/* Rute Dashboard Admin - Dilindungi */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>
-            {/* UnifiedDashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
+            {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
             <DashboardLayout userRole={userRole} />
           </ProtectedRoute>
         }>
