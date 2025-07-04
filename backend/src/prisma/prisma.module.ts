@@ -1,9 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common'; // 1. Import 'Global'
 import { PrismaService } from './prisma.service';
 
-@Global() // Tanda @Global() inilah yang membuatnya tersedia di seluruh aplikasi
+@Global() // 2. Tambahkan decorator @Global()
 @Module({
   providers: [PrismaService],
-  exports: [PrismaService], // Ekspor service agar bisa di-inject di modul lain
+  exports: [PrismaService], // 3. Pastikan PrismaService di-export
 })
 export class PrismaModule {}

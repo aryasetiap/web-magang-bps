@@ -2,23 +2,31 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  // Kita inject PrismaService agar bisa berinteraksi dengan database
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   async register(registerUserDto: RegisterUserDto) {
     const { name, email, password } = registerUserDto;
 
-    // 1. Hash password pengguna untuk keamanan
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // TODO: Cek jika email sudah terdaftar (bisa ditambahkan nanti)
 
-    // 2. Cari ID untuk peran 'mahasiswa'
+    // 2. Hash password sebelum disimpan
+    const saltRounds = 10; // Standar industri
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // 3. Cari ID untuk peran 'mahasiswa'
     const role = await this.prisma.role.findUnique({
       where: { name: 'Mahasiswa' }, // <-- INI BENAR (sesuai seed.ts)
     });
@@ -29,7 +37,7 @@ export class AuthService {
     }
 
     try {
-      // 3. Buat user baru di database
+      // 4. Buat user baru di database
       const newUser = await this.prisma.user.create({
         data: {
           name,
@@ -50,7 +58,7 @@ export class AuthService {
         },
       });
 
-      // 4. Kembalikan data user baru (tanpa password)
+      // 5. Kembalikan data user baru (tanpa password)
       return newUser;
     } catch (error) {
       // Tangani error jika email sudah ada (karena ada constraint 'unique')
@@ -59,5 +67,35 @@ export class AuthService {
       }
       throw new InternalServerErrorException();
     }
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    const { email, password } = loginUserDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Email atau password salah');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Email atau password salah');
+    }
+
+    // 3. Buat payload dan generate token
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role.name,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }
