@@ -21,6 +21,10 @@ import CertificatePage from './pages/intern/Certificate';
 // Import Halaman Dashboard Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAccountsPage from './pages/admin/AdminAccounts';
+import AdminSettingsPage from './pages/admin/AdminSettings';
+import AdminApplicantsPage from './pages/admin/AdminApplicants';
+import AdminMonitoringPage from './pages/admin/AdminMonitoring';
+
 
 
 // Import Halaman Dashboard Staff
@@ -77,9 +81,9 @@ function App() {
           <Route index element={<AdminDashboard />} /> {/* Halaman default /admin */}
           {/* Tambahkan rute khusus Admin lainnya di sini */}
           <Route path="accounts" element={<AdminAccountsPage />} />
-          {/* <Route path="settings" element={<AdminSettingsPage />} /> */}
-          {/* <Route path="applicants" element={<AdminApplicantsPage />} /> */}
-          {/* <Route path="monitoring" element={<AdminMonitoringPage />} /> */}
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="applicants" element={<AdminApplicantsPage />} />
+          <Route path="monitoring" element={<AdminMonitoringPage />} />
           {/* <Route path="assignments" element={<AdminAssignmentsPage />} /> */}
           {/* <Route path="final-reviews" element={<AdminFinalReviewsPage />} /> */}
           {/* <Route path="graduation" element={<AdminGraduationPage />} /> */}

@@ -49,7 +49,7 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     { name: 'Dashboard', path: '/staff', icon: HomeIcon, exact: true },
     { name: 'Manajemen Penugasan', path: '/staff/assignments', icon: FolderOpenIcon },
     // Tambahkan menu lain yang relevan untuk Staff BPS di sini
-    // { name: 'Monitoring Peserta', path: '/staff/monitoring', icon: ClipboardDocumentCheckIcon },
+    { name: 'Monitoring Peserta', path: '/staff/monitoring', icon: ClipboardDocumentCheckIcon },
   ];
 
   // Pilih menu yang akan ditampilkan berdasarkan role

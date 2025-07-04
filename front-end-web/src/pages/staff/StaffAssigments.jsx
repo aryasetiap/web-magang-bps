@@ -1,8 +1,8 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { PlusIcon, EyeIcon, PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-function StaffAssignments() {
+function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPage
   // Dummy data interns
   const [interns, setInterns] = useState([
     { id: 'int001', name: 'Budi Santoso', email: 'budi.santoso@example.com' },
@@ -12,55 +12,57 @@ function StaffAssignments() {
   ]);
 
   // Dummy data penugasan yang dibuat oleh staff ini
-  const [assignments, setAssignments] = useState([
-    {
-      id: 1,
-      title: 'Analisis Data Penjualan Q1',
-      description: 'Lakukan analisis data penjualan kuartal 1 dan buat ringkasan eksekutif.',
-      assignedTo: ['int001', 'int002'],
-      submissionType: 'file',
-      deadline: '2025-07-10',
-      submissions: {
-        'int001': { status: 'Submitted', content: { name: 'Laporan_Budi.pdf', url: '#' }, feedback: '', score: null },
-        'int002': { status: 'Not Submitted' },
-      }
-    },
-    {
-      id: 2,
-      title: 'Tanggapan Draft Kebijakan Baru',
-      description: 'Baca draft kebijakan baru dan berikan tanggapan tertulis Anda.',
-      assignedTo: ['int003'],
-      submissionType: 'text',
-      deadline: '2025-07-15',
-      submissions: {
-        'int003': { status: 'Submitted', content: { text: 'Kebijakan ini sangat baik, namun perlu penyesuaian...' }, feedback: '', score: null },
-      }
-    },
-    {
-      id: 3,
-      title: 'Ulasan Website BPS',
-      description: 'Berikan ulasan komprehensif terhadap website BPS Pringsewu. Sertakan link Google Docs jika reviewnya panjang.',
-      assignedTo: ['int004'],
-      submissionType: 'link',
-      deadline: '2025-07-20',
-      submissions: {
-        'int004': { status: 'Not Submitted' },
-      }
-    },
-  ]);
+  const [assignments, setAssignments] = useState(() => {
+    const savedAssignments = localStorage.getItem('staffAssignments');
+    if (savedAssignments) {
+      return JSON.parse(savedAssignments);
+    }
+    return [
+      {
+        id: 1,
+        title: 'Analisis Data Penjualan Kuartal 1 dan Buat Ringkasan Eksekutif yang Komprehensif', // Judul panjang
+        description: 'Lakukan analisis data penjualan kuartal 1 dan buat ringkasan eksekutif.',
+        assignedTo: ['int001', 'int002'],
+        submissionType: 'file',
+        deadline: '2025-07-10',
+        submissions: {
+          'int001': { status: 'Submitted', content: { name: 'Laporan_Budi.pdf', url: '#' }, feedback: '', score: null },
+          'int002': { status: 'Not Submitted' },
+        }
+      },
+      {
+        id: 2,
+        title: 'Tanggapan Draft Kebijakan Baru',
+        description: 'Baca draft kebijakan baru dan berikan tanggapan tertulis Anda.',
+        assignedTo: ['int003'],
+        submissionType: 'text',
+        deadline: '2025-07-15',
+        submissions: {
+          'int003': { status: 'Submitted', content: { text: 'Kebijakan ini sangat baik, namun perlu penyesuaian...' }, feedback: '', score: null },
+        }
+      },
+      {
+        id: 3,
+        title: 'Ulasan Website BPS',
+        description: 'Berikan ulasan komprehensif terhadap website BPS Pringsewu. Sertakan link Google Docs jika reviewnya panjang.',
+        assignedTo: ['int004'],
+        submissionType: 'link',
+        deadline: '2025-07-20',
+        submissions: {
+          'int004': { status: 'Not Submitted' },
+        }
+      },
+    ];
+  });
 
-  // State untuk modal Create/Edit Tugas
+  // ... (state dan fungsi-fungsi lain tetap sama)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState(null); // Null for create, object for edit
-
-  // State untuk form Create/Edit
+  const [editingAssignment, setEditingAssignment] = useState(null);
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formAssignedTo, setFormAssignedTo] = useState([]); // Array of intern IDs
-  const [formSubmissionType, setFormSubmissionType] = useState('file'); // 'file', 'text', 'link'
+  const [formAssignedTo, setFormAssignedTo] = useState([]);
+  const [formSubmissionType, setFormSubmissionType] = useState('file');
   const [formDeadline, setFormDeadline] = useState('');
-
-  // State untuk modal Review Submission
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingAssignment, setReviewingAssignment] = useState(null);
   const [reviewingInternId, setReviewingInternId] = useState(null);
@@ -68,7 +70,6 @@ function StaffAssignments() {
   const [reviewScore, setReviewScore] = useState('');
 
   useEffect(() => {
-    // Simulasi: muat data tugas dari localStorage (jika ada)
     const savedAssignments = localStorage.getItem('staffAssignments');
     if (savedAssignments) {
       setAssignments(JSON.parse(savedAssignments));
@@ -76,12 +77,9 @@ function StaffAssignments() {
   }, []);
 
   useEffect(() => {
-    // Simulasi: simpan data tugas ke localStorage setiap kali assignments berubah
     localStorage.setItem('staffAssignments', JSON.stringify(assignments));
   }, [assignments]);
 
-
-  // --- CRUD Tugas ---
   function openCreateModal() {
     setEditingAssignment(null);
     setFormTitle('');
@@ -119,22 +117,19 @@ function StaffAssignments() {
       assignedTo: formAssignedTo,
       submissionType: formSubmissionType,
       deadline: formDeadline,
-      submissions: {}, // Initialize empty submissions for new assignment
+      submissions: {},
     };
 
-    // Populate submissions for newly assigned interns
     formAssignedTo.forEach(internId => {
       newAssignment.submissions[internId] = { status: 'Not Submitted', content: null, feedback: '', score: null };
     });
 
     if (editingAssignment) {
-      // Update existing assignment
       setAssignments(assignments.map(assign =>
         assign.id === editingAssignment.id ? { ...assign, ...newAssignment, id: editingAssignment.id } : assign
       ));
       alert('Tugas berhasil diperbarui!');
     } else {
-      // Create new assignment
       newAssignment.id = assignments.length > 0 ? Math.max(...assignments.map(a => a.id)) + 1 : 1;
       setAssignments([...assignments, newAssignment]);
       alert('Tugas baru berhasil dibuat!');
@@ -149,13 +144,10 @@ function StaffAssignments() {
     }
   };
 
-
-  // --- Review Submission ---
   function openReviewModal(assignment, internId) {
     setReviewingAssignment(assignment);
     setReviewingInternId(internId);
-    // Isi feedback dan score jika sudah ada
-    const submission = assignment.submissions[internId];
+    const submission = assignment.submissions ?.[internId]; // Gunakan optional chaining
     if (submission) {
       setReviewFeedback(submission.feedback || '');
       setReviewScore(submission.score || '');
@@ -188,7 +180,7 @@ function StaffAssignments() {
               ...assign.submissions[reviewingInternId],
               feedback: reviewFeedback,
               score: reviewScore ? parseFloat(reviewScore) : null,
-              status: 'Reviewed' // Atau status lain seperti 'Completed' jika sudah dinilai
+              status: 'Reviewed'
             }
           }
         };
@@ -219,28 +211,32 @@ function StaffAssignments() {
       </div>
 
       {/* Daftar Penugasan */}
-      <div className="overflow-x-auto">
+      {/* Container ini tetap overflow-x-auto agar tabel tetap bisa discroll pada layar sangat kecil */}
+      <div className="overflow-x-auto"> 
+        {/* min-w-full tetap dipertahankan agar tabel tidak menyusut terlalu kecil */}
         <table className="min-w-full bg-white border border-gray-200 rounded-lg">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Judul Tugas</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe Input</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batas Waktu</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ditugaskan Kepada</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Submission</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+              {/* Hapus whitespace-nowrap dari th */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Judul Tugas</th> {/* Beri lebar relatif */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Tipe Input</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Batas Waktu</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Ditugaskan Kepada</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Status Submission</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {assignments.map((assignment) => (
               <Fragment key={assignment.id}>
                 <tr className="bg-white hover:bg-gray-50 transition-colors duration-150">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{assignment.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  {/* Hapus whitespace-nowrap dari td */}
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">{assignment.title}</td> {/* Tambahkan break-words */}
+                  <td className="px-6 py-4 text-sm text-gray-600">
                     <span className="capitalize">{assignment.submissionType}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{assignment.deadline}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600">{assignment.deadline}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
                     {assignment.assignedTo.map(internId => {
                       const intern = interns.find(i => i.id === internId);
                       return <span key={internId} className="block">{intern ? intern.name : `ID:${internId}`}</span>;
@@ -249,17 +245,17 @@ function StaffAssignments() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {Object.keys(assignment.submissions).map(internId => {
                       const intern = interns.find(i => i.id === internId);
-                      const submission = assignment.submissions[internId];
+                      const submission = assignment.submissions ?.[internId];
                       return (
-                        <div key={internId} className="flex items-center space-x-2">
+                        <div key={internId} className="flex flex-wrap items-center space-x-2"> {/* Tambahkan flex-wrap */}
                           <span className="font-medium">{intern ? intern.name : `ID:${internId}`}:</span>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                            ${submission.status === 'Submitted' ? 'bg-blue-100 text-blue-800' :
-                              submission.status === 'Reviewed' ? 'bg-green-100 text-green-800' :
+                            ${submission?.status === 'Submitted' ? 'bg-blue-100 text-blue-800' :
+                              submission?.status === 'Reviewed' ? 'bg-green-100 text-green-800' :
                               'bg-yellow-100 text-yellow-800'}`}>
-                            {submission.status}
+                            {submission?.status}
                           </span>
-                          {submission.status !== 'Not Submitted' && (
+                          {submission?.status !== 'Not Submitted' && (
                             <button
                               onClick={() => openReviewModal(assignment, internId)}
                               className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
@@ -268,7 +264,7 @@ function StaffAssignments() {
                               <EyeIcon className="h-4 w-4" />
                             </button>
                           )}
-                          {(submission.status === 'Submitted' || submission.status === 'Reviewed') && (
+                          {/* {(submission?.status === 'Submitted' || submission?.status === 'Reviewed') && (
                             <button
                               onClick={() => openReviewModal(assignment, internId)}
                               className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-100"
@@ -276,7 +272,7 @@ function StaffAssignments() {
                             >
                               <PencilIcon className="h-4 w-4" />
                             </button>
-                          )}
+                          )} */}
                         </div>
                       );
                     })}
@@ -286,13 +282,13 @@ function StaffAssignments() {
                       onClick={() => openEditModal(assignment)}
                       className="text-indigo-600 hover:text-indigo-900 mr-3"
                     >
-                      Edit
+                      <PencilSquareIcon className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => handleDeleteAssignment(assignment.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Hapus
+                      <TrashIcon className="h-5 w-5" />
                     </button>
                   </td>
                 </tr>
@@ -550,4 +546,4 @@ function StaffAssignments() {
   );
 }
 
-export default StaffAssignments;
+export default StaffAssignmentsPage;
