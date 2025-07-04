@@ -1,12 +1,16 @@
-import React, { useState } from 'react'; // Import useState
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import BPSLogo from '../assets/logo-sistem-magang.png'; 
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
+import BrandLogo from '../components/BrandLogo';
+import kantorBPS from '../assets/kantor-bps-3.jpg'
+
 
 function Registration() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const navigate = useNavigate(); // Inisialisasi useNavigate
+  const [fullName, setFullname] = useState('');
+
+  const navigate = useNavigate();
 
   const handleEmailRegistration = (e) => {
     e.preventDefault();
@@ -30,8 +34,12 @@ function Registration() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative">
+    <div 
+      className="min-h-screen flex items-center justify-center bg-gray-100 p-4"
+      style={{ backgroundImage: `url(${kantorBPS})`, backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -1}}
+    >
+      <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
+      <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative">
         {/* Tombol Kembali */}
         <a
           href="/"
@@ -51,8 +59,12 @@ function Registration() {
         </a>
 
         <div className="text-center mb-8 mt-4">
-          <img src={BPSLogo} alt="Logo BPS Pringsewu" className="h-auto mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800">Daftar Akun Baru</h2>
+           <div className="container mx-auto flex justify-center text-left">
+            <a href="/">
+              <BrandLogo textClassName='text-xl'/>
+            </a>
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-gray-800">Daftar Akun Baru</h2>
         </div>
 
         <form onSubmit={handleEmailRegistration}>
@@ -68,8 +80,21 @@ function Registration() {
               required
             />
           </div>
+          <div className="mb-6">
+            {/* buat form nama lengkap */}
+            <label htmlFor="regName" className="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap:</label>
+            <input
+              type="text"
+              id="regName"
+              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+              placeholder="John Doe"
+              value={fullName}
+              onChange={(e) => setFullname(e.target.value)}
+              required
+            />
+          </div>
           <div className="mb-4">
-            <label htmlFor="regPassword" className="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+            <label htmlFor="regPassword" className="block text-gray-700 text-sm font-bold mb-2">Kata Sandi:</label>
             <input
               type="password"
               id="regPassword"
@@ -81,7 +106,7 @@ function Registration() {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Password:</label>
+            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Kata Sandi:</label>
             <input
               type="password"
               id="confirmPassword"

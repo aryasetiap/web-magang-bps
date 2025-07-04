@@ -1,10 +1,10 @@
 import React from 'react';
-import Header from '../components/Header';
-import Hero from '../components/Hero'
-import About from '../components/About';
-import Faq from '../components/Faq';
-import Contact from '../components/Contact';
-import Footer from '../components/Footer';
+import Header from '../components/landing/Header';
+import Hero from '../components/landing/Hero'
+import About from '../components/landing/About';
+import Faq from '../components/landing/Faq';
+import Contact from '../components/landing/Contact';
+import Footer from '../components/landing/Footer';
 
 
 

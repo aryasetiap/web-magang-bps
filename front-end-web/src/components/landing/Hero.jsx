@@ -1,15 +1,24 @@
 import React from 'react';
+import kantorBPS from '../../assets/kantor-bps-1.jpg'; // Pastikan path ini benar
 
 function Hero() {
   return (
-    <section className="bg-bps-blue text-white py-20 px-4">
-      <div className="container mx-auto text-center">
+    <section
+      className="relative text-white py-40 px-4 bg-cover bg-center bg-no-repeat" // Tambahkan 'relative' dan kelas background
+      style={{ backgroundImage: `url(${kantorBPS})` }} // Gunakan style untuk gambar background
+    >
+      {/* Overlay hitam semi-transparan */}
+      <div className="absolute inset-0 bg-black bg-opacity-45"></div> {/* Hapus mb-40 */}
+      
+      {/* Konten Hero, pastikan di atas overlay dengan z-index */}
+      <div className="container mx-auto text-center relative z-10">
         <h2 className="text-xl md:text-2xl opacity-90">
           Selamat Datang
         </h2>
         <p className="text-2xl md:text-4xl font-extrabold leading-tight mb-6 mb-8">
           PLATFORM MAGANG BPS KABUPATEN PRINGSEWU
         </p>
+        
         <div className="space-x-4">
           <a 
             href="/register" 
