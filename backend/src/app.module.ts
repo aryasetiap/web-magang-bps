@@ -4,9 +4,18 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ConfigModule } from '@nestjs/config'; // 1. Impor ConfigModule
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule],
+  imports: [
+    // 2. Daftarkan ConfigModule di paling atas, dan buat jadi global
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

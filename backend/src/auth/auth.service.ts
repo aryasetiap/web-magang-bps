@@ -98,4 +98,51 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
+
+  async googleLogin(req) {
+    if (!req) {
+      throw new UnauthorizedException('Tidak ada data user dari Google');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: req.email },
+      include: { role: true },
+    });
+
+    if (user) {
+      const payload = { email: user.email, sub: user.id, role: user.role.name };
+      return {
+        message: 'User login berhasil',
+        access_token: this.jwtService.sign(payload),
+      };
+    }
+
+    const defaultRole = await this.prisma.role.findUnique({
+      where: { name: 'Mahasiswa' },
+    });
+    if (!defaultRole) {
+      throw new InternalServerErrorException(
+        'Role default "Mahasiswa" tidak ditemukan.',
+      );
+    }
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        email: req.email,
+        name: `${req.firstName} ${req.lastName}`,
+        password: '', // Password tidak perlu karena login via Google
+        roleId: defaultRole.id,
+      },
+    });
+
+    const payload = {
+      email: newUser.email,
+      sub: newUser.id,
+      role: 'Mahasiswa',
+    };
+    return {
+      message: 'User baru dibuat dan login berhasil',
+      access_token: this.jwtService.sign(payload),
+    };
+  }
 }
