@@ -1,0 +1,218 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// 1. Generator: Defines what to generate from this schema.
+// In this case, it's the Prisma Client for TypeScript.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Datasource: Specifies the database connection details.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Loads the URL from the .env file
+}
+
+// 3. Enums: Defines custom types for status fields, ensuring data consistency.
+enum StatusInternship {
+  pending
+  diterima
+  ditolak
+}
+
+enum StatusLogbook {
+  draft
+  submitted
+  reviewed
+}
+
+enum StatusFinalProject {
+  belum_submit
+  submitted
+  lulus
+  revisi
+}
+
+// 4. Data Models: Defines the tables in your database.
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Tambahan field untuk mahasiswa/siswa
+  namaLengkap   String? @map("nama_lengkap")
+  nimNisn       String? @map("nim_nisn")
+  asalInstitusi String? @map("asal_institusi")
+  jurusanProdi  String? @map("jurusan_prodi")
+  nomorTelepon  String? @map("nomor_telepon")
+  alamat        String?
+
+  // --- Relations ---
+  // A user has one role
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  roleId Int  @map("role_id")
+
+  // A user can be the verifier for many applications
+  verifiedApplications InternshipApplication[] @relation("VerifierApplications")
+
+  // A user can create many tasks
+  createdTasks Task[] @relation("CreatedTasks")
+
+  // A user can have one internship application
+  internshipApplication InternshipApplication? @relation("ApplicantApplication")
+
+  // A user has many attendances, logbooks, submissions, etc.
+  attendances     Attendance[]
+  logbooks        Logbook[]
+  submissions     Submission[]
+  finalProject    FinalProject?
+  uploadedDocs    Document[]
+  certificate     Certificate?
+  taskAssignments TaskAssignment[]
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // --- Relations ---
+  // A role can be assigned to many users
+  users User[]
+}
+
+model InternshipApplication {
+  id                Int              @id @default(autoincrement())
+  status            StatusInternship
+  cvPath            String           @map("cv_path")
+  transcriptPath    String           @map("transcript_path")
+  requestLetterPath String           @map("request_letter_path")
+  verifiedAt        DateTime?        @map("verified_at")
+
+  // --- Relations ---
+  // An application belongs to one user (the applicant)
+  applicant User @relation("ApplicantApplication", fields: [userId], references: [id])
+  userId    Int  @unique @map("user_id")
+
+  // An application is verified by one user (the coordinator)
+  verifier   User? @relation("VerifierApplications", fields: [verifiedBy], references: [id])
+  verifiedBy Int?  @map("verified_by")
+
+  @@map("internship_applications")
+}
+
+model Attendance {
+  id        Int       @id @default(autoincrement())
+  clockIn   DateTime  @map("clock_in")
+  clockOut  DateTime? @map("clock_out")
+  ipAddress String    @map("ip_address")
+
+  // --- Relations ---
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+
+  @@map("attendances")
+}
+
+model Logbook {
+  id      Int           @id @default(autoincrement())
+  logDate DateTime      @map("log_date") @db.Date
+  content String        @db.Text
+  status  StatusLogbook
+
+  // --- Relations ---
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+
+  @@map("logbooks")
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  deadline    DateTime
+
+  // --- Relations ---
+  // A task is created by one user (staff/coordinator)
+  creator   User @relation("CreatedTasks", fields: [createdBy], references: [id])
+  createdBy Int  @map("created_by")
+
+  // A task can have many submissions
+  submissions Submission[]
+
+  // A task can be assigned to many users via the TaskAssignment table
+  assignments TaskAssignment[]
+
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  // --- Relations ---
+  task   Task @relation(fields: [taskId], references: [id])
+  taskId Int  @map("task_id")
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+
+  // --- Composite Primary Key ---
+  @@id([taskId, userId])
+  @@map("task_assignments")
+}
+
+model Submission {
+  id          Int      @id @default(autoincrement())
+  filePath    String   @map("file_path")
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  grade       Int?
+  feedback    String?  @db.Text
+
+  // --- Relations ---
+  task   Task @relation(fields: [taskId], references: [id])
+  taskId Int  @map("task_id")
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+
+  @@map("submissions")
+}
+
+model FinalProject {
+  id       Int                @id @default(autoincrement())
+  filePath String             @map("file_path")
+  repoLink String?            @map("repo_link")
+  status   StatusFinalProject
+
+  // --- Relations ---
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique @map("user_id") // A user has only one final project
+
+  @@map("final_projects")
+}
+
+model Document {
+  id       Int    @id @default(autoincrement())
+  title    String
+  filePath String @map("file_path")
+
+  // --- Relations ---
+  uploader   User? @relation(fields: [uploadedBy], references: [id])
+  uploadedBy Int?  @map("uploaded_by")
+
+  @@map("documents")
+}
+
+model Certificate {
+  id                Int      @id @default(autoincrement())
+  certificateNumber String   @unique @map("certificate_number")
+  generatedAt       DateTime @default(now()) @map("generated_at")
+
+  // --- Relations ---
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique @map("user_id") // A user has only one certificate
+
+  @@map("certificates")
+}

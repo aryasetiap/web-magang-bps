@@ -31,7 +31,6 @@ import AdminMonitoringPage from './pages/admin/AdminMonitoring';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffAssignments from './pages/staff/StaffAssigments';
 
-
 function App() {
   // State global untuk menyimpan role pengguna.
   // Di aplikasi nyata, ini akan diatur melalui konteks autentikasi atau Redux.

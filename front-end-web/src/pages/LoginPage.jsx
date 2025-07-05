@@ -91,7 +91,11 @@ function LoginPage({ setUserRole }) {
             stroke="currentColor"
             strokeWidth="2"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11 17l-5-5m0 0l5-5m-5 5h12"
+            />
           </svg>
         </a>
 
@@ -106,7 +110,12 @@ function LoginPage({ setUserRole }) {
 
         <form onSubmit={handleEmailLogin}>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+            <label
+              htmlFor="email"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Email:
+            </label>
             <input
               type="email"
               id="email"
@@ -118,7 +127,12 @@ function LoginPage({ setUserRole }) {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Password:</label>
+            <label
+              htmlFor="password"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Password:
+            </label>
             <input
               type="password"
               id="password"
@@ -138,10 +152,18 @@ function LoginPage({ setUserRole }) {
         </form>
 
         <p className="text-center text-gray-600 text-sm mt-6">
-          Belum punya akun? <a href="/register" className="text-bps-blue hover:underline font-semibold">Daftar di sini</a>
+          Belum punya akun?{" "}
+          <a
+            href="/register"
+            className="text-bps-blue hover:underline font-semibold"
+          >
+            Daftar di sini
+          </a>
         </p>
         <p className="text-center text-gray-600 text-sm mt-2">
-          <a href="/lupa-password" className="text-bps-blue hover:underline">Lupa Password?</a>
+          <a href="/lupa-password" className="text-bps-blue hover:underline">
+            Lupa Password?
+          </a>
         </p>
       </div>
 

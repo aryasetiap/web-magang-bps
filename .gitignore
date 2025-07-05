@@ -1,0 +1,48 @@
+# Node modules & build output
+backend/node_modules/
+backend/dist/
+backend/build/
+
+# Logs
+backend/logs/
+backend/*.log
+backend/npm-debug.log*
+backend/pnpm-debug.log*
+backend/yarn-debug.log*
+backend/lerna-debug.log*
+
+# OS files
+.DS_Store
+
+# Test coverage & output
+backend/coverage/
+backend/.nyc_output
+
+# IDE/editor settings
+backend/.idea/
+backend/.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Environment files
+backend/.env*
+.env*
+database/.env*
+
+# Temp files
+backend/.temp/
+backend/.tmp/
+backend/pids
+backend/*.pid
+backend/*.seed
+backend/*.pid.lock
+
+# Diagnostic reports
+backend/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Database artifacts (optional, adjust as needed)
+database/*.sqlite
+database/*.db
+database/dump.sql

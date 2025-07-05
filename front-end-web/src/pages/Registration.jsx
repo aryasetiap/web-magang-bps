@@ -23,11 +23,12 @@ function Registration() {
       return;
     }
 
-    if (email && password) { // Validasi sederhana
+    if (email && password) {
+      // Validasi sederhana
       alert("Registrasi Berhasil! Anda akan diarahkan ke dashboard.");
       // Di sini, setelah registrasi berhasil, Anda bisa mengarahkan langsung ke dashboard
       // atau ke halaman login agar pengguna login dengan akun barunya.
-      navigate('/dashboard'); // Atau navigate('/login')
+      navigate("/dashboard"); // Atau navigate('/login')
     } else {
       alert("Mohon lengkapi semua bidang.");
     }
@@ -54,7 +55,11 @@ function Registration() {
             stroke="currentColor"
             strokeWidth="2"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11 17l-5-5m0 0l5-5m-5 5h12"
+            />
           </svg>
         </a>
 
@@ -69,7 +74,12 @@ function Registration() {
 
         <form onSubmit={handleEmailRegistration}>
           <div className="mb-4">
-            <label htmlFor="regEmail" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+            <label
+              htmlFor="regEmail"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Email:
+            </label>
             <input
               type="email"
               id="regEmail"
@@ -126,7 +136,13 @@ function Registration() {
         </form>
 
         <p className="text-center text-gray-600 text-sm mt-6">
-          Sudah punya akun? <a href="/login" className="text-bps-blue hover:underline font-semibold">Login di sini</a>
+          Sudah punya akun?{" "}
+          <a
+            href="/login"
+            className="text-bps-blue hover:underline font-semibold"
+          >
+            Login di sini
+          </a>
         </p>
       </div>
     </div>

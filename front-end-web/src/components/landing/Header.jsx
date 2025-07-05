@@ -16,18 +16,43 @@ function Header() {
         </div>
         <nav>
           <ul className="flex space-x-6">
-            <li><a href="#about" className="text-gray-600 hover:text-bps-blue transition-colors duration-200">Tentang</a></li>
-            <li><a href="#faq" className="text-gray-600 hover:text-bps-blue transition-colors duration-200">FAQ</a></li>
-            <li><a href="#contact" className="text-gray-600 hover:text-bps-blue transition-colors duration-200">Kontak</a></li>
             <li>
-                <a href="/login" 
-                className="border-2 border-bps-blue text-bps-blue font-semibold py-2 px-4 rounded-lg shadow-md  transition-colors duration-200">Masuk
-                </a></li>
+              <a
+                href="#about"
+                className="text-gray-600 hover:text-bps-blue transition-colors duration-200"
+              >
+                Tentang
+              </a>
+            </li>
             <li>
-                <a 
-                href="/register" 
+              <a
+                href="#faq"
+                className="text-gray-600 hover:text-bps-blue transition-colors duration-200"
+              >
+                FAQ
+              </a>
+            </li>
+            <li>
+              <a
+                href="#contact"
+                className="text-gray-600 hover:text-bps-blue transition-colors duration-200"
+              >
+                Kontak
+              </a>
+            </li>
+            <li>
+              <a
+                href="/login"
+                className="border-2 border-bps-blue text-bps-blue font-semibold py-2 px-4 rounded-lg shadow-md  transition-colors duration-200"
+              >
+                Login
+              </a>
+            </li>
+            <li>
+              <a
+                href="/register"
                 className="bg-bps-blue hover:bg-bps-light-blue text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-105"
-                >
+              >
                 Registrasi
               </a>
             </li>
