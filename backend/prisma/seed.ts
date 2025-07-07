@@ -8,7 +8,7 @@ async function main() {
   console.log(`Memulai proses seeding...`);
 
   const rolesToCreate = [
-    { name: 'Mahasiswa' },
+    { name: 'Intern' }, // <-- UBAH DARI 'Mahasiswa' MENJADI 'Intern'
     { name: 'Staff BPS' },
     { name: 'Admin' },
   ];
