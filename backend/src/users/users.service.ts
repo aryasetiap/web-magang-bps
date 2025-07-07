@@ -1,22 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service'; // 1. Pastikan path import ini benar
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  // 2. Tambahkan constructor untuk inject PrismaService
   constructor(private prisma: PrismaService) {}
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }
 
-  // Ganti method findAll() yang lama dengan ini
   async findAll() {
-    // Mengambil semua user dari database
     return this.prisma.user.findMany({
-      // Praktik yang baik: jangan kembalikan password dalam response
+      where: {
+        deletedAt: null,
+      },
       select: {
         id: true,
         name: true,
@@ -24,7 +24,6 @@ export class UsersService {
         namaLengkap: true,
         nimNisn: true,
         asalInstitusi: true,
-        // Pilih field lain yang aman untuk ditampilkan
         role: {
           select: {
             name: true,
@@ -34,12 +33,12 @@ export class UsersService {
     });
   }
 
-  // Ganti method findOne() yang lama dengan ini
   async findOne(id: number) {
-    // Mencari satu user berdasarkan ID uniknya
-    return this.prisma.user.findUnique({
-      where: { id: id },
-      // Pilih field yang ingin ditampilkan untuk detail user
+    return this.prisma.user.findFirst({
+      where: {
+        id: id,
+        deletedAt: null,
+      },
       select: {
         id: true,
         name: true,
@@ -61,11 +60,45 @@ export class UsersService {
     });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    try {
+      return await this.prisma.user.update({
+        where: { id: id },
+        data: updateUserDto,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          namaLengkap: true,
+          nimNisn: true,
+          asalInstitusi: true,
+          jurusanProdi: true,
+          nomorTelepon: true,
+          alamat: true,
+          updatedAt: true,
+          role: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+        }
+      }
+      throw error;
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: number) {
+    return this.prisma.user.update({
+      where: { id: id },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
   }
 }

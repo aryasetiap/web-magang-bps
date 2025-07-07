@@ -145,4 +145,13 @@ export class AuthService {
       access_token: this.jwtService.sign(payload),
     };
   }
+
+  generateJwt(user: { userId: number; email: string; role: string }) {
+    const payload = {
+      sub: user.userId,
+      email: user.email,
+      role: user.role,
+    };
+    return this.jwtService.sign(payload);
+  }
 }
