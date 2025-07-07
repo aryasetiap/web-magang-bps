@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config'; // 1. Impor ConfigModule
 import { InternshipApplicationsModule } from './internship-applications/internship-applications.module';
+import { AttendancesModule } from './attendances/attendances.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { InternshipApplicationsModule } from './internship-applications/internsh
     AuthModule,
     UsersModule,
     InternshipApplicationsModule,
+    AttendancesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

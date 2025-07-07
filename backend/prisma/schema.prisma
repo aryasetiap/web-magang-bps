@@ -110,6 +110,8 @@ model Attendance {
   clockIn   DateTime  @map("clock_in")
   clockOut  DateTime? @map("clock_out")
   ipAddress String    @map("ip_address")
+  latitude  Float? // <-- TAMBAHKAN BARIS INI
+  longitude Float? // <-- TAMBAHKAN BARIS INI
 
   // --- Relations ---
   user   User @relation(fields: [userId], references: [id])
