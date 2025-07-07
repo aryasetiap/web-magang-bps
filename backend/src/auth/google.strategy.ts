@@ -29,19 +29,19 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
   // 2. Tambahkan 'request: any' sebagai parameter pertama
   async validate(
-    request: any, // <-- Tambahan parameter
+    request: any,
     accessToken: string,
     refreshToken: string,
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
     const { name, emails, photos } = profile;
+    // Ambil user dari database jika sudah ada, atau buat baru jika belum
+    // (atau lakukan di AuthService.googleLogin)
     const user = {
+      userId: profile.id, // atau mapping ke ID user di DB jika sudah ada
       email: emails[0].value,
-      firstName: name.givenName,
-      lastName: name.familyName,
-      picture: photos[0].value,
-      accessToken,
+      role: 'Mahasiswa', // atau ambil dari DB jika sudah ada
     };
     done(null, user);
   }

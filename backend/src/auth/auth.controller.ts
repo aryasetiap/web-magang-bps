@@ -6,11 +6,13 @@ import {
   Get,
   Request,
   Req, // pastikan Req diimpor
+  Res, // Tambahkan Res diimpor
 } from '@nestjs/common'; // Tambahkan UseGuards, Get, Request
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthGuard } from '@nestjs/passport'; // Import AuthGuard
+import { Response } from 'express'; // Tambahkan import ini
 
 @Controller('auth')
 export class AuthController {
@@ -41,12 +43,28 @@ export class AuthController {
     // Guard 'google' akan otomatis me-redirect ke halaman login Google.
   }
 
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    // req.user diisi oleh GoogleStrategy.validate
+    const user = req.user;
+    // Generate JWT
+    const jwtToken = this.authService.generateJwt(user);
+
+    // Redirect ke FE dengan query token dan role
+    return res.redirect(
+      `http://localhost:5173/login?token=${jwtToken}&role=${user.role}`,
+    );
+  }
+
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req) {
-    // Setelah user login di Google, Google akan mengarahkan kembali ke sini.
-    // Passport akan memvalidasi dan `req.user` sudah berisi data dari GoogleStrategy.
-    // Kita panggil service untuk menangani data user ini.
-    return this.authService.googleLogin(req.user);
+  async googleCallback(@Req() req, @Res() res: Response) {
+    // req.user diisi oleh GoogleStrategy.validate
+    // Lakukan login/daftar user di sini, lalu redirect ke FE
+    const jwtToken = this.authService.generateJwt(req.user);
+    return res.redirect(
+      `http://localhost:5173/login?token=${jwtToken}&role=${req.user.role}`,
+    );
   }
 }
