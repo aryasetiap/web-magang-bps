@@ -5,18 +5,27 @@ import {
   UseGuards,
   Get,
   Request,
-  Req, // pastikan Req diimpor
-  Res, // Tambahkan Res diimpor
-} from '@nestjs/common'; // Tambahkan UseGuards, Get, Request
+  Req,
+  Res,
+  Patch, // Tambahkan Patch
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
-import { AuthGuard } from '@nestjs/passport'; // Import AuthGuard
-import { Response } from 'express'; // Tambahkan import ini
+import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
+
+// Tambahkan import berikut
+import { UpdateProfileDto } from '../users/dto/update-profile.dto';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  // Tambahkan UsersService ke constructor
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('register')
   register(@Body() registerUserDto: RegisterUserDto) {
@@ -34,6 +43,14 @@ export class AuthController {
   getProfile(@Request() req) {
     // req.user diisi otomatis oleh Passport dari JwtStrategy
     return req.user;
+  }
+
+  // Tambahkan endpoint PATCH untuk update profile
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('profile')
+  updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+    const userId = req.user.userId;
+    return this.usersService.update(userId, updateProfileDto);
   }
 
   @Get('google')

@@ -5,5 +5,6 @@ import { UsersController } from './users.controller';
 @Module({
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService], // <-- TAMBAHKAN BARIS INI
 })
 export class UsersModule {}
