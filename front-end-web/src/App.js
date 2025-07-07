@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import Home from './pages/Home';
@@ -21,11 +21,16 @@ import CertificatePage from './pages/intern/Certificate';
 // Import Halaman Dashboard Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAccountsPage from './pages/admin/AdminAccounts';
-import AdminSettingsPage from './pages/admin/AdminSettings';
+// import AdminSettingsPage from './pages/admin/AdminSettings';
 import AdminApplicantsPage from './pages/admin/AdminApplicants';
 import AdminMonitoringPage from './pages/admin/AdminMonitoring';
-
-
+import AdminManagementSettingsPage from './pages/admin/AdminManagementSettings';
+import AdminAssignmentsPage from './pages/admin/AdminAssignments';
+import AdminFinalReviewsPage from './pages/admin/AdminFinalReview';
+import AdminGraduationPage from './pages/admin/AdminGraduation';
+import AdminReportsPage from './pages/admin/AdminReports';
+import AdminMasterDocsPage from './pages/admin/AdminMasterDocs';
+import AdminCertSettingsPage from './pages/admin/AdminCertSettings';
 
 // Import Halaman Dashboard Staff
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -80,15 +85,15 @@ function App() {
           <Route index element={<AdminDashboard />} /> {/* Halaman default /admin */}
           {/* Tambahkan rute khusus Admin lainnya di sini */}
           <Route path="accounts" element={<AdminAccountsPage />} />
-          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="settings" element={<AdminManagementSettingsPage />} />
           <Route path="applicants" element={<AdminApplicantsPage />} />
           <Route path="monitoring" element={<AdminMonitoringPage />} />
-          {/* <Route path="assignments" element={<AdminAssignmentsPage />} /> */}
-          {/* <Route path="final-reviews" element={<AdminFinalReviewsPage />} /> */}
-          {/* <Route path="graduation" element={<AdminGraduationPage />} /> */}
-          {/* <Route path="reports" element={<AdminReportsPage />} /> */}
-          {/* <Route path="master-docs" element={<AdminMasterDocsPage />} /> */}
-          {/* <Route path="cert-settings" element={<AdminCertSettingsPage />} /> */}
+          <Route path="assignments" element={<AdminAssignmentsPage />} />
+          <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
+          <Route path="graduation" element={<AdminGraduationPage />} />
+          <Route path="reports" element={<AdminReportsPage />} />
+          <Route path="master-docs" element={<AdminMasterDocsPage />} />
+          <Route path="cert-settings" element={<AdminCertSettingsPage />} />
         </Route>
 
         {/* Rute Dashboard Staff BPS - Dilindungi */}

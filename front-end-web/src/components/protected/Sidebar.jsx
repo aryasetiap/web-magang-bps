@@ -7,8 +7,7 @@ import {
   CalendarDaysIcon, // Untuk Aktivitas
   DocumentTextIcon, // Untuk Laporan Akhir
   AcademicCapIcon, // Untuk Sertifikat (juga untuk Manajemen Kelulusan Admin)
-  UsersIcon, // Untuk Manajemen Akun Admin
-  CogIcon, // Untuk Pengaturan Sistem Admin
+  AdjustmentsHorizontalIcon,
   UserGroupIcon, // Untuk Manajemen Pendaftar Admin
   ClipboardDocumentCheckIcon, // Untuk Monitoring Aktivitas Admin/Staff
   FolderOpenIcon, // Untuk Manajemen Penugasan Admin/Staff
@@ -33,8 +32,8 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
 
   const adminMenus = [
     { name: 'Dashboard', path: '/admin', icon: HomeIcon, exact: true },
-    { name: 'Manajemen Akun', path: '/admin/accounts', icon: UsersIcon },
-    { name: 'Pengaturan Sistem', path: '/admin/settings', icon: CogIcon },
+    // { name: 'Manajemen Akun', path: '/admin/accounts', icon: UsersIcon },
+    { name: 'Pengaturan Akun & Sistem', path: '/admin/settings', icon: AdjustmentsHorizontalIcon },
     { name: 'Manajemen Pendaftar', path: '/admin/applicants', icon: UserGroupIcon },
     { name: 'Monitoring Peserta', path: '/admin/monitoring', icon: ClipboardDocumentCheckIcon },
     { name: 'Manajemen Penugasan', path: '/admin/assignments', icon: FolderOpenIcon },
@@ -108,7 +107,7 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
                 }
               >
                 <menu.icon className={`h-6 w-6 ${!isCollapsed && 'mr-3'}`} />
-                {!isCollapsed && <span className="font-medium">{menu.name}</span>}
+                {!isCollapsed && <span className="font-medium text-sm">{menu.name}</span>}
               </NavLink>
             </li>
           ))}

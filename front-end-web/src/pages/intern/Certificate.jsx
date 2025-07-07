@@ -5,33 +5,28 @@ function CertificatePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulasi pengambilan status kelulusan dan info sertifikat dari backend/localStorage
-    // Di aplikasi nyata, Anda akan memanggil API untuk mendapatkan data ini
     const fetchSertifikatStatus = () => {
       setIsLoading(true);
       const finalReportStatus = localStorage.getItem('finalReportStatus');
       
-      // Jika status laporan akhir adalah 'Lulus', simulasikan sertifikat tersedia
-      if (finalReportStatus === 'Lulus') {
+      // Jika status laporan akhir adalah 'Disetujui', simulasikan sertifikat tersedia
+      if (finalReportStatus === 'Disetujui') { // Ubah ini
         setSertifikatInfo({
-          idSertifikat: 'BPS-PRINGSEWU-2025-001-Budi', // Contoh ID unik
+          idSertifikat: 'BPS-PRINGSEWU-2025-001-Budi',
           fileName: 'Sertifikat_Magang_BPS_Pringsewu_Budi_Santoso.pdf',
-          downloadUrl: '/assets/dummy-sertifikat.pdf', // URL dummy untuk file PDF
+          downloadUrl: '/assets/dummy-sertifikat.pdf',
         });
       } else {
-        setSertifikatInfo(null); // Sertifikat belum tersedia
+        setSertifikatInfo(null);
       }
       setIsLoading(false);
     };
 
     fetchSertifikatStatus();
-    // Anda bisa menambahkan interval atau trigger lain jika status sertifikat bisa berubah real-time
   }, []);
 
   const handleDownloadSertifikat = () => {
     if (sertifikatInfo && sertifikatInfo.downloadUrl) {
-      // Dalam aplikasi nyata, Anda bisa memicu download file langsung
-      // Atau, jika perlu otorisasi, panggil API yang mengembalikan file
       window.open(sertifikatInfo.downloadUrl, '_blank');
       alert(`Mulai mengunduh: ${sertifikatInfo.fileName}`);
     } else {
@@ -43,7 +38,7 @@ function CertificatePage() {
     <div className="bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-3xl font-bold text-bps-blue mb-6">Sertifikat Kelulusan</h2>
       <p className="text-gray-700 mb-6">
-        Halaman ini menampilkan sertifikat kelulusan magangmu di BPS Kabupaten Pringsewu.
+        Halaman ini menampilkan sertifikat kelulusan magang Anda di BPS Kabupaten Pringsewu.
       </p>
 
       {isLoading ? (
@@ -57,9 +52,9 @@ function CertificatePage() {
       ) : (
         sertifikatInfo ? (
           <div className="p-6 border rounded-lg bg-green-50 text-center">
-            <h3 className="text-2xl font-semibold text-green-800 mb-4">Selamat! Kamu telah Lulus Magang! 🎉</h3>
+            <h3 className="text-2xl font-semibold text-green-800 mb-4">Selamat! Anda telah Lulus Magang! 🎉</h3>
             <p className="text-gray-700 mb-2">
-              Sertifikat kelulusanmu sudah tersedia.
+              Sertifikat kelulusan Anda sudah tersedia.
             </p>
             <div className="mb-4">
               <p className="text-gray-800 font-medium">ID Sertifikat:</p>
@@ -74,16 +69,16 @@ function CertificatePage() {
               </svg>
               Unduh Sertifikat ({sertifikatInfo.fileName})
             </button>
-            <p className="text-gray-600 text-sm mt-3">Pastikan kamu memiliki pembaca PDF untuk melihat sertifikat.</p>
+            <p className="text-gray-600 text-sm mt-3">Pastikan Anda memiliki pembaca PDF untuk melihat sertifikat.</p>
           </div>
         ) : (
           <div className="p-6 border rounded-lg bg-yellow-50 text-center">
             <h3 className="text-2xl font-semibold text-yellow-800 mb-4">Sertifikat Belum Tersedia</h3>
             <p className="text-gray-700 mb-4">
-              Sertifikat kelulusan akan tersedia setelah kamu menyelesaikan laporan akhir magang dan dinyatakan **Lulus** oleh Koordinator Magang.
+              Sertifikat kelulusan akan tersedia setelah Anda menyelesaikan laporan akhir magang dan dinyatakan **Disetujui** oleh Koordinator Magang. {/* Ubah ini */}
             </p>
             <p className="text-gray-600">
-              Silakan cek halaman <a href="/dashboard/laporan-akhir" className="text-bps-blue hover:underline font-semibold">Laporan Akhir</a> untuk memantau status laporanmu.
+              Silakan cek halaman <a href="/dashboard/laporan-akhir" className="text-bps-blue hover:underline font-semibold">Laporan Akhir</a> untuk memantau status laporan Anda.
             </p>
           </div>
         )

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { PlusIcon, EyeIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, EyeIcon, PencilIcon, TrashIcon, CheckIcon, XMarkIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 
-function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPage
-  // Dummy data interns
+function AdminAssignmentsPage() { // Ubah nama fungsi menjadi AdminAssignmentsPage
+  // Dummy data interns (bisa diambil dari sumber data global jika ada)
   const [interns, setInterns] = useState([
     { id: 'int001', name: 'Budi Santoso', email: 'budi.santoso@example.com' },
     { id: 'int002', name: 'Siti Aminah', email: 'siti.aminah@example.com' },
@@ -11,16 +11,16 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
     { id: 'int004', name: 'Nurul Hidayah', email: 'nurul.hidayah@example.com' },
   ]);
 
-  // Dummy data penugasan yang dibuat oleh staff ini
+  // Dummy data penugasan yang dikelola Admin
   const [assignments, setAssignments] = useState(() => {
-    const savedAssignments = localStorage.getItem('staffAssignments');
+    const savedAssignments = localStorage.getItem('adminAssignmentsData'); // Ubah kunci localStorage
     if (savedAssignments) {
       return JSON.parse(savedAssignments);
     }
     return [
       {
         id: 1,
-        title: 'Analisis Data Penjualan Kuartal 1 dan Buat Ringkasan Eksekutif yang Komprehensif', // Judul panjang
+        title: 'Analisis Data Penjualan Kuartal 1 dan Buat Ringkasan Eksekutif yang Komprehensif',
         description: 'Lakukan analisis data penjualan kuartal 1 dan buat ringkasan eksekutif.',
         assignedTo: ['int001', 'int002'],
         submissionType: 'file',
@@ -55,14 +55,18 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
     ];
   });
 
-  // ... (state dan fungsi-fungsi lain tetap sama)
+  // State untuk modal Create/Edit Tugas
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
+
+  // State untuk form Create/Edit
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formAssignedTo, setFormAssignedTo] = useState([]);
   const [formSubmissionType, setFormSubmissionType] = useState('file');
   const [formDeadline, setFormDeadline] = useState('');
+
+  // State untuk modal Review Submission
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingAssignment, setReviewingAssignment] = useState(null);
   const [reviewingInternId, setReviewingInternId] = useState(null);
@@ -70,16 +74,18 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
   const [reviewScore, setReviewScore] = useState('');
 
   useEffect(() => {
-    const savedAssignments = localStorage.getItem('staffAssignments');
+    const savedAssignments = localStorage.getItem('adminAssignmentsData'); // Gunakan kunci yang sama
     if (savedAssignments) {
       setAssignments(JSON.parse(savedAssignments));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('staffAssignments', JSON.stringify(assignments));
+    localStorage.setItem('adminAssignmentsData', JSON.stringify(assignments)); // Simpan dengan kunci yang sama
   }, [assignments]);
 
+
+  // --- CRUD Tugas ---
   function openCreateModal() {
     setEditingAssignment(null);
     setFormTitle('');
@@ -144,10 +150,12 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
     }
   };
 
+
+  // --- Review Submission ---
   function openReviewModal(assignment, internId) {
     setReviewingAssignment(assignment);
     setReviewingInternId(internId);
-    const submission = assignment.submissions ?.[internId]; // Gunakan optional chaining
+    const submission = assignment.submissions ?.[internId];
     if (submission) {
       setReviewFeedback(submission.feedback || '');
       setReviewScore(submission.score || '');
@@ -195,9 +203,9 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-bps-blue mb-6">Manajemen Penugasan</h2>
+      <h2 className="text-3xl font-bold text-bps-blue mb-6">Manajemen Penugasan (Admin)</h2> {/* Ubah judul */}
       <p className="text-gray-700 mb-6">
-        Kelola penugasan untuk peserta magang, buat tugas baru, dan review hasil submission.
+        Sebagai Admin, Anda dapat mengelola semua penugasan untuk peserta magang.
       </p>
 
       {/* Tombol Buat Tugas Baru */}
@@ -211,18 +219,15 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
       </div>
 
       {/* Daftar Penugasan */}
-      {/* Container ini tetap overflow-x-auto agar tabel tetap bisa discroll pada layar sangat kecil */}
-      <div className="overflow-x-auto"> 
-        {/* min-w-full tetap dipertahankan agar tabel tidak menyusut terlalu kecil */}
+      <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
           <thead className="bg-gray-50">
             <tr>
-              {/* Hapus whitespace-nowrap dari th */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Judul Tugas</th> {/* Beri lebar relatif */}
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Judul Tugas</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Tipe Input</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Batas Waktu</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Ditugaskan Kepada</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Status Submission</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Ditugaskan Kepada</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">Status Submission</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Aksi</th>
             </tr>
           </thead>
@@ -230,24 +235,23 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
             {assignments.map((assignment) => (
               <Fragment key={assignment.id}>
                 <tr className="bg-white hover:bg-gray-50 transition-colors duration-150">
-                  {/* Hapus whitespace-nowrap dari td */}
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">{assignment.title}</td> {/* Tambahkan break-words */}
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">{assignment.title}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
                     <span className="capitalize">{assignment.submissionType}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{assignment.deadline}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
+                  <td className="px-6 py-4 text-sm text-gray-600 break-words">{assignment.deadline}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
                     {assignment.assignedTo.map(internId => {
                       const intern = interns.find(i => i.id === internId);
                       return <span key={internId} className="block">{intern ? intern.name : `ID:${internId}`}</span>;
                     })}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 break-words">
                     {Object.keys(assignment.submissions).map(internId => {
                       const intern = interns.find(i => i.id === internId);
                       const submission = assignment.submissions ?.[internId];
                       return (
-                        <div key={internId} className="flex flex-wrap items-center space-x-2"> {/* Tambahkan flex-wrap */}
+                        <div key={internId} className="flex flex-wrap items-center space-x-2">
                           <span className="font-medium">{intern ? intern.name : `ID:${internId}`}:</span>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
                             ${submission?.status === 'Submitted' ? 'bg-blue-100 text-blue-800' :
@@ -546,4 +550,4 @@ function StaffAssignmentsPage() { // Ubah nama fungsi menjadi StaffAssignmentsPa
   );
 }
 
-export default StaffAssignmentsPage;
+export default AdminAssignmentsPage;

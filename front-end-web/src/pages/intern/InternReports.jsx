@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
+import { CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'; // Untuk ikon status
 
-function InternReportPage() {
+function InternReports() {
   // Dummy Data Rekap Aktivitas
-  const [recapData, setRecapData] = useState({
-    totalPresensiMasuk: 45, // Contoh: total hari presensi masuk
-    totalPresensiPulang: 42, // Contoh: total hari presensi pulang
-    logbookEntries: [ // Contoh entri logbook
-      { date: '2025-06-01', activity: 'Mempelajari sistem internal BPS dan membaca panduan magang.' },
-      { date: '2025-06-02', activity: 'Membantu input data survei lapangan.' },
-      { date: '2025-06-03', activity: 'Mengikuti rapat koordinasi tim pengolahan data.' },
-      { date: '2025-06-04', activity: 'Melakukan verifikasi data sensus ekonomi.' },
-      { date: '2025-06-05', activity: 'Menyiapkan materi untuk presentasi internal.' },
-    ],
-    completedAssignments: [ // Contoh tugas yang sudah selesai
-      { id: 1, title: 'Mempelajari Struktur Organisasi BPS', submission: 'Laporan Ringkasan.pdf', type: 'file' },
-      { id: 3, title: 'Menyusun Laporan Mingguan', submission: 'Laporan_Mingguan_Budi.pdf', type: 'file' },
-      { id: 5, title: 'Analisis Data Penjualan (Teks)', submission: 'Ringkasan analisis teks', type: 'text' },
-    ],
-    totalAssignments: 8, // Contoh: total penugasan yang diberikan
-    submittedFinalReport: null, // Untuk menyimpan status laporan akhir yang diunggah
-    finalReportStatus: 'Belum Diperiksa', // Bisa 'Belum Diperiksa', 'Perlu Revisi', 'Lulus'
-    revisiNotes: '', // Catatan revisi jika statusnya 'Perlu Revisi'
+  const [recapData, setRecapData] = useState(() => {
+    const savedRecapData = localStorage.getItem('recapData');
+    if (savedRecapData) {
+        return JSON.parse(savedRecapData);
+    }
+    return {
+      totalPresensiMasuk: 45,
+      totalPresensiPulang: 42,
+      logbookEntries: [
+        { date: '2025-06-01', activity: 'Mempelajari sistem internal BPS dan membaca panduan magang.' },
+        { date: '2025-06-02', activity: 'Membantu input data survei lapangan.' },
+        { date: '2025-06-03', activity: 'Mengikuti rapat koordinasi tim pengolahan data.' },
+        { date: '2025-06-04', activity: 'Melakukan verifikasi data sensus ekonomi.' },
+        { date: '2025-06-05', activity: 'Menyiapkan materi untuk presentasi internal.' },
+      ],
+      completedAssignments: [
+        { id: 1, title: 'Mempelajari Struktur Organisasi BPS', submission: { name: 'Laporan Ringkasan.pdf', url: '#' }, type: 'file' },
+        { id: 3, title: 'Menyusun Laporan Mingguan', submission: { name: 'Laporan_Mingguan_Budi.pdf', url: '#' }, type: 'file' },
+        { id: 5, title: 'Analisis Data Penjualan (Teks)', submission: 'Ringkasan analisis teks', type: 'text' },
+      ],
+      totalAssignments: 8,
+      submittedFinalReport: null,
+      finalReportStatus: 'Belum Diperiksa', // Belum Diperiksa, Perlu Revisi, Disetujui
+      revisiNotes: '',
+    };
   });
 
-  const [finalReportFile, setFinalReportFile] = useState(null); // State untuk file laporan akhir yang akan diunggah
+  const [finalReportFile, setFinalReportFile] = useState(null);
 
   // Simulasi memuat data rekap dari backend saat komponen dimuat
   useEffect(() => {
-    // Di sini Anda akan melakukan fetch data rekap aktivitas dan status laporan akhir dari backend
-    // const fetchRecap = async () => { ... }
-    // Untuk demo, kita pakai data dummy
     const savedReport = localStorage.getItem('finalReportFile');
     const savedReportStatus = localStorage.getItem('finalReportStatus');
     const savedRevisiNotes = localStorage.getItem('revisiNotes');
@@ -44,6 +48,12 @@ function InternReportPage() {
     }
   }, []);
 
+  // Efek untuk menyimpan data rekap ke localStorage saat berubah
+  useEffect(() => {
+    localStorage.setItem('recapData', JSON.stringify(recapData));
+  }, [recapData]);
+
+
   const handleFinalReportUpload = (e) => {
     setFinalReportFile(e.target.files[0]);
   };
@@ -54,22 +64,21 @@ function InternReportPage() {
       return;
     }
 
-    // Simulasi proses unggah laporan akhir
     const fileName = finalReportFile.name;
     alert(`Laporan akhir "${fileName}" berhasil diunggah! Menunggu pemeriksaan.`);
     
-    // Update state dan localStorage
     setRecapData(prev => ({
       ...prev,
-      submittedFinalReport: { name: fileName, url: '#' }, // URL dummy
+      submittedFinalReport: { name: fileName, url: '#' },
       finalReportStatus: 'Belum Diperiksa',
       revisiNotes: ''
     }));
+    // Kita juga akan update localStorage untuk status di halaman Sertifikat dan AdminGraduation
     localStorage.setItem('finalReportFile', JSON.stringify({ name: fileName, url: '#' }));
     localStorage.setItem('finalReportStatus', 'Belum Diperiksa');
-    localStorage.removeItem('revisiNotes'); // Clear previous revision notes
-    setFinalReportFile(null); // Reset input file
-    // Di aplikasi nyata: Kirim file ke backend (FormData)
+    localStorage.removeItem('revisiNotes');
+    
+    setFinalReportFile(null);
   };
 
   // Fungsi simulasi untuk mengubah status laporan (untuk testing)
@@ -95,7 +104,7 @@ function InternReportPage() {
         Di sini Anda dapat melihat rekap aktivitas selama magang dan mengunggah laporan akhir magang Anda.
       </p>
 
-      {/* Bagian Rekap Aktivitas */}
+      {/* Bagian Rekap Aktivitas (tetap sama) */}
       <div className="mb-8 p-6 border rounded-lg bg-indigo-50">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Rekap Aktivitas</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -160,7 +169,7 @@ function InternReportPage() {
         <div className="mb-4">
           <p className="text-gray-700 font-medium mb-2">Status Laporan Akhir Anda:</p>
           <span className={`px-4 py-1 rounded-full font-semibold text-sm
-            ${recapData.finalReportStatus === 'Lulus' ? 'bg-green-200 text-green-800' :
+            ${recapData.finalReportStatus === 'Disetujui' ? 'bg-green-200 text-green-800' : // Ubah ini
               recapData.finalReportStatus === 'Perlu Revisi' ? 'bg-red-200 text-red-800' :
               'bg-yellow-200 text-yellow-800'}`}
           >
@@ -180,7 +189,7 @@ function InternReportPage() {
           </div>
         )}
 
-        {recapData.finalReportStatus !== 'Lulus' && ( // Tidak bisa upload lagi jika sudah lulus
+        {recapData.finalReportStatus !== 'Disetujui' && ( // Tidak bisa upload lagi jika sudah Disetujui
             <>
                 <p className="text-gray-600 text-sm mb-4">
                     Unggah file laporan akhir magang Anda dalam format PDF. Ukuran maksimal 5MB.
@@ -209,8 +218,8 @@ function InternReportPage() {
                 </button>
             </>
         )}
-        {recapData.finalReportStatus === 'Lulus' && (
-            <p className="text-green-700 mt-4 font-semibold">Selamat! Laporan akhir Anda sudah diperiksa dan dinyatakan Lulus.</p>
+        {recapData.finalReportStatus === 'Disetujui' && ( // Ubah ini
+            <p className="text-green-700 mt-4 font-semibold">Selamat! Laporan akhir Anda sudah diperiksa dan dinyatakan Disetujui.</p>
         )}
 
         {/* Tombol simulasi status (Hanya untuk dev/demo) */}
@@ -219,7 +228,7 @@ function InternReportPage() {
             <div className="flex space-x-2">
                 <button onClick={() => simulateStatusChange('Belum Diperiksa')} className="bg-yellow-500 text-white px-3 py-1 rounded text-sm">Set Belum Diperiksa</button>
                 <button onClick={() => simulateStatusChange('Perlu Revisi', 'Tolong perbaiki bagian metodologi dan hasil analisis.')} className="bg-red-500 text-white px-3 py-1 rounded text-sm">Set Perlu Revisi</button>
-                <button onClick={() => simulateStatusChange('Lulus')} className="bg-green-500 text-white px-3 py-1 rounded text-sm">Set Lulus</button>
+                <button onClick={() => simulateStatusChange('Disetujui')} className="bg-green-500 text-white px-3 py-1 rounded text-sm">Set Disetujui</button> {/* Ubah ini */}
             </div>
         </div>
       </div>
@@ -227,4 +236,4 @@ function InternReportPage() {
   );
 }
 
-export default InternReportPage;
+export default InternReports;
