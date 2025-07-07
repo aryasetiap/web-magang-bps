@@ -34,7 +34,7 @@ function Faq() {
   ];
 
   return (
-    <section id="faq" className="py-20 px-4 bg-gray-50">
+    <section id="faq" className="py-20 px-4 sm:px-6 md:px-8 bg-gray-50">
       <div className="container mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
           Pertanyaan yang Sering Diajukan (FAQ)

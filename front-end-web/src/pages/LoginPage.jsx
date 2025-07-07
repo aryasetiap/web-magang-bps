@@ -60,6 +60,7 @@ function LoginPage({ setUserRole }) {
   // ✅ Login Email/Password
   const handleEmailLogin = async (e) => {
     e.preventDefault();
+    console.log("Attempting login with:", email, password); // Debug log
 
     try {
       const apiResponse = await fetch('http://localhost:3000/auth/login', {
@@ -90,6 +91,7 @@ function LoginPage({ setUserRole }) {
           navigate(data.role === 'admin' ? '/admin' : data.role === 'staff' ? '/staff/dashboard' : '/dashboard');
         }, 1500);
       } else {
+        console.error("Login failed (non-2xx status):", apiResponse.status, data); // Log error response
         throw new Error(data.message || 'Login gagal. Periksa email dan password Anda.');
       }
     } catch (error) {

@@ -2,7 +2,7 @@ import React from "react";
 
 function Contact() {
   return (
-    <section id="contact" className="py-20 px-4 bg-bps-blue text-white">
+    <section id="contact" className="py-20 px-4 sm:px-6 md:px-8 bg-bps-blue text-white">
       <div className="container mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center">
           Informasi Kontak BPS Kabupaten Pringsewu
@@ -10,7 +10,7 @@ function Contact() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h3 className="text-xl font-semibold mb-3">Alamat</h3>
-            <p className="text-white-700">
+            <p className="text-white-700 break-words">
               Jl. Raya Gading Rejo KM.33,<br />
               Wonodadi, Gading Rejo,<br />
               Kabupaten Pringsewu, Lampung, 35372

@@ -19,19 +19,19 @@ function Hero() {
           PLATFORM MAGANG BPS KABUPATEN PRINGSEWU
         </p>
         
-        <div className="space-x-4">
-          <a
-            href="/register"
-            className="bg-bps-green hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-          >
-            Daftar Sekarang!
-          </a>
-          <a
-            href="/login"
-            className="border-2 border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-bps-blue shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
-          >
-            Masuk ke Sistem
-          </a>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 sm:space-x-4">
+            <a
+              href="/register"
+              className="bg-bps-green hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+            >
+              Daftar Sekarang!
+            </a>
+            <a
+              href="/login"
+              className="border-2 border-white text-white font-bold py-3 px-8 rounded-full hover:bg-white hover:text-bps-blue shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+            >
+              Masuk ke Sistem
+            </a>
         </div>
       </div>
     </section>

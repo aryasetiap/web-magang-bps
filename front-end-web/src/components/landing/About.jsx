@@ -2,7 +2,7 @@ import React from "react";
 
 function About() {
   return (
-    <section id="about" className="py-20 px-4 bg-gray-50">
+    <section id="about" className="py-20 px-4 sm:px-6 md:px-8 bg-gray-50">
       <div className="container mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12">
           Tentang Magang di BPS Kabupaten Pringsewu
