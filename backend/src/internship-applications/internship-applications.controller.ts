@@ -18,6 +18,9 @@ import { CreateInternshipApplicationDto } from './dto/create-internship-applicat
 import { UpdateInternshipApplicationDto } from './dto/update-internship-application.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 
 @Controller('internship-applications')
 export class InternshipApplicationsController {
@@ -55,17 +58,40 @@ export class InternshipApplicationsController {
     );
   }
 
-  // (Method lainnya akan kita implementasikan nanti)
+  // Ganti method findAll() yang lama dengan ini
   @Get()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('Admin')
   findAll() {
     return this.internshipApplicationsService.findAll();
   }
 
+  // Ganti method findOne() yang lama dengan ini
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('Admin')
   findOne(@Param('id') id: string) {
     return this.internshipApplicationsService.findOne(+id);
   }
 
+  // 2. Tambahkan method baru ini untuk update status
+  @Patch(':id/status')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('Admin')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateApplicationStatusDto: UpdateApplicationStatusDto,
+    @Request() req,
+  ) {
+    const adminId = req.user.userId;
+    return this.internshipApplicationsService.updateStatus(
+      +id,
+      adminId,
+      updateApplicationStatusDto,
+    );
+  }
+
+  // Method update() yang lama bisa kita hapus atau biarkan dulu untuk saat ini
   @Patch(':id')
   update(
     @Param('id') id: string,

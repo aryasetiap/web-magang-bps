@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
 import { UpdateInternshipApplicationDto } from './dto/update-internship-application.dto';
+import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 import { PrismaService } from '../prisma/prisma.service'; // 1. Impor PrismaService
 
 @Injectable()
@@ -59,12 +60,61 @@ export class InternshipApplicationsService {
     });
   }
 
+  // Ganti method findAll() yang lama dengan ini
   findAll() {
-    return `This action returns all internshipApplications`;
+    // Mengambil semua data pendaftaran
+    return this.prisma.internshipApplication.findMany({
+      // Sertakan juga data user yang mendaftar agar informatif
+      include: {
+        applicant: {
+          select: {
+            name: true,
+            email: true,
+            namaLengkap: true,
+            asalInstitusi: true,
+          },
+        },
+      },
+    });
   }
 
+  // Ganti method findOne() yang lama dengan ini
   findOne(id: number) {
-    return `This action returns a #${id} internshipApplication`;
+    // Mencari satu pendaftaran spesifik berdasarkan ID-nya
+    return this.prisma.internshipApplication.findUnique({
+      where: { id: id },
+      include: {
+        applicant: {
+          select: {
+            name: true,
+            email: true,
+            namaLengkap: true,
+            nimNisn: true,
+            asalInstitusi: true,
+            jurusanProdi: true,
+            nomorTelepon: true,
+            alamat: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Tambahkan method baru ini
+  async updateStatus(
+    id: number,
+    adminId: number,
+    updateApplicationStatusDto: UpdateApplicationStatusDto,
+  ) {
+    // Kita akan update status, dan juga mencatat siapa & kapan verifikasi dilakukan
+    return this.prisma.internshipApplication.update({
+      where: { id: id },
+      data: {
+        status: updateApplicationStatusDto.status,
+        verifiedBy: adminId,
+        verifiedAt: new Date(),
+      },
+    });
   }
 
   update(
