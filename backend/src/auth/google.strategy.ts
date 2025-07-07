@@ -1,4 +1,4 @@
-// src/auth/google.strategy.ts (Versi yang sudah diperbaiki)
+// src/auth/google.strategy.ts (Versi Final yang Benar)
 
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
@@ -18,31 +18,32 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     }
 
     super({
-      clientID, // <-- Sekarang ini dijamin string
-      clientSecret, // <-- Sekarang ini dijamin string
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      clientID,
+      clientSecret,
+      callbackURL: 'http://localhost:3000/auth/google/callback', // Ini URL yang benar
       scope: ['email', 'profile'],
-      // 1. Tambahkan baris ini untuk mengatasi error
-      passReqToCallback: true,
     });
   }
 
-  // 2. Tambahkan 'request: any' sebagai parameter pertama
+  // Method validate ini TIDAK perlu passReqToCallback, kita sederhanakan
   async validate(
-    request: any,
     accessToken: string,
     refreshToken: string,
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
     const { name, emails, photos } = profile;
-    // Ambil user dari database jika sudah ada, atau buat baru jika belum
-    // (atau lakukan di AuthService.googleLogin)
-    const user = {
-      userId: profile.id, // atau mapping ke ID user di DB jika sudah ada
+
+    // Kita hanya mem-packing data yang dibutuhkan oleh AuthService
+    const userPayload = {
       email: emails[0].value,
-      role: 'Mahasiswa', // atau ambil dari DB jika sudah ada
+      firstName: name.givenName,
+      lastName: name.familyName,
+      picture: photos[0].value,
+      accessToken,
     };
-    done(null, user);
+
+    // 'done' akan menempelkan 'userPayload' ini ke req.user
+    done(null, userPayload);
   }
 }

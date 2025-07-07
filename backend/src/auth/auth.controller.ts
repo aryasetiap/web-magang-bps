@@ -6,22 +6,17 @@ import {
   Get,
   Request,
   Req,
-  Res,
-  Patch, // Tambahkan Patch
+  Patch,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
-
-// Tambahkan import berikut
 import { UpdateProfileDto } from '../users/dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  // Tambahkan UsersService ke constructor
   constructor(
     private readonly authService: AuthService,
     private readonly usersService: UsersService,
@@ -37,15 +32,12 @@ export class AuthController {
     return this.authService.login(loginUserDto);
   }
 
-  // Endpoint ini sekarang dilindungi oleh "penjaga" JWT
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   getProfile(@Request() req) {
-    // req.user diisi otomatis oleh Passport dari JwtStrategy
     return req.user;
   }
 
-  // Tambahkan endpoint PATCH untuk update profile
   @UseGuards(AuthGuard('jwt'))
   @Patch('profile')
   updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
@@ -53,35 +45,20 @@ export class AuthController {
     return this.usersService.update(userId, updateProfileDto);
   }
 
+  // --- GOOGLE AUTH SECTION ---
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Req() req) {
-    // Method ini tidak akan pernah dieksekusi.
-    // Guard 'google' akan otomatis me-redirect ke halaman login Google.
+    // Guard akan me-redirect, method ini tidak akan berjalan.
   }
 
-  @Get('google/redirect')
-  @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    // req.user diisi oleh GoogleStrategy.validate
-    const user = req.user;
-    // Generate JWT
-    const jwtToken = this.authService.generateJwt(user);
-
-    // Redirect ke FE dengan query token dan role
-    return res.redirect(
-      `http://localhost:3001/login?token=${jwtToken}&role=${user.role}`,
-    );
-  }
-
+  // HANYA SATU ENDPOINT CALLBACK INI YANG DIPERLUKAN
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req, @Res() res: Response) {
+  googleAuthCallback(@Request() req) {
     // req.user diisi oleh GoogleStrategy.validate
-    // Lakukan login/daftar user di sini, lalu redirect ke FE
-    const jwtToken = this.authService.generateJwt(req.user);
-    return res.redirect(
-      `http://localhost:3001/login?token=${jwtToken}&role=${req.user.role}`,
-    );
+    // Kita panggil service yang sudah kita buat untuk menangani logika ini.
+    return this.authService.googleLogin(req.user);
   }
 }
