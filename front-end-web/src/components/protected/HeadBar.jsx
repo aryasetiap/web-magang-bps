@@ -69,10 +69,10 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
           ) : (
             <>
               {/* Link ke root dashboard role masing-masing */}
-              <a href={roleRootPath} className="text-gray-600 hover:text-bps-blue mr-2">
-                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : 'Dashboard'}
+              {/* <a href={roleRootPath} className="text-gray-600 hover:text-bps-blue mr-2">
+                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : ''}
               </a>
-              <span className="text-gray-400 mr-2">/</span>
+              <span className="text-gray-400 mr-2">/</span> */}
               {/* Filter out the role's root segment from breadcrumbs */}
               {breadcrumbs.filter(crumb => crumb.props.children[0].props.href !== roleRootPath)}
             </>

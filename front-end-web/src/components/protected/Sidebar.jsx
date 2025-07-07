@@ -57,6 +57,9 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     case 'intern':
       currentMenus = internMenus;
       break;
+    case 'Mahasiswa':
+      currentMenus = internMenus; // Jika role 'Mahasiswa', tampilkan menu intern
+      break;
     case 'admin':
       currentMenus = adminMenus;
       break;
