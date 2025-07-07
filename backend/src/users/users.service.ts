@@ -37,7 +37,7 @@ export class UsersService {
     return this.prisma.user.findFirst({
       where: {
         id: id,
-        deletedAt: null,
+        // deletedAt: null,
       },
       select: {
         id: true,

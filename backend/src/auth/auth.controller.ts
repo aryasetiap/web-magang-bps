@@ -70,7 +70,7 @@ export class AuthController {
 
     // Redirect ke FE dengan query token dan role
     return res.redirect(
-      `http://localhost:5173/login?token=${jwtToken}&role=${user.role}`,
+      `http://localhost:3001/login?token=${jwtToken}&role=${user.role}`,
     );
   }
 
@@ -81,7 +81,7 @@ export class AuthController {
     // Lakukan login/daftar user di sini, lalu redirect ke FE
     const jwtToken = this.authService.generateJwt(req.user);
     return res.redirect(
-      `http://localhost:5173/login?token=${jwtToken}&role=${req.user.role}`,
+      `http://localhost:3001/login?token=${jwtToken}&role=${req.user.role}`,
     );
   }
 }

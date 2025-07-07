@@ -14,6 +14,12 @@ async function bootstrap() {
     }),
   );
 
+  // ✅ Aktifkan CORS untuk frontend React (sesuaikan port-nya)
+  app.enableCors({
+    origin: 'http://localhost:3001', // jika frontend kamu jalan di port ini
+    credentials: true,               // jika kamu kirim cookie / auth
+  });
+
   await app.listen(3000);
 }
 bootstrap();
