@@ -1,20 +1,59 @@
-// src/internship-applications/internship-applications.service.ts
-
 import {
   Injectable,
   BadRequestException,
   ConflictException,
-  NotFoundException, // Tambahkan import ini
+  NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
 import { UpdateInternshipApplicationDto } from './dto/update-internship-application.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
-import { PrismaService } from '../prisma/prisma.service'; // 1. Impor PrismaService
+import { PrismaService } from '../prisma/prisma.service';
+import * as fs from 'fs';
 
 @Injectable()
 export class InternshipApplicationsService {
-  // 2. Suntikkan PrismaService melalui constructor
   constructor(private prisma: PrismaService) {}
+
+  private validateFiles(files: {
+    cv?: Express.Multer.File[];
+    transcript?: Express.Multer.File[];
+    requestLetter?: Express.Multer.File[];
+  }) {
+    const requiredFields = ['cv', 'transcript', 'requestLetter'];
+    for (const field of requiredFields) {
+      if (!files[field] || !files[field][0]) {
+        throw new BadRequestException(`File untuk '${field}' wajib diunggah.`);
+      }
+    }
+
+    // [PERBAIKAN] Gunakan '!' untuk memberitahu TypeScript bahwa kita sudah memvalidasi keberadaan file.
+    const allFiles = [
+      ...files.cv!,
+      ...files.transcript!,
+      ...files.requestLetter!,
+    ];
+    const maxSize = 2 * 1024 * 1024; // 2 MB
+
+    for (const file of allFiles) {
+      if (!file.mimetype.includes('pdf')) {
+        Object.values(files).forEach((fileArray) => {
+          if (fileArray && fileArray[0]) fs.unlinkSync(fileArray[0].path);
+        });
+        throw new BadRequestException(
+          `Tipe file tidak valid: ${file.originalname}. Hanya file PDF yang diizinkan.`,
+        );
+      }
+      if (file.size > maxSize) {
+        Object.values(files).forEach((fileArray) => {
+          if (fileArray && fileArray[0]) fs.unlinkSync(fileArray[0].path);
+        });
+        throw new BadRequestException(
+          `Ukuran file terlalu besar: ${file.originalname}. Ukuran maksimum adalah 2 MB.`,
+        );
+      }
+    }
+  }
 
   async create(
     userId: number,
@@ -25,47 +64,39 @@ export class InternshipApplicationsService {
       requestLetter?: Express.Multer.File[];
     },
   ) {
-    // 3. Validasi bahwa semua file yang dibutuhkan telah diunggah
-    if (!files.cv || !files.transcript || !files.requestLetter) {
-      throw new BadRequestException(
-        'Semua file (CV, Transkrip, Surat Permohonan) wajib diunggah.',
-      );
-    }
+    this.validateFiles(files);
 
-    // 4. Cek apakah user sudah pernah mendaftar sebelumnya
     const existingApplication =
       await this.prisma.internshipApplication.findUnique({
         where: { userId: userId },
       });
 
     if (existingApplication) {
+      Object.values(files).forEach((fileArray) => {
+        if (fileArray && fileArray[0]) fs.unlinkSync(fileArray[0].path);
+      });
       throw new ConflictException(
         'Anda sudah pernah mengajukan pendaftaran magang.',
       );
     }
 
-    // 5. Ambil path dari setiap file
-    const cvPath = files.cv[0].path;
-    const transcriptPath = files.transcript[0].path;
-    const requestLetterPath = files.requestLetter[0].path;
+    // [PERBAIKAN] Gunakan '!' di sini juga untuk meyakinkan TypeScript.
+    const cvPath = files.cv![0].path;
+    const transcriptPath = files.transcript![0].path;
+    const requestLetterPath = files.requestLetter![0].path;
 
-    // 6. Simpan data ke database
     return this.prisma.internshipApplication.create({
       data: {
         userId: userId,
         cvPath: cvPath,
         transcriptPath: transcriptPath,
         requestLetterPath: requestLetterPath,
-        // Status akan otomatis 'pending' karena kita sudah set default di schema.prisma
       },
     });
   }
 
-  // Ganti method findAll() yang lama dengan ini
   findAll() {
-    // Mengambil semua data pendaftaran
     return this.prisma.internshipApplication.findMany({
-      // Sertakan juga data user yang mendaftar agar informatif
       include: {
         applicant: {
           select: {
@@ -79,7 +110,6 @@ export class InternshipApplicationsService {
     });
   }
 
-  // Ganti method findOne() dengan versi yang ditingkatkan
   async findOne(id: number) {
     const application = await this.prisma.internshipApplication.findUnique({
       where: { id: id },
@@ -105,10 +135,7 @@ export class InternshipApplicationsService {
       );
     }
 
-    // [PENINGKATAN] Ubah path menjadi URL lengkap
-    const baseUrl = 'http://localhost:3000'; // Nanti bisa diambil dari .env
-
-    // Ganti backslash (\) dengan forward slash (/) agar URL valid
+    const baseUrl = 'http://localhost:3000';
     const cvUrl = `${baseUrl}/${application.cvPath.replace(/\\/g, '/')}`;
     const transcriptUrl = `${baseUrl}/${application.transcriptPath.replace(/\\/g, '/')}`;
     const requestLetterUrl = `${baseUrl}/${application.requestLetterPath.replace(/\\/g, '/')}`;
@@ -121,13 +148,11 @@ export class InternshipApplicationsService {
     };
   }
 
-  // Tambahkan method baru ini
   async updateStatus(
     id: number,
     adminId: number,
     updateApplicationStatusDto: UpdateApplicationStatusDto,
   ) {
-    // Kita akan update status, dan juga mencatat siapa & kapan verifikasi dilakukan
     return this.prisma.internshipApplication.update({
       where: { id: id },
       data: {

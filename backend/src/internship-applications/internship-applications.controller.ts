@@ -1,4 +1,4 @@
-// src/internship-applications/internship-applications.controller.ts
+// src/internship-applications/internship-applications.controller.ts (Versi Final yang Benar)
 
 import {
   Controller,
@@ -28,11 +28,9 @@ export class InternshipApplicationsController {
     private readonly internshipApplicationsService: InternshipApplicationsService,
   ) {}
 
-  // Endpoint untuk membuat pendaftaran baru
   @Post()
-  @UseGuards(AuthGuard('jwt')) // 1. Lindungi endpoint ini, hanya user login yang bisa mendaftar
+  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
-    // 2. Gunakan interceptor untuk menangani beberapa field file
     FileFieldsInterceptor([
       { name: 'cv', maxCount: 1 },
       { name: 'transcript', maxCount: 1 },
@@ -40,16 +38,17 @@ export class InternshipApplicationsController {
     ]),
   )
   create(
-    @UploadedFiles() // 3. Ambil file yang sudah di-upload oleh Multer
+    // [PERBAIKAN] Deklarasi parameter yang benar tanpa validasi di sini.
+    // Semua validasi file sekarang ditangani oleh service.
+    @UploadedFiles()
     files: {
       cv?: Express.Multer.File[];
       transcript?: Express.Multer.File[];
       requestLetter?: Express.Multer.File[];
     },
-    @Request() req, // 4. Ambil data user dari token
+    @Request() req,
     @Body() createInternshipApplicationDto: CreateInternshipApplicationDto,
   ) {
-    // 5. Kirim semua data ke service untuk diproses
     const userId = req.user.userId;
     return this.internshipApplicationsService.create(
       userId,
@@ -58,7 +57,6 @@ export class InternshipApplicationsController {
     );
   }
 
-  // Ganti method findAll() yang lama dengan ini
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -66,7 +64,6 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findAll();
   }
 
-  // Ganti method findOne() yang lama dengan ini
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -74,7 +71,6 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findOne(+id);
   }
 
-  // 2. Tambahkan method baru ini untuk update status
   @Patch(':id/status')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -91,20 +87,23 @@ export class InternshipApplicationsController {
     );
   }
 
-  // Method update() yang lama bisa kita hapus atau biarkan dulu untuk saat ini
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateInternshipApplicationDto: UpdateInternshipApplicationDto,
-  ) {
-    return this.internshipApplicationsService.update(
-      +id,
-      updateInternshipApplicationDto,
-    );
-  }
+  // Method di bawah ini tidak lagi diperlukan karena sudah ada updateStatus yang lebih spesifik.
+  // Anda bisa menghapusnya untuk membuat kode lebih bersih.
+  // @Patch(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateInternshipApplicationDto: UpdateInternshipApplicationDto,
+  // ) {
+  //   return this.internshipApplicationsService.update(
+  //     +id,
+  //     updateInternshipApplicationDto,
+  //   );
+  // }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.internshipApplicationsService.remove(+id);
-  }
+  // Endpoint Delete ini belum kita implementasikan di service,
+  // jadi kita beri komentar untuk sementara.
+  // @Delete(':id')
+  // remove(@Param('id') id: string) {
+  //   return this.internshipApplicationsService.remove(+id);
+  // }
 }
