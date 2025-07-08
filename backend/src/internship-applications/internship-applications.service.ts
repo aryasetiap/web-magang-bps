@@ -4,6 +4,7 @@ import {
   Injectable,
   BadRequestException,
   ConflictException,
+  NotFoundException, // Tambahkan import ini
 } from '@nestjs/common';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
 import { UpdateInternshipApplicationDto } from './dto/update-internship-application.dto';
@@ -78,10 +79,9 @@ export class InternshipApplicationsService {
     });
   }
 
-  // Ganti method findOne() yang lama dengan ini
-  findOne(id: number) {
-    // Mencari satu pendaftaran spesifik berdasarkan ID-nya
-    return this.prisma.internshipApplication.findUnique({
+  // Ganti method findOne() dengan versi yang ditingkatkan
+  async findOne(id: number) {
+    const application = await this.prisma.internshipApplication.findUnique({
       where: { id: id },
       include: {
         applicant: {
@@ -98,6 +98,27 @@ export class InternshipApplicationsService {
         },
       },
     });
+
+    if (!application) {
+      throw new NotFoundException(
+        `Pendaftaran dengan ID ${id} tidak ditemukan.`,
+      );
+    }
+
+    // [PENINGKATAN] Ubah path menjadi URL lengkap
+    const baseUrl = 'http://localhost:3000'; // Nanti bisa diambil dari .env
+
+    // Ganti backslash (\) dengan forward slash (/) agar URL valid
+    const cvUrl = `${baseUrl}/${application.cvPath.replace(/\\/g, '/')}`;
+    const transcriptUrl = `${baseUrl}/${application.transcriptPath.replace(/\\/g, '/')}`;
+    const requestLetterUrl = `${baseUrl}/${application.requestLetterPath.replace(/\\/g, '/')}`;
+
+    return {
+      ...application,
+      cvUrl,
+      transcriptUrl,
+      requestLetterUrl,
+    };
   }
 
   // Tambahkan method baru ini
