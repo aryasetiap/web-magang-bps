@@ -153,7 +153,7 @@ function Registration() {
         <p className="text-center text-gray-600 text-sm mt-6">
           Sudah punya akun?{" "}
           <a href="/login" className="text-bps-blue hover:underline font-semibold">
-            Login di sini
+            Masuk
           </a>
         </p>
       </div>

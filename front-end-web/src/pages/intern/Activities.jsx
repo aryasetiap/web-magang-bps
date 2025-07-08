@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 
-function ActivitiesPage() {
+function ActivitiesPage() { // Pastikan nama fungsi adalah AktivitasPage
   const today = new Date();
   const formattedToday = today.toLocaleDateString('id-ID', {
     weekday: 'long',
@@ -10,41 +10,36 @@ function ActivitiesPage() {
     day: 'numeric',
   });
 
+  // State untuk tanggal yang dipilih untuk filter aktivitas
+  const [selectedDate, setSelectedDate] = useState(today.toISOString().split('T')[0]); // Default hari ini (YYYY-MM-DD)
+
   // State untuk presensi dan logbook, ambil dari localStorage jika ada
   const [checkInTime, setCheckInTime] = useState(() => {
-    const savedCheckIn = localStorage.getItem('checkInTime');
-    const savedCheckInDate = localStorage.getItem('checkInDate');
-    if (savedCheckInDate === today.toDateString()) {
-      return savedCheckIn;
-    }
-    return null;
+    const savedCheckIn = localStorage.getItem('checkInTime_' + selectedDate); // Ubah kunci untuk per tanggal
+    return savedCheckIn || null;
   });
 
   const [checkOutTime, setCheckOutTime] = useState(() => {
-    const savedCheckOut = localStorage.getItem('checkOutTime');
-    const savedCheckOutDate = localStorage.getItem('checkOutDate');
-    if (savedCheckOutDate === today.toDateString()) {
-      return savedCheckOut;
-    }
-    return null;
+    const savedCheckOut = localStorage.getItem('checkOutTime_' + selectedDate); // Ubah kunci untuk per tanggal
+    return savedCheckOut || null;
   });
 
   const [logbookEntry, setLogbookEntry] = useState(() => {
-    const savedLogbook = localStorage.getItem('logbookEntry');
-    const savedLogbookDate = localStorage.getItem('logbookDate');
-    if (savedLogbookDate === today.toDateString()) {
-      return savedLogbook;
-    }
-    return '';
+    const savedLogbook = localStorage.getItem('logbookEntry_' + selectedDate); // Ubah kunci untuk per tanggal
+    return savedLogbook || '';
   });
+
+  // State untuk informasi lokasi presensi
+  const [currentLocation, setCurrentLocation] = useState(null); // { latitude, longitude }
+  const [locationError, setLocationError] = useState('');
 
   // Dummy data penugasan - Tambahkan 'submissionType' dan 'submissionContent'
   const [assignments, setAssignments] = useState([
     { id: 1, title: 'Mempelajari Struktur Organisasi BPS', description: 'Pelajari hierarki dan fungsi setiap divisi di BPS Kabupaten Pringsewu. Buat ringkasan 2 halaman.', status: 'Belum Selesai', deadline: '2025-07-05', submissionType: 'file', uploadedFile: null, submittedText: '', submittedLink: '' },
-    { id: 2, title: 'Beri Tanggapan tentang Survei X', description: 'Berikan opini Anda mengenai hasil Survei X. Tulis dalam 200 kata.', status: 'Belum Selesai', deadline: '2025-07-10', submissionType: 'text', uploadedFile: null, submittedText: '', submittedLink: '' },
+    { id: 2, title: 'Beri Tanggapan tentang Survei X', description: 'Berikan opini Anda mengenai hasil Survei X. Tulis dalam 200 kata.', status: 'Belum Selesai', deadline: '2025-07-07', submissionType: 'text', uploadedFile: null, submittedText: '', submittedLink: '' }, // Deadine hari ini
     { id: 3, title: 'Menyusun Laporan Mingguan', description: 'Buat draf laporan kegiatan mingguan yang telah dilakukan dan kumpulkan ke Koordinator Magang.', status: 'Selesai', deadline: '2025-06-28', submissionType: 'file', uploadedFile: { name: 'Laporan_Mingguan_Budi.pdf', url: '#' }, submittedText: '', submittedLink: '' },
     { id: 4, title: 'Presentasi Konsep Aplikasi Baru', description: 'Buat presentasi interaktif mengenai konsep aplikasi baru BPS. Unggah link Google Slide atau dokumen lain.', status: 'Belum Selesai', deadline: '2025-07-15', submissionType: 'link', uploadedFile: null, submittedText: '', submittedLink: '' },
-    { id: 5, title: 'Analisis Data Penjualan (Teks)', description: 'Jelaskan hasil analisis data penjualan kuartal 2. Hanya butuh teks summary.', status: 'Belum Selesai', deadline: '2025-07-12', submissionType: 'text', uploadedFile: null, submittedText: '', submittedLink: '' },
+    { id: 5, title: 'Analisis Data Penjualan (Teks)', description: 'Jelaskan hasil analisis data penjualan kuartal 2. Hanya butuh teks summary.', status: 'Belum Selesai', deadline: '2025-07-07', submissionType: 'text', uploadedFile: null, submittedText: '', submittedLink: '' }, // Deadine hari ini
   ]);
 
   // State untuk modal detail tugas
@@ -54,53 +49,92 @@ function ActivitiesPage() {
   const [submissionText, setSubmissionText] = useState(''); // State untuk teks submission
   const [submissionLink, setSubmissionLink] = useState(''); // State untuk link submission
 
-  // Efek untuk menyimpan state ke localStorage setiap kali berubah
+  // Efek untuk memuat/menyimpan data presensi/logbook sesuai tanggal yang dipilih
   useEffect(() => {
-    if (checkInTime) {
-      localStorage.setItem('checkInTime', checkInTime);
-      localStorage.setItem('checkInDate', today.toDateString());
-    } else {
-      localStorage.removeItem('checkInTime');
-      localStorage.removeItem('checkInDate');
-    }
-    if (checkOutTime) {
-      localStorage.setItem('checkOutTime', checkOutTime);
-      localStorage.setItem('checkOutDate', today.toDateString());
-    } else {
-      localStorage.removeItem('checkOutTime');
-      localStorage.removeItem('checkOutDate');
-    }
-    if (logbookEntry) {
-      localStorage.setItem('logbookEntry', logbookEntry);
-      localStorage.setItem('logbookDate', today.toDateString());
-    } else {
-      localStorage.removeItem('logbookEntry');
-      localStorage.removeItem('logbookDate');
-    }
-  }, [checkInTime, checkOutTime, logbookEntry, today]);
+    setCheckInTime(localStorage.getItem('checkInTime_' + selectedDate));
+    setCheckOutTime(localStorage.getItem('checkOutTime_' + selectedDate));
+    setLogbookEntry(localStorage.getItem('logbookEntry_' + selectedDate) || '');
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (checkInTime) localStorage.setItem('checkInTime_' + selectedDate, checkInTime);
+    else localStorage.removeItem('checkInTime_' + selectedDate);
+
+    if (checkOutTime) localStorage.setItem('checkOutTime_' + selectedDate, checkOutTime);
+    else localStorage.removeItem('checkOutTime_' + selectedDate);
+
+    if (logbookEntry) localStorage.setItem('logbookEntry_' + selectedDate, logbookEntry);
+    else localStorage.removeItem('logbookEntry_' + selectedDate);
+  }, [checkInTime, checkOutTime, logbookEntry, selectedDate]);
+
 
   function closeModal() {
     setIsOpen(false);
-    setSelectedAssignment(null); // Reset tugas yang dipilih saat modal ditutup
-    setUploadFile(null); // Reset file yang diunggah
-    setSubmissionText(''); // Reset teks
-    setSubmissionLink(''); // Reset link
+    setSelectedAssignment(null);
+    setUploadFile(null);
+    setSubmissionText('');
+    setSubmissionLink('');
   }
 
   function openModal(assignment) {
     setSelectedAssignment(assignment);
     setIsOpen(true);
-    setUploadFile(assignment.uploadedFile); // Set file yang sudah diunggah jika ada
-    setSubmissionText(assignment.submittedText || ''); // Set teks yang sudah disubmit jika ada
-    setSubmissionLink(assignment.submittedLink || ''); // Set link yang sudah disubmit jika ada
+    setUploadFile(assignment.uploadedFile);
+    setSubmissionText(assignment.submittedText || '');
+    setSubmissionLink(assignment.submittedLink || '');
   }
 
+  // --- Fungsi Presensi dengan Lokasi ---
+  const getGeoLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation tidak didukung oleh browser Anda.');
+      alert('Geolocation tidak didukung oleh browser Anda.');
+      return;
+    }
+
+    setLocationError('Mencari lokasi...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setCurrentLocation({ latitude, longitude });
+        setLocationError(''); // Clear error
+        alert(`Lokasi ditemukan! Lat: ${latitude}, Long: ${longitude}.`);
+      },
+      (error) => {
+        let errorMessage = 'Gagal mendapatkan lokasi. ';
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += 'Akses lokasi ditolak oleh pengguna.';
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += 'Informasi lokasi tidak tersedia.';
+            break;
+          case error.TIMEOUT:
+            errorMessage += 'Waktu permintaan lokasi habis.';
+            break;
+          default:
+            errorMessage += 'Terjadi kesalahan tidak dikenal.';
+            break;
+        }
+        setLocationError(errorMessage);
+        alert(errorMessage);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Opsi geolocation
+    );
+  };
+
   const handleCheckIn = () => {
+    if (!currentLocation) {
+      alert('Mohon dapatkan lokasi Anda terlebih dahulu untuk presensi masuk.');
+      getGeoLocation(); // Coba dapatkan lokasi jika belum ada
+      return;
+    }
+
     const now = new Date();
     const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     setCheckInTime(timeString);
-    alert(`Anda berhasil presensi masuk pada pukul ${timeString}.`);
-    // Di aplikasi nyata: Kirim data check-in ke backend
+    alert(`Anda berhasil presensi masuk pada pukul ${timeString} dari lokasi Lat: ${currentLocation.latitude}, Long: ${currentLocation.longitude}.`);
+    // Di aplikasi nyata: Kirim data check-in dan lokasi ke backend
   };
 
   const handleCheckOut = () => {
@@ -108,11 +142,17 @@ function ActivitiesPage() {
       alert('Mohon isi logbook harian Anda sebelum presensi pulang.');
       return;
     }
+    if (!currentLocation) {
+      alert('Mohon dapatkan lokasi Anda terlebih dahulu untuk presensi pulang.');
+      getGeoLocation(); // Coba dapatkan lokasi jika belum ada
+      return;
+    }
+
     const now = new Date();
     const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     setCheckOutTime(timeString);
-    alert(`Anda berhasil presensi pulang pada pukul ${timeString}. Logbook harian Anda telah disimpan.`);
-    // Di aplikasi nyata: Kirim data check-out dan logbook ke backend
+    alert(`Anda berhasil presensi pulang pada pukul ${timeString}. Logbook harian Anda telah disimpan dari lokasi Lat: ${currentLocation.latitude}, Long: ${currentLocation.longitude}.`);
+    // Di aplikasi nyata: Kirim data check-out, logbook, dan lokasi ke backend
   };
 
   const handleLogbookChange = (e) => {
@@ -125,13 +165,13 @@ function ActivitiesPage() {
         assign.id === selectedAssignment.id ? { ...assign, status: 'Selesai' } : assign
       );
       setAssignments(updatedAssignments);
-      setSelectedAssignment(prev => ({ ...prev, status: 'Selesai' })); // Update status di modal juga
+      setSelectedAssignment(prev => ({ ...prev, status: 'Selesai' }));
       alert(`Tugas "${selectedAssignment.title}" berhasil ditandai sebagai Selesai!`);
       // Di aplikasi nyata: Kirim update status ke backend
     }
   };
 
-const handleFileUpload = (e) => {
+  const handleFileUpload = (e) => {
     setUploadFile(e.target.files[0]);
   };
 
@@ -151,11 +191,9 @@ const handleFileUpload = (e) => {
         return;
       }
       if (uploadFile) {
-        // Simulasi upload
         newSubmissionContent.uploadedFile = { name: uploadFile.name, url: '#' };
         submissionValid = true;
       } else if (selectedAssignment.uploadedFile) {
-        // Jika sudah ada file terunggah sebelumnya dan tidak ada file baru dipilih
         submissionValid = true;
       } else {
         alert('Mohon unggah file terlebih dahulu.');
@@ -176,12 +214,10 @@ const handleFileUpload = (e) => {
       newSubmissionContent.submittedLink = submissionLink.trim();
       submissionValid = true;
     } else {
-        submissionValid = true; // For tasks that require no explicit submission type (e.g. only "mark as done")
+        submissionValid = true;
     }
 
-
     if (submissionValid) {
-        // Update state assignments
         const updatedAssignments = assignments.map(assign =>
             assign.id === selectedAssignment.id ? { ...assign, ...newSubmissionContent, status: 'Selesai' } : assign
         );
@@ -190,10 +226,10 @@ const handleFileUpload = (e) => {
 
         alert(`Tugas "${selectedAssignment.title}" berhasil disubmit dan ditandai Selesai!`);
         // Di aplikasi nyata: Kirim data (file, teks, link) ke backend
-        setUploadFile(null); // Clear selected file
-        setSubmissionText(''); // Clear text input
-        setSubmissionLink(''); // Clear link input
-        closeModal(); // Tutup modal setelah submit
+        setUploadFile(null);
+        setSubmissionText('');
+        setSubmissionLink('');
+        closeModal();
     }
   };
 
@@ -288,13 +324,27 @@ const handleFileUpload = (e) => {
     }
   };
 
+  // Filter tugas berdasarkan tanggal yang dipilih
+  const filteredAssignments = assignments.filter(assignment => {
+    return assignment.deadline === selectedDate; // Asumsi deadline format YYYY-MM-DD
+  });
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-3xl font-bold text-bps-blue mb-6">Aktivitas Harian</h2>
-      <p className="text-gray-700 mb-6">
-        {formattedToday}
-      </p>
+      
+      {/* Filter Tanggal */}
+      <div className="mb-6 flex items-center space-x-4">
+        <label htmlFor="activityDate" className="text-gray-700 font-bold">Pilih Tanggal:</label>
+        <input
+          type="date"
+          id="activityDate"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="shadow appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+        />
+        <p className="text-gray-600">Menampilkan aktivitas untuk: {new Date(selectedDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      </div>
 
       {/* Bagian Presensi Kehadiran */}
       <div className="mb-8 p-6 border rounded-lg bg-blue-50">
@@ -311,14 +361,22 @@ const handleFileUpload = (e) => {
             Anda sudah presensi masuk pada pukul <span className="font-bold">{checkInTime}</span>.
           </p>
         )}
+        <button
+            onClick={getGeoLocation}
+            className="mt-3 bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-4 rounded-lg transition-colors duration-200 text-sm"
+        >
+            Dapatkan Lokasi
+        </button>
+        {currentLocation && <p className="text-sm text-gray-600 mt-2">Lokasi: Lat {currentLocation.latitude.toFixed(4)}, Long {currentLocation.longitude.toFixed(4)}</p>}
+        {locationError && <p className="text-sm text-red-600 mt-2">{locationError}</p>}
       </div>
 
       {/* Bagian Penugasan */}
       <div className="mb-8 p-6 border rounded-lg bg-green-50">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-4">Penugasan</h3>
-        {assignments.length > 0 ? (
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">Penugasan Hari Ini</h3>
+        {filteredAssignments.length > 0 ? (
           <ul className="space-y-4">
-            {assignments.map((assignment) => (
+            {filteredAssignments.map((assignment) => (
               <li
                 key={assignment.id}
                 className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
@@ -336,7 +394,7 @@ const handleFileUpload = (e) => {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-600">Belum ada penugasan untuk hari ini.</p>
+          <p className="text-gray-600">Tidak ada penugasan untuk tanggal ini.</p>
         )}
       </div>
 
@@ -359,8 +417,8 @@ const handleFileUpload = (e) => {
           <button
             onClick={handleCheckOut}
             className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
-              ${!checkInTime || !logbookEntry.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!checkInTime || !logbookEntry.trim()}
+              ${!checkInTime || !logbookEntry.trim() || !currentLocation ? 'opacity-50 cursor-not-allowed' : ''}`} // Disable jika lokasi belum ada
+            disabled={!checkInTime || !logbookEntry.trim() || !currentLocation} // Disable jika lokasi belum ada
           >
             Presensi Pulang & Simpan Logbook
           </button>
@@ -372,6 +430,7 @@ const handleFileUpload = (e) => {
         {!checkInTime && (
             <p className="text-red-500 text-sm mt-2">Anda harus presensi masuk terlebih dahulu.</p>
         )}
+        {!currentLocation && <p className="text-red-500 text-sm mt-2">Lokasi diperlukan untuk presensi.</p>}
       </div>
 
       {/* Modal Detail Tugas */}
@@ -426,19 +485,17 @@ const handleFileUpload = (e) => {
                     <div className="mt-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
                       <h4 className="text-lg font-semibold text-gray-800 mb-2">Pengumpulan Hasil Tugas</h4>
 
-                      {/* Tampilkan input berdasarkan submissionType */}
                       {getSubmissionInput()}
 
                     </div>
                   </div>
 
                   <div className="mt-4 flex justify-end space-x-3">
-                    {/* Tombol Tandai Selesai (Jika belum disubmit atau perlu disubmit) */}
                     {selectedAssignment?.status !== 'Selesai' && (
                         <button
                             type="button"
                             className="inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
-                            onClick={handleSubmitAssignment} // Memanggil fungsi submit utama
+                            onClick={handleSubmitAssignment}
                             disabled={
                                 (selectedAssignment?.submissionType === 'file' && (!uploadFile && !selectedAssignment.uploadedFile)) ||
                                 (selectedAssignment?.submissionType === 'text' && !submissionText.trim()) ||

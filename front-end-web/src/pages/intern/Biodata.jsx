@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function Biodata() {
+function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
   // State untuk data identitas diri
   const [formData, setFormData] = useState({
     namaLengkap: '',
@@ -47,6 +47,12 @@ function Biodata() {
     console.log('Berkas Transkrip Nilai/Rapor:', files.transkripNilai ? files.transkripNilai.name : 'Belum diunggah');
     console.log('Berkas Surat Permohonan:', files.suratPermohonan ? files.suratPermohonan.name : 'Belum diunggah');
 
+    // Anda bisa menambahkan validasi di sini untuk memastikan file wajib sudah diunggah
+    if (!files.cv || !files.transkripNilai || !files.suratPermohonan) {
+        alert('Mohon lengkapi semua berkas yang wajib diunggah.');
+        return;
+    }
+
     alert('Data biodata dan berkas berhasil disimpan (simulasi)!');
     // Anda bisa menambahkan logika redirect atau pesan sukses di sini
   };
@@ -56,6 +62,7 @@ function Biodata() {
       <h2 className="text-3xl font-bold text-bps-blue mb-6">Biodata Diri</h2>
       <p className="text-gray-700 mb-6">
         Mohon lengkapi data identitas diri dan unggah berkas yang diperlukan untuk kelengkapan data magang.
+        Bidang dengan tanda (<span className="text-red-500">*</span>) wajib diisi.
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -64,7 +71,9 @@ function Biodata() {
           <h3 className="text-2xl font-semibold text-gray-800 mb-4">Identitas Diri</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="namaLengkap" className="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap:</label>
+              <label htmlFor="namaLengkap" className="block text-gray-700 text-sm font-bold mb-2">
+                Nama Lengkap: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 id="namaLengkap"
@@ -76,7 +85,9 @@ function Biodata() {
               />
             </div>
             <div>
-              <label htmlFor="nimNis" className="block text-gray-700 text-sm font-bold mb-2">NIM / NISN:</label>
+              <label htmlFor="nimNis" className="block text-gray-700 text-sm font-bold mb-2">
+                NIM / NISN: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 id="nimNis"
@@ -88,7 +99,9 @@ function Biodata() {
               />
             </div>
             <div>
-              <label htmlFor="asalInstitusi" className="block text-gray-700 text-sm font-bold mb-2">Asal Sekolah / Universitas:</label>
+              <label htmlFor="asalInstitusi" className="block text-gray-700 text-sm font-bold mb-2">
+                Asal Sekolah / Universitas: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 id="asalInstitusi"
@@ -100,7 +113,9 @@ function Biodata() {
               />
             </div>
             <div>
-              <label htmlFor="jurusanProdi" className="block text-gray-700 text-sm font-bold mb-2">Jurusan / Program Studi:</label>
+              <label htmlFor="jurusanProdi" className="block text-gray-700 text-sm font-bold mb-2">
+                Jurusan / Program Studi: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 id="jurusanProdi"
@@ -112,7 +127,9 @@ function Biodata() {
               />
             </div>
             <div>
-              <label htmlFor="nomorTelepon" className="block text-gray-700 text-sm font-bold mb-2">Nomor Telepon:</label>
+              <label htmlFor="nomorTelepon" className="block text-gray-700 text-sm font-bold mb-2">
+                Nomor Telepon: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="tel"
                 id="nomorTelepon"
@@ -124,7 +141,9 @@ function Biodata() {
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+              <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+                Email: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 id="email"
@@ -136,7 +155,9 @@ function Biodata() {
               />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="alamat" className="block text-gray-700 text-sm font-bold mb-2">Alamat Lengkap:</label>
+              <label htmlFor="alamat" className="block text-gray-700 text-sm font-bold mb-2">
+                Alamat Lengkap: <span className="text-red-500">*</span>
+              </label>
               <textarea
                 id="alamat"
                 name="alamat"
@@ -153,10 +174,15 @@ function Biodata() {
         {/* Bagian Unggah Berkas */}
         <div className="mb-8 p-6 border rounded-lg bg-gray-50">
           <h3 className="text-2xl font-semibold text-gray-800 mb-4">Unggah Berkas</h3>
-          <p className="text-gray-600 text-sm mb-4">Unggah berkas dalam format PDF. Ukuran maksimal 2MB per berkas.</p>
+          <p className="text-gray-600 text-sm mb-4">
+            Unggah berkas dalam format PDF. Ukuran maksimal 2MB per berkas.
+            Berkas dengan tanda (<span className="text-red-500">*</span>) wajib diunggah.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="cv" className="block text-gray-700 text-sm font-bold mb-2">Curriculum Vitae (CV):</label>
+              <label htmlFor="cv" className="block text-gray-700 text-sm font-bold mb-2">
+                Curriculum Vitae (CV): <span className="text-red-500">*</span>
+              </label>
               <input
                 type="file"
                 id="cv"
@@ -169,12 +195,14 @@ function Biodata() {
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                // required // Opsional, tergantung apakah upload berkas wajib saat pertama kali
+                required // Tambahkan kembali required di sini
               />
               {files.cv && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.cv.name}</p>}
             </div>
             <div>
-              <label htmlFor="transkripNilai" className="block text-gray-700 text-sm font-bold mb-2">Transkrip Nilai / Rapor:</label>
+              <label htmlFor="transkripNilai" className="block text-gray-700 text-sm font-bold mb-2">
+                Transkrip Nilai / Rapor: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="file"
                 id="transkripNilai"
@@ -187,12 +215,14 @@ function Biodata() {
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                // required
+                required // Tambahkan kembali required di sini
               />
               {files.transkripNilai && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.transkripNilai.name}</p>}
             </div>
             <div>
-              <label htmlFor="suratPermohonan" className="block text-gray-700 text-sm font-bold mb-2">Surat Permohonan Magang:</label>
+              <label htmlFor="suratPermohonan" className="block text-gray-700 text-sm font-bold mb-2">
+                Surat Permohonan Magang: <span className="text-red-500">*</span>
+              </label>
               <input
                 type="file"
                 id="suratPermohonan"
@@ -205,7 +235,7 @@ function Biodata() {
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                // required
+                required // Tambahkan kembali required di sini
               />
               {files.suratPermohonan && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.suratPermohonan.name}</p>}
             </div>
@@ -223,4 +253,4 @@ function Biodata() {
   );
 }
 
-export default Biodata;
+export default BiodataPage;

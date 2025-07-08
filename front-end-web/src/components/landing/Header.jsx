@@ -47,7 +47,7 @@ function Header() {
             </li>
             <li>
               <a href="/login" className="border-2 border-bps-blue text-bps-blue font-semibold py-2 px-4 rounded-lg shadow-md">
-                Login
+                Masuk
               </a>
             </li>
             <li>
@@ -74,7 +74,7 @@ function Header() {
             </li>
             <li>
               <a href="/login" className="text-bps-blue border-2 border-bps-blue font-semibold py-2 px-4 rounded-lg text-center">
-                Login
+                Masuk
               </a>
             </li>
             <li className="mt-4">

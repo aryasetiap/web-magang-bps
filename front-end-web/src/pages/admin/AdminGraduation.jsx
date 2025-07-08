@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { AcademicCapIcon, UserCheckIcon, UserXMarkIcon, EyeIcon } from '@heroicons/react/24/outline'; // Menambahkan ikon
+import { AcademicCapIcon, UserCheckIcon, UserXMarkIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 function AdminGraduationPage() {
   // Dummy data peserta magang dengan status laporan dan kelulusan
@@ -14,10 +14,11 @@ function AdminGraduationPage() {
         id: 'int001',
         name: 'Budi Santoso',
         email: 'budi.santoso@example.com',
-        finalReportStatus: 'Disetujui', // Ubah dari 'Lulus' ke 'Disetujui'
-        overallGraduationStatus: 'Belum Lulus', // Status kelulusan akhir: Belum Lulus, Lulus
-        completionDate: null, // Tanggal kelulusan
-        notes: '', // Catatan admin
+        finalReportStatus: 'Disetujui',
+        overallGraduationStatus: 'Belum Lulus',
+        completionDate: null,
+        graduationPredicate: null, // Tambahkan properti ini
+        notes: '',
       },
       {
         id: 'int002',
@@ -26,6 +27,7 @@ function AdminGraduationPage() {
         finalReportStatus: 'Perlu Revisi',
         overallGraduationStatus: 'Belum Lulus',
         completionDate: null,
+        graduationPredicate: null,
         notes: '',
       },
       {
@@ -35,15 +37,17 @@ function AdminGraduationPage() {
         finalReportStatus: 'Belum Diperiksa',
         overallGraduationStatus: 'Belum Lulus',
         completionDate: null,
+        graduationPredicate: null,
         notes: '',
       },
       {
         id: 'int004',
         name: 'Nurul Hidayah',
         email: 'nurul.hidayah@example.com',
-        finalReportStatus: 'Disetujui', // Ubah dari 'Lulus' ke 'Disetujui'
+        finalReportStatus: 'Disetujui',
         overallGraduationStatus: 'Lulus',
         completionDate: '2025-07-01',
+        graduationPredicate: 'Sangat Baik', // Contoh predikat
         notes: 'Lulus dengan nilai sangat baik.',
       },
     ];
@@ -51,8 +55,9 @@ function AdminGraduationPage() {
 
   // State untuk modal Manajemen Kelulusan
   const [isGraduationModalOpen, setIsGraduationModalOpen] = useState(false);
-  const [reviewingIntern, setReviewingIntern] = useState(null); // Peserta yang sedang di-review
+  const [reviewingIntern, setReviewingIntern] = useState(null);
   const [newGraduationStatus, setNewGraduationStatus] = useState('');
+  const [newGraduationPredicate, setNewGraduationPredicate] = useState(''); // State baru untuk predikat
   const [adminNotes, setAdminNotes] = useState('');
 
   // Efek untuk menyimpan data kelulusan ke localStorage
@@ -63,8 +68,9 @@ function AdminGraduationPage() {
   // --- Manajemen Kelulusan ---
   function openGraduationModal(intern) {
     setReviewingIntern(intern);
-    setNewGraduationStatus(intern.overallGraduationStatus); // Set status default
-    setAdminNotes(intern.notes || ''); // Isi catatan jika sudah ada
+    setNewGraduationStatus(intern.overallGraduationStatus);
+    setNewGraduationPredicate(intern.graduationPredicate || ''); // Set predikat default
+    setAdminNotes(intern.notes || '');
     setIsGraduationModalOpen(true);
   }
 
@@ -72,6 +78,7 @@ function AdminGraduationPage() {
     setIsGraduationModalOpen(false);
     setReviewingIntern(null);
     setNewGraduationStatus('');
+    setNewGraduationPredicate('');
     setAdminNotes('');
   }
 
@@ -79,14 +86,23 @@ function AdminGraduationPage() {
     e.preventDefault();
     if (!reviewingIntern) return;
 
+    // Validasi predikat hanya jika statusnya Lulus
+    if (newGraduationStatus === 'Lulus' && !newGraduationPredicate) {
+        alert('Mohon pilih predikat kelulusan jika statusnya Lulus.');
+        return;
+    }
+    if (newGraduationStatus !== 'Lulus') { // Reset predikat jika tidak Lulus
+        setNewGraduationPredicate('');
+    }
+
     if (window.confirm(`Apakah Anda yakin ingin mengubah status kelulusan ${reviewingIntern.name} menjadi "${newGraduationStatus}"?`)) {
       const updatedData = internsGraduationData.map(intern =>
         intern.id === reviewingIntern.id
           ? {
               ...intern,
               overallGraduationStatus: newGraduationStatus,
-              // Ubah kondisi di sini: kelulusan terjadi jika laporan akhir 'Disetujui' DAN status kelulusan diubah jadi 'Lulus'
               completionDate: (newGraduationStatus === 'Lulus' && reviewingIntern.finalReportStatus === 'Disetujui') ? new Date().toISOString().slice(0, 10) : null,
+              graduationPredicate: newGraduationStatus === 'Lulus' ? newGraduationPredicate : null, // Simpan predikat hanya jika Lulus
               notes: adminNotes,
             }
           : intern
@@ -98,7 +114,7 @@ function AdminGraduationPage() {
   };
 
   // Filter untuk melihat peserta berdasarkan status
-  const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Belum Lulus', 'Lulus'
+  const [filterStatus, setFilterStatus] = useState('All');
 
   const filteredInterns = internsGraduationData.filter(intern => {
     if (filterStatus === 'All') return true;
@@ -136,8 +152,9 @@ function AdminGraduationPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Nama Peserta</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Status Laporan Akhir</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Status Kelulusan</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Predikat</th> {/* Kolom baru */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Tgl. Kelulusan</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Aksi</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Aksi</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -146,7 +163,7 @@ function AdminGraduationPage() {
                 <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">{intern.name}</td>
                 <td className="px-6 py-4 text-sm break-words">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                    ${intern.finalReportStatus === 'Disetujui' ? 'bg-green-100 text-green-800' : // Ubah ini
+                    ${intern.finalReportStatus === 'Disetujui' ? 'bg-green-100 text-green-800' :
                       intern.finalReportStatus === 'Perlu Revisi' ? 'bg-red-100 text-red-800' :
                       'bg-yellow-100 text-yellow-800'}`}>
                     {intern.finalReportStatus}
@@ -158,6 +175,9 @@ function AdminGraduationPage() {
                       'bg-gray-100 text-gray-800'}`}>
                     {intern.overallGraduationStatus}
                   </span>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600 break-words">
+                    {intern.graduationPredicate || '-'} {/* Tampilkan predikat */}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
                   {intern.completionDate || '-'}
@@ -175,7 +195,7 @@ function AdminGraduationPage() {
             ))}
             {filteredInterns.length === 0 && (
                 <tr>
-                    <td colSpan="5" className="px-6 py-4 text-center text-gray-500">Tidak ada peserta magang sesuai filter.</td>
+                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">Tidak ada peserta magang sesuai filter.</td> {/* Ubah colspan */}
                 </tr>
             )}
           </tbody>
@@ -217,13 +237,13 @@ function AdminGraduationPage() {
                     <p><strong>Email:</strong> {reviewingIntern?.email}</p>
                     <p><strong>Status Laporan Akhir:</strong>{' '}
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold
-                        ${reviewingIntern?.finalReportStatus === 'Disetujui' ? 'bg-green-100 text-green-800' : // Ubah ini
+                        ${reviewingIntern?.finalReportStatus === 'Disetujui' ? 'bg-green-100 text-green-800' :
                           reviewingIntern?.finalReportStatus === 'Perlu Revisi' ? 'bg-red-100 text-red-800' :
                           'bg-yellow-100 text-yellow-800'}`}>
                         {reviewingIntern?.finalReportStatus}
                       </span>
                     </p>
-                    {reviewingIntern?.finalReportStatus !== 'Disetujui' && ( // Ubah ini
+                    {reviewingIntern?.finalReportStatus !== 'Disetujui' && (
                         <p className="text-sm text-red-500 mt-1">Laporan akhir belum Disetujui. Peserta tidak dapat diluluskan.</p>
                     )}
                   </div>
@@ -236,13 +256,31 @@ function AdminGraduationPage() {
                         value={newGraduationStatus}
                         onChange={(e) => setNewGraduationStatus(e.target.value)}
                         className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-                        // Hanya bisa diubah jika laporan akhir sudah Disetujui
-                        disabled={reviewingIntern?.finalReportStatus !== 'Disetujui'} // Ubah ini
+                        disabled={reviewingIntern?.finalReportStatus !== 'Disetujui'}
                       >
                         <option value="Belum Lulus">Belum Lulus</option>
                         <option value="Lulus">Lulus</option>
                       </select>
                     </div>
+
+                    {newGraduationStatus === 'Lulus' && ( // Tampilkan predikat hanya jika status Lulus
+                        <div className="mb-4">
+                            <label htmlFor="newGraduationPredicate" className="block text-gray-700 text-sm font-bold mb-2">Predikat Kelulusan:</label>
+                            <select
+                                id="newGraduationPredicate"
+                                value={newGraduationPredicate}
+                                onChange={(e) => setNewGraduationPredicate(e.target.value)}
+                                className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+                                required={newGraduationStatus === 'Lulus'} // Wajib jika status Lulus
+                            >
+                                <option value="">Pilih Predikat</option>
+                                <option value="Cukup Baik">Cukup Baik</option>
+                                <option value="Baik">Baik</option>
+                                <option value="Sangat Baik">Sangat Baik</option>
+                                <option value="Cum Laude">Cum Laude</option>
+                            </select>
+                        </div>
+                    )}
 
                     <div className="mb-4">
                       <label htmlFor="adminNotes" className="block text-gray-700 text-sm font-bold mb-2">Catatan Admin:</label>
@@ -267,9 +305,8 @@ function AdminGraduationPage() {
                       <button
                         type="submit"
                         className={`bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200
-                            ${reviewingIntern?.finalReportStatus !== 'Disetujui' ? 'opacity-50 cursor-not-allowed' : ''}`} // Ubah ini
-                        // Tombol submit hanya aktif jika laporan akhir sudah Disetujui
-                        disabled={reviewingIntern?.finalReportStatus !== 'Disetujui'} // Ubah ini
+                            ${reviewingIntern?.finalReportStatus !== 'Disetujui' || (newGraduationStatus === 'Lulus' && !newGraduationPredicate) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={reviewingIntern?.finalReportStatus !== 'Disetujui' || (newGraduationStatus === 'Lulus' && !newGraduationPredicate)}
                       >
                         Simpan Status
                       </button>

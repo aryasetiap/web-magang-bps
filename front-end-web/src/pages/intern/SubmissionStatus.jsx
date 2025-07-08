@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function SubmissionStatusPage() {
+function StatusAjuanPage() {
   const navigate = useNavigate();
   // Menggunakan state untuk menyimpan status ajuan
-  // 'initial': baru pertama kali, perlu konfirmasi
-  // 'pending': sudah diajukan, menunggu verifikasi
-  // 'accepted': telah diterima
-  // 'rejected': telah ditolak
   const [submissionStatus, setSubmissionStatus] = useState('initial');
   // State dummy untuk data biodata yang akan dikonfirmasi
   const [biodataDummy, setBiodataDummy] = useState(null);
 
   useEffect(() => {
     // Simulasi memuat data biodata dari "database" atau state global
-    // Di aplikasi nyata, Anda akan mengambil data biodata yang sudah disimpan
-    // dari API atau context/Redux.
     const dummyData = {
       namaLengkap: 'Budi Santoso',
       nimNis: '202312345',
@@ -23,7 +17,7 @@ function SubmissionStatusPage() {
       jurusanProdi: 'Teknik Informatika',
       nomorTelepon: '081234567890',
       email: 'budi.santoso@example.com',
-      alamat: 'Jl. Contoh Alamat No. 10, Pringsewu',
+      alamat: 'Jl. Contoh Alamat No. 10, RT 01/RW 02, Kel. Pringkumpul, Kec. Pringsewu, Kabupaten Pringsewu, Lampung, 35373', // Contoh alamat lebih panjang
       // Status berkas: asumsi sudah diunggah di halaman biodata
       cvUploaded: true,
       transkripUploaded: true,
@@ -41,8 +35,6 @@ function SubmissionStatusPage() {
 
   const handleAjukan = () => {
     // Logika untuk mengirim ajuan ke backend
-    // Di sini Anda akan mengirim konfirmasi bahwa data sudah benar
-    // dan mengubah status di backend menjadi 'pending'.
     alert('Ajuan Anda telah berhasil dikirim! Menunggu verifikasi.');
     setSubmissionStatus('pending'); // Mengubah status di frontend
   };
@@ -57,6 +49,15 @@ function SubmissionStatusPage() {
       );
     }
 
+    // Helper untuk item baris
+    const BiodataItem = ({ label, value, isFullWidth = false }) => (
+      <div className={`grid grid-cols-2 gap-4 py-2 border-b border-blue-100 last:border-b-0 ${isFullWidth ? 'md:grid-cols-[auto_1fr]' : ''}`}>
+        <div className="font-semibold text-black-800">{label}</div>
+        <div className="text-gray-700 break-words">: {value}</div>
+      </div>
+    );
+
+
     switch (submissionStatus) {
       case 'initial':
         return (
@@ -66,19 +67,24 @@ function SubmissionStatusPage() {
               Mohon periksa kembali data biodata dan kelengkapan berkasmu sebelum mengajukan permohonan magang.
             </p>
 
-            {/* Ringkasan Biodata */}
+            {/* Ringkasan Biodata - Diubah menjadi tampilan mirip tabel */}
             <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
               <h4 className="font-bold text-blue-800 text-lg mb-3">Ringkasan Biodata:</h4>
-              <ul className="list-none space-y-2 text-gray-700">
-                <li><strong>Nama Lengkap:</strong> {biodataDummy.namaLengkap}</li>
-                <li><strong>NIM / NIS:</strong> {biodataDummy.nimNis}</li>
-                <li><strong>Asal Institusi:</strong> {biodataDummy.asalInstitusi}</li>
-                <li><strong>Jurusan/Prodi:</strong> {biodataDummy.jurusanProdi}</li>
-                <li><strong>Nomor Telepon:</strong> {biodataDummy.nomorTelepon}</li>
-                <li><strong>Email:</strong> {biodataDummy.email}</li>
-                <li><strong>Alamat:</strong> {biodataDummy.alamat}</li>
-              </ul>
-              <h4 className="font-bold text-blue-800 text-lg mt-4 mb-3">Kelengkapan Berkas:</h4>
+              <div className="divide-y divide-blue-100"> {/* Garis pemisah antar baris */}
+                <BiodataItem label="Nama Lengkap" value={biodataDummy.namaLengkap} />
+                <BiodataItem label="NIM / NIS" value={biodataDummy.nimNis} />
+                <BiodataItem label="Asal Institusi" value={biodataDummy.asalInstitusi} />
+                <BiodataItem label="Jurusan/Prodi" value={biodataDummy.jurusanProdi} />
+                <BiodataItem label="Nomor Telepon" value={biodataDummy.nomorTelepon} />
+                <BiodataItem label="Email" value={biodataDummy.email} />
+                {/* Alamat akan merentang penuh di mobile, dan tetap 2 kolom di desktop tapi dengan label di awal baris */}
+                <div className="py-2 border-b border-blue-100 last:border-b-0">
+                  <div className="font-semibold text-black-800 mb-1">Alamat</div>
+                  <div className="text-gray-700 break-words">{biodataDummy.alamat}</div>
+                </div>
+              </div>
+              
+              <h4 className="font-bold text-blue-800 text-lg mt-6 mb-3">Kelengkapan Berkas:</h4>
               <ul className="list-disc list-inside space-y-1 text-gray-700">
                 <li className={biodataDummy.cvUploaded ? 'text-green-700' : 'text-red-700'}>
                   CV: {biodataDummy.cvUploaded ? 'Sudah Diunggah' : 'Belum Diunggah!'}
@@ -98,14 +104,10 @@ function SubmissionStatusPage() {
             <button
               onClick={handleAjukan}
               className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
-              // Disable tombol jika ada berkas yang belum diunggah (simulasi)
               // disabled={!(biodataDummy.cvUploaded && biodataDummy.transkripUploaded && biodataDummy.suratPermohonanUploaded)}
             >
               Ajukan Permohonan Magang
             </button>
-            {/* {!(biodataDummy.cvUploaded && biodataDummy.transkripUploaded && biodataDummy.suratPermohonanUploaded) && (
-                <p className="text-red-500 text-sm mt-2">Mohon lengkapi semua berkas di halaman Biodata sebelum mengajukan.</p>
-            )} */}
           </div>
         );
 
@@ -184,4 +186,4 @@ function SubmissionStatusPage() {
   );
 }
 
-export default SubmissionStatusPage;
+export default StatusAjuanPage;

@@ -5,109 +5,174 @@ import BrandLogo from '../components/BrandLogo';
 import kantorBPS from '../assets/kantor-bps-3.jpg';
 
 function LoginPage({ setUserRole }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const navigate = useNavigate();
-  const location = useLocation();
+  // const [email, setEmail] = useState('');
+  // const [password, setPassword] = useState('');
+  // const navigate = useNavigate();
+  // const location = useLocation();
 
-  const [alert, setAlert] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    type: '',
-    autoCloseDelay: 0,
-    onConfirm: null,
-    showCancelButton: false,
-  });
+  // const [alert, setAlert] = useState({
+  //   isOpen: false,
+  //   title: '',
+  //   message: '',
+  //   type: '',
+  //   autoCloseDelay: 0,
+  //   onConfirm: null,
+  //   showCancelButton: false,
+  // });
 
-  const closeAlert = () => {
-    setAlert(prev => ({ ...prev, isOpen: false }));
-  };
+  // const closeAlert = () => {
+  //   setAlert(prev => ({ ...prev, isOpen: false }));
+  // };
 
-  // ✅ Menangkap token dari redirect Google OAuth
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    const role = params.get('role');
+  // // ✅ Menangkap token dari redirect Google OAuth
+  // useEffect(() => {
+  //   const params = new URLSearchParams(location.search);
+  //   const token = params.get('token');
+  //   const role = params.get('role');
 
-    if (token && role) {
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userRole', role);
-      setUserRole(role);
+  //   if (token && role) {
+  //     localStorage.setItem('authToken', token);
+  //     localStorage.setItem('userRole', role);
+  //     setUserRole(role);
 
-      setAlert({
-        isOpen: true,
-        title: 'Login Google Berhasil!',
-        message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
-        type: 'success',
-        autoCloseDelay: 1500,
-      });
+  //     setAlert({
+  //       isOpen: true,
+  //       title: 'Login Google Berhasil!',
+  //       message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
+  //       type: 'success',
+  //       autoCloseDelay: 1500,
+  //     });
 
-      setTimeout(() => {
-        closeAlert();
-        navigate(
-          role === 'admin'
-            ? '/admin'
-            : role === 'staff'
-            ? '/staff/dashboard'
-            : '/dashboard'
-        );
-      }, 1500);
-    }
-  }, [location, navigate, setUserRole]);
+  //     setTimeout(() => {
+  //       closeAlert();
+  //       navigate(
+  //         role === 'admin'
+  //           ? '/admin'
+  //           : role === 'staff'
+  //           ? '/staff/dashboard'
+  //           : '/dashboard'
+  //       );
+  //     }, 1500);
+  //   }
+  // }, [location, navigate, setUserRole]);
 
 
-  // ✅ Login Email/Password
-  const handleEmailLogin = async (e) => {
-    e.preventDefault();
-    console.log("Attempting login with:", email, password); // Debug log
+  // // ✅ Login Email/Password
+  // const handleEmailLogin = async (e) => {
+  //   e.preventDefault();
+  //   console.log("Attempting login with:", email, password); // Debug log
 
-    try {
-      const apiResponse = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+  //   try {
+  //     const apiResponse = await fetch('http://localhost:3000/auth/login', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ email, password }),
+  //     });
 
-      const data = await apiResponse.json();
+  //     const data = await apiResponse.json();
 
-      if (apiResponse.ok) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userRole', data.role);
-        setUserRole(data.role);
+  //     if (apiResponse.ok) {
+  //       localStorage.setItem('authToken', data.token);
+  //       localStorage.setItem('userRole', data.role);
+  //       setUserRole(data.role);
 
-        setAlert({
-          isOpen: true,
-          title: 'Login Berhasil!',
-          message: `Selamat datang, ${data.role}! Anda akan diarahkan ke dashboard.`,
-          type: 'success',
-          autoCloseDelay: 1500,
-        });
+  //       setAlert({
+  //         isOpen: true,
+  //         title: 'Login Berhasil!',
+  //         message: `Selamat datang, ${data.role}! Anda akan diarahkan ke dashboard.`,
+  //         type: 'success',
+  //         autoCloseDelay: 1500,
+  //       });
 
-        setTimeout(() => {
-          closeAlert();
-          navigate(data.role === 'admin' ? '/admin' : data.role === 'staff' ? '/staff/dashboard' : '/dashboard');
-        }, 1500);
-      } else {
-        console.error("Login failed (non-2xx status):", apiResponse.status, data); // Log error response
-        throw new Error(data.message || 'Login gagal. Periksa email dan password Anda.');
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      setAlert({
-        isOpen: true,
-        title: 'Login Gagal!',
-        message: error.message || 'Terjadi masalah saat mencoba login.',
-        type: 'error',
-      });
-    }
-  };
+  //       setTimeout(() => {
+  //         closeAlert();
+  //         navigate(data.role === 'admin' ? '/admin' : data.role === 'staff' ? '/staff/dashboard' : '/dashboard');
+  //       }, 1500);
+  //     } else {
+  //       console.error("Login failed (non-2xx status):", apiResponse.status, data); // Log error response
+  //       throw new Error(data.message || 'Login gagal. Periksa email dan password Anda.');
+  //     }
+  //   } catch (error) {
+  //     console.error("Login error:", error);
+  //     setAlert({
+  //       isOpen: true,
+  //       title: 'Login Gagal!',
+  //       message: error.message || 'Terjadi masalah saat mencoba login.',
+  //       type: 'error',
+  //     });
+  //   }
+  // };
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
     window.location.href = 'http://localhost:3000/auth/google'; // ke backend
+  };
+
+  const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+  
+    const [alert, setAlert] = useState({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: '',
+      autoCloseDelay: 0,
+      onConfirm: null,
+      showCancelButton: false,
+    });
+  
+    const closeAlert = () => {
+      setAlert(prev => ({ ...prev, isOpen: false }));
+    };
+  
+    const handleEmailLogin = (e) => {
+      e.preventDefault();
+  
+      const users = [
+        { email: 'admin@example.com', password: 'admin123', role: 'admin', redirectPath: '/admin' },
+        { email: 'intern@example.com', password: 'intern123', role: 'intern', redirectPath: '/dashboard' },
+        { email: 'staff@example.com', password: 'staff123', role: 'staff', redirectPath: '/staff' },
+      ];
+  
+      let authenticatedUser = null;
+      for (const user of users) {
+        if (user.email === email && user.password === password) {
+          authenticatedUser = user;
+          break;
+        }
+      }
+  
+      if (authenticatedUser) {
+        // Set role in localStorage for persistence across refreshes
+        localStorage.setItem('userRole', authenticatedUser.role);
+        // Also update the global userRole state in App.js
+        if (setUserRole) {
+          setUserRole(authenticatedUser.role);
+        }
+  
+        setAlert({
+          isOpen: true,
+          title: 'Login Berhasil!',
+          message: `Selamat datang, ${authenticatedUser.role}! Anda akan diarahkan ke dashboard ${authenticatedUser.role}.`,
+          type: 'success',
+          autoCloseDelay: 1500,
+        });
+  
+        setTimeout(() => {
+          closeAlert();
+          navigate(authenticatedUser.redirectPath);
+        }, 1500);
+      } else {
+        setAlert({
+          isOpen: true,
+          title: 'Login Gagal!',
+          message: 'Email atau password salah. Silakan coba lagi.',
+          type: 'error',
+        });
+      }
   };
 
   return (
@@ -180,7 +245,7 @@ function LoginPage({ setUserRole }) {
             type="submit"
             className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg w-full transition-colors duration-200"
           >
-            Login
+            Masuk
           </button>
         </form>
 

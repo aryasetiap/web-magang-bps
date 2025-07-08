@@ -61,28 +61,30 @@ function AdminMonitoringPage() {
     return recap;
   };
 
-  // Fungsi untuk mendapatkan semua entri logbook
-  const getAllLogbookEntries = () => {
-    const allEntries = [];
+  // --- Fungsi untuk mendapatkan dan mengelompokkan entri logbook per peserta ---
+  const getGroupedLogbookEntries = () => {
+    const groupedEntries = {};
     interns.forEach(intern => {
       const activities = dailyActivities[intern.id] || [];
-      activities.forEach(activity => {
-        if (activity.logbook) {
-          allEntries.push({
-            internId: intern.id,
-            internName: intern.name,
-            date: activity.date,
-            logbook: activity.logbook,
-          });
-        }
-      });
+      const internLogbooks = activities
+        .filter(activity => activity.logbook)
+        .map(activity => ({
+          internId: intern.id,
+          internName: intern.name,
+          date: activity.date,
+          logbook: activity.logbook,
+        }))
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Urutkan logbook per peserta berdasarkan tanggal terbaru
+
+      if (internLogbooks.length > 0) {
+        groupedEntries[intern.name] = internLogbooks;
+      }
     });
-    // Urutkan berdasarkan tanggal terbaru
-    return allEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return groupedEntries;
   };
 
   const presensiRecap = getPresensiRecap();
-  const allLogbookEntries = getAllLogbookEntries();
+  const groupedLogbookEntries = getGroupedLogbookEntries(); // Gunakan fungsi baru ini
 
   // --- Logbook Detail Modal ---
   function openLogbookModal(logbookEntry) {
@@ -134,31 +136,38 @@ function AdminMonitoringPage() {
         </div>
       </div>
 
-      {/* Bagian Logbook Harian */}
+      {/* Bagian Logbook Harian - Dikelompokkan per Peserta */}
       <div className="mb-8 p-6 border rounded-lg bg-green-50">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Logbook Harian Peserta</h3>
-        {allLogbookEntries.length > 0 ? (
-          <ul className="space-y-4">
-            {allLogbookEntries.map((entry, index) => (
-              <li
-                key={index}
-                className="p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                onClick={() => openLogbookModal(entry)}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-semibold text-lg text-gray-900">{entry.internName} - {entry.date}</h4>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openLogbookModal(entry); }} // Stop propagation untuk tombol
-                    className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-100"
-                    title="Baca Logbook"
-                  >
-                    <EyeIcon className="h-5 w-5" />
-                  </button>
-                </div>
-                <p className="text-gray-600 text-sm line-clamp-2">{entry.logbook}</p> {/* Preview logbook */}
-              </li>
+        {Object.keys(groupedLogbookEntries).length > 0 ? (
+          <div className="space-y-6">
+            {Object.keys(groupedLogbookEntries).map(internName => (
+              <div key={internName} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                <h4 className="font-bold text-xl text-bps-blue mb-3">{internName}</h4>
+                <ul className="space-y-3">
+                  {groupedLogbookEntries[internName].map((entry, index) => (
+                    <li
+                      key={index}
+                      className="p-3 bg-gray-50 rounded-lg border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                      onClick={() => openLogbookModal(entry)}
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-semibold text-gray-900">{entry.date}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openLogbookModal(entry); }}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-100"
+                          title="Baca Logbook"
+                        >
+                          <EyeIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                      <p className="text-gray-700 text-sm line-clamp-2">{entry.logbook}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           <p className="text-gray-600">Belum ada entri logbook dari peserta.</p>
         )}
