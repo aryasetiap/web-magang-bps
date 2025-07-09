@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import AlertDialog from '../components/AlertDialog';
-import BrandLogo from '../components/BrandLogo';
-import kantorBPS from '../assets/kantor-bps-3.jpg';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import AlertDialog from "../components/AlertDialog";
+import BrandLogo from "../components/BrandLogo";
+import kantorBPS from "../assets/kantor-bps-3.jpg";
 
 function LoginPage({ setUserRole }) {
   // const [email, setEmail] = useState('');
@@ -56,7 +56,6 @@ function LoginPage({ setUserRole }) {
   //   }
   // }, [location, navigate, setUserRole]);
 
-
   // // ✅ Login Email/Password
   // const handleEmailLogin = async (e) => {
   //   e.preventDefault();
@@ -107,78 +106,98 @@ function LoginPage({ setUserRole }) {
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/auth/google'; // ke backend
+    window.location.href = "http://localhost:3000/auth/google"; // ke backend
   };
 
-  const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const navigate = useNavigate();
-  
-    const [alert, setAlert] = useState({
-      isOpen: false,
-      title: '',
-      message: '',
-      type: '',
-      autoCloseDelay: 0,
-      onConfirm: null,
-      showCancelButton: false,
-    });
-  
-    const closeAlert = () => {
-      setAlert(prev => ({ ...prev, isOpen: false }));
-    };
-  
-    const handleEmailLogin = (e) => {
-      e.preventDefault();
-  
-      const users = [
-        { email: 'admin@example.com', password: 'admin123', role: 'admin', redirectPath: '/admin' },
-        { email: 'intern@example.com', password: 'intern123', role: 'intern', redirectPath: '/dashboard' },
-        { email: 'staff@example.com', password: 'staff123', role: 'staff', redirectPath: '/staff' },
-      ];
-  
-      let authenticatedUser = null;
-      for (const user of users) {
-        if (user.email === email && user.password === password) {
-          authenticatedUser = user;
-          break;
-        }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleEmailLogin = (e) => {
+    e.preventDefault();
+
+    const users = [
+      {
+        email: "admin@example.com",
+        password: "admin123",
+        role: "admin",
+        redirectPath: "/admin",
+      },
+      {
+        email: "intern@example.com",
+        password: "intern123",
+        role: "intern",
+        redirectPath: "/dashboard",
+      },
+      {
+        email: "staff@example.com",
+        password: "staff123",
+        role: "staff",
+        redirectPath: "/staff",
+      },
+    ];
+
+    let authenticatedUser = null;
+    for (const user of users) {
+      if (user.email === email && user.password === password) {
+        authenticatedUser = user;
+        break;
       }
-  
-      if (authenticatedUser) {
-        // Set role in localStorage for persistence across refreshes
-        localStorage.setItem('userRole', authenticatedUser.role);
-        // Also update the global userRole state in App.js
-        if (setUserRole) {
-          setUserRole(authenticatedUser.role);
-        }
-  
-        setAlert({
-          isOpen: true,
-          title: 'Login Berhasil!',
-          message: `Selamat datang, ${authenticatedUser.role}! Anda akan diarahkan ke dashboard ${authenticatedUser.role}.`,
-          type: 'success',
-          autoCloseDelay: 1500,
-        });
-  
-        setTimeout(() => {
-          closeAlert();
-          navigate(authenticatedUser.redirectPath);
-        }, 1500);
-      } else {
-        setAlert({
-          isOpen: true,
-          title: 'Login Gagal!',
-          message: 'Email atau password salah. Silakan coba lagi.',
-          type: 'error',
-        });
+    }
+
+    if (authenticatedUser) {
+      // Set role in localStorage for persistence across refreshes
+      localStorage.setItem("userRole", authenticatedUser.role);
+      // Also update the global userRole state in App.js
+      if (setUserRole) {
+        setUserRole(authenticatedUser.role);
       }
+
+      setAlert({
+        isOpen: true,
+        title: "Login Berhasil!",
+        message: `Selamat datang, ${authenticatedUser.role}! Anda akan diarahkan ke dashboard ${authenticatedUser.role}.`,
+        type: "success",
+        autoCloseDelay: 1500,
+      });
+
+      setTimeout(() => {
+        closeAlert();
+        navigate(authenticatedUser.redirectPath);
+      }, 1500);
+    } else {
+      setAlert({
+        isOpen: true,
+        title: "Login Gagal!",
+        message: "Email atau password salah. Silakan coba lagi.",
+        type: "error",
+      });
+    }
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center bg-gray-100 p-4"
-      style={{ backgroundImage: `url(${kantorBPS})`, backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -1 }}
+      style={{
+        backgroundImage: `url(${kantorBPS})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        zIndex: -1,
+      }}
     >
       <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
       <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative z-10">
@@ -206,7 +225,7 @@ function LoginPage({ setUserRole }) {
         <div className="text-center mb-8 mt-4">
           <div className="container mx-auto flex justify-center text-left">
             <a href="/">
-              <BrandLogo textClassName='text-xl' />
+              <BrandLogo textClassName="text-xl" />
             </a>
           </div>
           <h2 className="mt-4 text-2xl font-bold text-gray-800">Masuk</h2>
@@ -214,7 +233,10 @@ function LoginPage({ setUserRole }) {
 
         <form onSubmit={handleEmailLogin}>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="email"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Email:
             </label>
             <input
@@ -228,7 +250,10 @@ function LoginPage({ setUserRole }) {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="password"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Password:
             </label>
             <input
@@ -261,14 +286,21 @@ function LoginPage({ setUserRole }) {
             onClick={handleGoogleLogin}
             className="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg w-full flex items-center justify-center gap-2"
           >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              className="w-5 h-5"
+            />
             Masuk dengan Google
           </button>
         </div>
 
         <p className="text-center text-gray-600 text-sm mt-6">
           Belum punya akun?{" "}
-          <a href="/register" className="text-bps-blue hover:underline font-semibold">
+          <a
+            href="/register"
+            className="text-bps-blue hover:underline font-semibold"
+          >
             Daftar di sini
           </a>
         </p>
