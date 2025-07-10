@@ -5,6 +5,7 @@ import Home from './pages/Home';
 // Import halaman login dan registrasi
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/Registration';
+import ForgotPasswordPage from './pages/ForgotPassword';
 
 // Import Unified Dashboard Layout (Layout gabungan untuk semua role dashboard)
 import DashboardLayout from './components/protected/DashboardLayout'
@@ -36,10 +37,12 @@ import AdminCertSettingsPage from './pages/admin/AdminCertSettings';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffAssignments from './pages/staff/StaffAssigments';
 
+import NotFoundPage from './pages/error/NotFound';
+import ForbiddenPage from './pages/error/Forbidden';
+import ServerErrorPage from './pages/error/ServerError';
+
 function App() {
   // State global untuk menyimpan role pengguna.
-  // Di aplikasi nyata, ini akan diatur melalui konteks autentikasi atau Redux.
-  // Saat ini, nilai awal diambil dari localStorage (simulasi).
   const [userRole, setUserRole] = useState(localStorage.getItem('userRole'));
 
   // Fungsi untuk memperbarui role pengguna secara global (dipanggil dari LoginPage)
@@ -59,6 +62,7 @@ function App() {
         <Route path="/" element={<Home/>} />
         <Route path="/login" element={<LoginPage setUserRole={updateGlobalUserRole} />} />
         <Route path="/register" element={<RegistrationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
         <Route path="/dashboard" element={
@@ -106,10 +110,13 @@ function App() {
           <Route index element={<StaffDashboard />} /> {/* Halaman default /staff */}
           {/* Tambahkan rute khusus Staff BPS lainnya di sini */}
           <Route path="assignments" element={<StaffAssignments />} />
+
         </Route>
 
         {/* Rute Catch-all untuk halaman tidak ditemukan (opsional) */}
-        {/* <Route path="*" element={<NotFoundPage />} /> */}
+        <Route path="*" element={<NotFoundPage />} />
+        <Route path="/forbidden" element={<ForbiddenPage />} />
+        <Route path="/server-error" element={<ServerErrorPage />} />
 
       </Routes>
     

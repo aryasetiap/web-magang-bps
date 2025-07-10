@@ -43,7 +43,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 
       // Redirect setelah alert ditampilkan
       const timer = setTimeout(() => {
-        navigate('/login', { replace: true }); // Arahkan kembali ke login
+        navigate('/forbidden', { replace: true }); // Arahkan kembali ke login
       }, 2000); // Durasi ini harus sama dengan autoCloseDelay
 
       return () => clearTimeout(timer); // Cleanup timer

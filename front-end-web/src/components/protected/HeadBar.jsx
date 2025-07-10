@@ -177,14 +177,14 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
         <nav aria-label="breadcrumb" className="flex text-sm">
           {currentPath === roleRootPath ? (
             <span className="text-gray-600 font-semibold">
-              {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : 'Dashboard'}
+              {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : ''}
             </span>
           ) : (
             <>
               <a href={roleRootPath} className="text-gray-600 hover:text-bps-blue mr-2">
-                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : 'Dashboard'}
+                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : ''}
               </a>
-              <span className="text-gray-400 mr-2">/</span>
+              <span className="text-gray-400 mr-2"></span>
               {breadcrumbs.filter((_, idx) => {
                 const rootSegment = roleRootPath.split('/').filter(Boolean)[0];
                 return !(idx === 0 && pathnames[0] === rootSegment);

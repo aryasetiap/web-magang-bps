@@ -143,7 +143,7 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                 value={formData.nimNisn}
                 onChange={handleChange}
                 className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-                required
+                // required
               />
             </div>
             <div>

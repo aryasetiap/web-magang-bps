@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import BrandLogo from '../components/BrandLogo';
 import kantorBPS from '../assets/kantor-bps-3.jpg';
+import AlertDialog from '../components/AlertDialog';
 
 function Registration() {
   const [email, setEmail] = useState('');
@@ -9,17 +10,55 @@ function Registration() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
+  // inisialisasikan alert
+  
+  const [alert, setAlert] = useState({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: '',
+      autoCloseDelay: 0,
+      onConfirm: null,
+      showCancelButton: false,
+    });
+  
+    const closeAlert = () => {
+      setAlert(prev => ({ ...prev, isOpen: false }));
+    };
+
 
   const handleEmailRegistration = async (e) => {
     e.preventDefault();
 
     if (!email || !fullName || !password || !confirmPassword) {
-      alert('Mohon lengkapi semua bidang.');
+      // Tampilkan alert jika ada bidang yang kosong
+      setAlert({
+        isOpen: true,
+        title: 'Peringatan',
+        message: 'Mohon lengkapi semua bidang.',
+        type: 'warning',
+        autoCloseDelay: 3000,
+        onConfirm: closeAlert,
+        showCancelButton: false,  
+      });
+
+      // alert('Mohon lengkapi semua bidang.');
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Konfirmasi password tidak cocok.');
+      // Tampilkan alert jika konfirmasi password tidak cocok
+      setAlert({
+        isOpen: true,
+        title: 'Peringatan',
+        message: 'Konfirmasi password tidak cocok.',
+        type: 'error',
+        autoCloseDelay: 3000,
+        onConfirm: closeAlert,
+        showCancelButton: false,  
+      });
+
+      // alert('Konfirmasi password tidak cocok.');
       return;
     }
 
@@ -33,14 +72,47 @@ function Registration() {
       const data = await res.json();
 
       if (res.ok) {
-        alert('Registrasi berhasil! Silakan login.');
-        navigate('/login');
+        // Tampilkan alert sukses
+        setAlert({
+          isOpen: true,
+          title: 'Berhasil',
+          message: 'Registrasi berhasil! Silakan login.',
+          type: 'success',
+          onConfirm: () => {  
+            closeAlert();
+            navigate('/login'); 
+          },
+          showCancelButton: false,
+          autoCloseDelay: 0,
+        });
+        // alert('Registrasi berhasil! Silakan login.');
+        // navigate('/login');
       } else {
-        alert(data?.message || 'Registrasi gagal.');
+        // Tampilkan alert gagal
+        setAlert({
+          isOpen: true,
+          title: 'Gagal',
+          message: data?.message || 'Registrasi gagal.',
+          type: 'error',
+          autoCloseDelay: 3000,
+          onConfirm: closeAlert,
+          showCancelButton: false,
+        });
+        // alert(data?.message || 'Registrasi gagal.');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert('Terjadi kesalahan saat registrasi.');
+      // Tampilkan alert jika terjadi kesalahan
+      setAlert({
+        isOpen: true,
+        title: 'Kesalahan',
+        message: 'Terjadi kesalahan saat registrasi.',
+        type: 'error',
+        autoCloseDelay: 3000,
+        onConfirm: closeAlert,
+        showCancelButton: false,
+      });
+      // alert('Terjadi kesalahan saat registrasi.');
     }
   };
 
@@ -163,7 +235,18 @@ function Registration() {
           </a>
         </p>
       </div>
+      <AlertDialog
+      isOpen={alert.isOpen}
+      title={alert.title}
+      message={alert.message}
+      type={alert.type}
+      autoCloseDelay={alert.autoCloseDelay}
+      onConfirm={alert.onConfirm}
+      showCancelButton={alert.showCancelButton}
+      onClose={closeAlert}
+    />
     </div>
+    
   );
 }
 

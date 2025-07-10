@@ -39,7 +39,7 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     { name: 'Manajemen Penugasan', path: '/admin/assignments', icon: FolderOpenIcon },
     { name: 'Review Tugas Akhir', path: '/admin/final-reviews', icon: DocumentMagnifyingGlassIcon },
     { name: 'Manajemen Kelulusan', path: '/admin/graduation', icon: AcademicCapIcon },
-    { name: 'Laporan & Statistik', path: '/admin/reports', icon: ChartPieIcon },
+    // { name: 'Laporan & Statistik', path: '/admin/reports', icon: ChartPieIcon },
     { name: 'Master Dokumen', path: '/admin/master-docs', icon: DocumentArrowUpIcon },
     { name: 'Pengaturan Sertifikat', path: '/admin/cert-settings', icon: DocumentDuplicateIcon },
   ];

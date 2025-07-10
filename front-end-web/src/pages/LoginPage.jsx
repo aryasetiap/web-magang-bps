@@ -98,11 +98,16 @@ function LoginPage({ setUserRole }) {
         );
       }, 1500);
     } else {
-      alert(data.message || 'Login gagal');
+      throw new Error(data.message || 'Email atau password salah.');
     }
   } catch (err) {
-    console.error(err);
-    alert('Terjadi kesalahan saat login');
+    console.error("Login error:", err);
+    setAlert({
+      isOpen: true,
+      title: 'Login Gagal!',
+      message: err.message || 'Terjadi kesalahan saat login. Mohon coba lagi.',
+      type: 'error',
+    });
   }
 };
 
@@ -307,7 +312,7 @@ function LoginPage({ setUserRole }) {
           </a>
         </p>
         <p className="text-center text-gray-600 text-sm mt-2">
-          <a href="/lupa-password" className="text-bps-blue hover:underline">
+          <a href="/forgot-password" className="text-bps-blue hover:underline">
             Lupa Password?
           </a>
         </p>
