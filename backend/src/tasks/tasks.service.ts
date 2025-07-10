@@ -9,6 +9,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
+import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto'; // 1. Impor DTO
 
 @Injectable()
 export class TasksService {
@@ -44,14 +45,10 @@ export class TasksService {
     });
   }
 
-  // 1. Implementasikan method submitTask
   async submitTask(userId: number, taskId: number, file: Express.Multer.File) {
-    // Validasi 1: Pastikan file diunggah
     if (!file) {
       throw new BadRequestException('File tugas wajib diunggah.');
     }
-
-    // Validasi 2: Cek apakah intern ini benar-benar ditugaskan untuk tugas ini
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: {
         taskId_userId: {
@@ -60,52 +57,40 @@ export class TasksService {
         },
       },
     });
-
     if (!assignment) {
       throw new ForbiddenException(
         'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
       );
     }
-
-    // Validasi 3: Cek apakah intern sudah pernah mengumpulkan tugas ini
     const existingSubmission = await this.prisma.submission.findFirst({
       where: {
         taskId: taskId,
         userId: userId,
       },
     });
-
     if (existingSubmission) {
       throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
     }
-
-    // Jika semua validasi lolos, buat record submission baru
     return this.prisma.submission.create({
       data: {
         filePath: file.path,
         taskId: taskId,
         userId: userId,
-        // submittedAt akan diisi otomatis oleh @default(now())
       },
     });
   }
 
-  // 1. Implementasikan method findSubmissionsForTask
   async findSubmissionsForTask(taskId: number) {
-    // Opsional: Verifikasi dulu apakah tugasnya ada
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
     });
     if (!task) {
       throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
     }
-
-    // Cari semua submission untuk taskId ini
     return this.prisma.submission.findMany({
       where: {
         taskId: taskId,
       },
-      // Sertakan juga nama intern yang mengumpulkan
       include: {
         user: {
           select: {
@@ -113,6 +98,23 @@ export class TasksService {
             namaLengkap: true,
           },
         },
+      },
+    });
+  }
+
+  // 2. Implementasikan method gradeSubmission
+  async gradeSubmission(
+    submissionId: number,
+    gradeSubmissionDto: GradeSubmissionDto,
+  ) {
+    // Gunakan update untuk mengisi nilai dan feedback pada submission yang ada
+    return this.prisma.submission.update({
+      where: {
+        id: submissionId,
+      },
+      data: {
+        grade: gradeSubmissionDto.grade,
+        feedback: gradeSubmissionDto.feedback,
       },
     });
   }
@@ -149,28 +151,14 @@ export class TasksService {
   }
 
   findOne(id: number) {
-    return this.prisma.task.findUnique({
-      where: { id },
-      include: {
-        creator: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
+    return `This action returns a #${id} task`;
   }
 
   update(id: number, updateTaskDto: UpdateTaskDto) {
-    return this.prisma.task.update({
-      where: { id },
-      data: updateTaskDto,
-    });
+    return `This action updates a #${id} task`;
   }
 
   remove(id: number) {
-    return this.prisma.task.delete({
-      where: { id },
-    });
+    return `This action removes a #${id} task`;
   }
 }

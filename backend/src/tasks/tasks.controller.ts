@@ -20,6 +20,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto'; // 1. Impor DTO baru kita
 
 @Controller('tasks')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -58,6 +59,16 @@ export class TasksController {
   @Roles('Admin', 'Staff BPS')
   findSubmissionsForTask(@Param('id', ParseIntPipe) taskId: number) {
     return this.tasksService.findSubmissionsForTask(taskId);
+  }
+
+  // 2. Endpoint untuk menilai hasil submission
+  @Patch('submissions/:submissionId/grade')
+  @Roles('Admin', 'Staff BPS')
+  gradeSubmission(
+    @Param('submissionId', ParseIntPipe) submissionId: number,
+    @Body() gradeSubmissionDto: GradeSubmissionDto,
+  ) {
+    return this.tasksService.gradeSubmission(submissionId, gradeSubmissionDto);
   }
 
   @Get('my-tasks')
