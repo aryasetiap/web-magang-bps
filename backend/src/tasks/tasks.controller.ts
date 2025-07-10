@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
-  ParseIntPipe, // 1. Impor ParseIntPipe
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -16,7 +16,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { AssignTaskDto } from './dto/assign-task.dto'; // 2. Impor DTO baru kita
+import { AssignTaskDto } from './dto/assign-task.dto';
 
 @Controller('tasks')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -30,7 +30,6 @@ export class TasksController {
     return this.tasksService.create(creatorId, createTaskDto);
   }
 
-  // 3. Tambahkan endpoint baru untuk menugaskan tugas
   @Post(':id/assign')
   @Roles('Admin', 'Staff BPS')
   assignTask(
@@ -40,7 +39,15 @@ export class TasksController {
     return this.tasksService.assignTask(id, assignTaskDto);
   }
 
+  @Get('my-tasks')
+  @Roles('Intern')
+  findMyTasks(@Request() req) {
+    const userId = req.user.userId;
+    return this.tasksService.findTasksForUser(userId);
+  }
+
   @Get()
+  @Roles('Admin', 'Staff BPS')
   findAll() {
     return this.tasksService.findAll();
   }
@@ -51,6 +58,7 @@ export class TasksController {
   }
 
   @Patch(':id')
+  @Roles('Admin', 'Staff BPS')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -59,6 +67,7 @@ export class TasksController {
   }
 
   @Delete(':id')
+  @Roles('Admin', 'Staff BPS')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.tasksService.remove(id);
   }
