@@ -1,5 +1,3 @@
-// src/internship-applications/internship-applications.controller.ts (Versi Final yang Benar)
-
 import {
   Controller,
   Get,
@@ -12,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   Request,
+  Query, // 1. Impor Query
 } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
@@ -21,6 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto'; // 2. Impor DTO Paginasi
 
 @Controller('internship-applications')
 export class InternshipApplicationsController {
@@ -28,6 +28,7 @@ export class InternshipApplicationsController {
     private readonly internshipApplicationsService: InternshipApplicationsService,
   ) {}
 
+  // ... (method create tetap sama)
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
@@ -38,8 +39,6 @@ export class InternshipApplicationsController {
     ]),
   )
   create(
-    // [PERBAIKAN] Deklarasi parameter yang benar tanpa validasi di sini.
-    // Semua validasi file sekarang ditangani oleh service.
     @UploadedFiles()
     files: {
       cv?: Express.Multer.File[];
@@ -57,13 +56,15 @@ export class InternshipApplicationsController {
     );
   }
 
+  // 3. Modifikasi method findAll
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
-  findAll() {
-    return this.internshipApplicationsService.findAll();
+  findAll(@Query() paginationQuery: PaginationQueryDto) {
+    return this.internshipApplicationsService.findAll(paginationQuery);
   }
 
+  // ... (method findOne, updateStatus, dll. tetap sama)
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -86,24 +87,4 @@ export class InternshipApplicationsController {
       updateApplicationStatusDto,
     );
   }
-
-  // Method di bawah ini tidak lagi diperlukan karena sudah ada updateStatus yang lebih spesifik.
-  // Anda bisa menghapusnya untuk membuat kode lebih bersih.
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateInternshipApplicationDto: UpdateInternshipApplicationDto,
-  // ) {
-  //   return this.internshipApplicationsService.update(
-  //     +id,
-  //     updateInternshipApplicationDto,
-  //   );
-  // }
-
-  // Endpoint Delete ini belum kita implementasikan di service,
-  // jadi kita beri komentar untuk sementara.
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.internshipApplicationsService.remove(+id);
-  // }
 }
