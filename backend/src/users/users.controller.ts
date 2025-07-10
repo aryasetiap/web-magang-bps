@@ -9,7 +9,7 @@ import {
   Param,
   Delete,
   UseGuards,
-  Query, // 1. Impor Query
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,7 +17,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto'; // 2. Impor DTO Paginasi
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -25,16 +25,14 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @Roles('Admin')
+  @Roles('Admin') // Hanya Admin yang bisa membuat user baru dari sini
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  // 3. Modifikasi method findAll
   @Get()
   @Roles('Admin')
   findAll(@Query() paginationQuery: PaginationQueryDto) {
-    // Teruskan parameter paginasi ke service
     return this.usersService.findAll(paginationQuery);
   }
 
