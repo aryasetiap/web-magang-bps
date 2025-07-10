@@ -33,6 +33,13 @@ enum StatusFinalProject {
   revisi
 }
 
+enum StatusSubmission {
+  not_submitted
+  submitted
+  reviewed
+  revisi // Tambahkan status revisi
+}
+
 // 4. Data Models: Defines the tables in your database.
 
 model User {
@@ -168,11 +175,11 @@ model TaskAssignment {
 }
 
 model Submission {
-  id          Int      @id @default(autoincrement())
-  filePath    String   @map("file_path")
-  submittedAt DateTime @default(now()) @map("submitted_at")
-  grade       Int?
-  feedback    String?  @db.Text
+  id       Int              @id @default(autoincrement())
+  filePath String?          @map("file_path")
+  grade    Float?
+  feedback String?
+  status   StatusSubmission @default(not_submitted) // Tambahkan/ubah field status
 
   // --- Relations ---
   task   Task @relation(fields: [taskId], references: [id])
