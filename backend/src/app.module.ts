@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config'; // 1. Impor ConfigModule
 import { InternshipApplicationsModule } from './internship-applications/internship-applications.module';
 import { AttendancesModule } from './attendances/attendances.module';
 import { LogbooksModule } from './logbooks/logbooks.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { LogbooksModule } from './logbooks/logbooks.module';
     InternshipApplicationsModule,
     AttendancesModule,
     LogbooksModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
