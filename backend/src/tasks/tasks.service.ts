@@ -90,6 +90,33 @@ export class TasksService {
     });
   }
 
+  // 1. Implementasikan method findSubmissionsForTask
+  async findSubmissionsForTask(taskId: number) {
+    // Opsional: Verifikasi dulu apakah tugasnya ada
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+    });
+    if (!task) {
+      throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
+    }
+
+    // Cari semua submission untuk taskId ini
+    return this.prisma.submission.findMany({
+      where: {
+        taskId: taskId,
+      },
+      // Sertakan juga nama intern yang mengumpulkan
+      include: {
+        user: {
+          select: {
+            name: true,
+            namaLengkap: true,
+          },
+        },
+      },
+    });
+  }
+
   findTasksForUser(userId: number) {
     return this.prisma.task.findMany({
       where: {

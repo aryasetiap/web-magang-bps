@@ -9,8 +9,8 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
-  UseInterceptors, // 1. Impor UseInterceptors
-  UploadedFile, // 2. Impor UploadedFile
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -19,7 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { AssignTaskDto } from './dto/assign-task.dto';
-import { FileInterceptor } from '@nestjs/platform-express'; // 3. Impor FileInterceptor
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('tasks')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -42,17 +42,22 @@ export class TasksController {
     return this.tasksService.assignTask(id, assignTaskDto);
   }
 
-  // 4. Endpoint untuk intern mengumpulkan tugas (upload file)
   @Post(':id/submissions')
   @Roles('Intern')
-  @UseInterceptors(FileInterceptor('submissionFile')) // 'submissionFile' adalah nama field di form-data
+  @UseInterceptors(FileInterceptor('submissionFile'))
   submitTask(
     @Param('id', ParseIntPipe) taskId: number,
     @Request() req,
-    @UploadedFile() file: Express.Multer.File, // Ambil file yang di-upload
+    @UploadedFile() file: Express.Multer.File,
   ) {
     const userId = req.user.userId;
     return this.tasksService.submitTask(userId, taskId, file);
+  }
+
+  @Get(':id/submissions')
+  @Roles('Admin', 'Staff BPS')
+  findSubmissionsForTask(@Param('id', ParseIntPipe) taskId: number) {
+    return this.tasksService.findSubmissionsForTask(taskId);
   }
 
   @Get('my-tasks')
