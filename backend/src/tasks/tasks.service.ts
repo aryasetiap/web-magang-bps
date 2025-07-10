@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,7 +16,6 @@ export class TasksService {
 
   create(creatorId: number, createTaskDto: CreateTaskDto) {
     const { title, description, deadline } = createTaskDto;
-
     return this.prisma.task.create({
       data: {
         title,
@@ -23,28 +28,69 @@ export class TasksService {
 
   async assignTask(taskId: number, assignTaskDto: AssignTaskDto) {
     const { internIds } = assignTaskDto;
-
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
     });
     if (!task) {
       throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
     }
-
     const assignmentsData = internIds.map((internId) => ({
       taskId: taskId,
       userId: internId,
     }));
-
     return this.prisma.taskAssignment.createMany({
       data: assignmentsData,
       skipDuplicates: true,
     });
   }
 
-  // 1. Implementasikan method findTasksForUser
+  // 1. Implementasikan method submitTask
+  async submitTask(userId: number, taskId: number, file: Express.Multer.File) {
+    // Validasi 1: Pastikan file diunggah
+    if (!file) {
+      throw new BadRequestException('File tugas wajib diunggah.');
+    }
+
+    // Validasi 2: Cek apakah intern ini benar-benar ditugaskan untuk tugas ini
+    const assignment = await this.prisma.taskAssignment.findUnique({
+      where: {
+        taskId_userId: {
+          taskId: taskId,
+          userId: userId,
+        },
+      },
+    });
+
+    if (!assignment) {
+      throw new ForbiddenException(
+        'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
+      );
+    }
+
+    // Validasi 3: Cek apakah intern sudah pernah mengumpulkan tugas ini
+    const existingSubmission = await this.prisma.submission.findFirst({
+      where: {
+        taskId: taskId,
+        userId: userId,
+      },
+    });
+
+    if (existingSubmission) {
+      throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
+    }
+
+    // Jika semua validasi lolos, buat record submission baru
+    return this.prisma.submission.create({
+      data: {
+        filePath: file.path,
+        taskId: taskId,
+        userId: userId,
+        // submittedAt akan diisi otomatis oleh @default(now())
+      },
+    });
+  }
+
   findTasksForUser(userId: number) {
-    // Cari semua tugas di mana user ini ada di dalam daftar penugasannya
     return this.prisma.task.findMany({
       where: {
         assignments: {
@@ -53,7 +99,6 @@ export class TasksService {
           },
         },
       },
-      // Sertakan juga informasi pembuat tugas
       include: {
         creator: {
           select: {
@@ -64,7 +109,6 @@ export class TasksService {
     });
   }
 
-  // 2. Implementasikan juga findAll untuk Admin/Staff
   findAll() {
     return this.prisma.task.findMany({
       include: {
