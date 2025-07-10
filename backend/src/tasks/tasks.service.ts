@@ -1,11 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { PrismaService } from '../prisma/prisma.service'; // 1. Impor PrismaService
 
 @Injectable()
 export class TasksService {
-  create(createTaskDto: CreateTaskDto) {
-    return 'This action adds a new task';
+  // 2. Suntikkan PrismaService melalui constructor
+  constructor(private prisma: PrismaService) {}
+
+  // 3. Implementasikan method create
+  create(creatorId: number, createTaskDto: CreateTaskDto) {
+    const { title, description, deadline } = createTaskDto;
+
+    return this.prisma.task.create({
+      data: {
+        title,
+        description,
+        deadline: new Date(deadline), // Konversi string tanggal ke objek Date
+        createdBy: creatorId, // Simpan ID pembuat tugas
+      },
+    });
   }
 
   findAll() {
