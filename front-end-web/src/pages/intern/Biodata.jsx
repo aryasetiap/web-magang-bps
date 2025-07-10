@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
   // State untuk data identitas diri
-  const [formData, setFormData] = useState({
+   const [formData, setFormData] = useState({
     namaLengkap: '',
     nimNisn: '',
     asalInstitusi: '',
@@ -12,79 +12,91 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
     alamat: '',
   });
 
-  // State untuk file yang akan diunggah
   const [files, setFiles] = useState({
     cv: null,
     transkripNilai: null,
     suratPermohonan: null,
   });
 
-  // Handle perubahan input teks
+  const token = localStorage.getItem('authToken');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch('http://localhost:3000/auth/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setFormData({
+            namaLengkap: data.namaLengkap || '',
+            nimNisn: data.nimNisn || '',
+            asalInstitusi: data.asalInstitusi || '',
+            jurusanProdi: data.jurusanProdi || '',
+            nomorTelepon: data.nomorTelepon || '',
+            email: data.email || '',
+            alamat: data.alamat || '',
+          });
+        }
+      } catch (err) {
+        console.error('Gagal mengambil data biodata:', err);
+      }
+    };
+
+    fetchProfile();
+  }, [token]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  // Handle perubahan input file
   const handleFileChange = (e) => {
     const { name, files: selectedFiles } = e.target;
-    setFiles((prevFiles) => ({
-      ...prevFiles,
-      [name]: selectedFiles[0], // Ambil file pertama
-    }));
+    setFiles((prevFiles) => ({ ...prevFiles, [name]: selectedFiles[0] }));
   };
 
-  // Handle submit form
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (!token) {
+      alert('Token tidak ditemukan. Silakan login ulang.');
+      return;
+    }
 
-  if (!files.cv || !files.transkripNilai || !files.suratPermohonan) {
-    alert('Mohon lengkapi semua berkas yang wajib diunggah.');
-    return;
-  }
-
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    alert('Token tidak ditemukan. Silakan login ulang.');
-    return;
-  }
-
-  const formDataToSend = new FormData();
-
-  // Tambahkan data identitas ke formData
-  Object.entries(formData).forEach(([key, value]) => {
-    formDataToSend.append(key, value);
-  });
-
-  // Tambahkan file
-  formDataToSend.append('cv', files.cv);
-  formDataToSend.append('transkripNilai', files.transkripNilai);
-  formDataToSend.append('suratPermohonan', files.suratPermohonan);
-
-  try {
-    const res = await fetch('http://localhost:3000/auth/profile', {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formDataToSend,
+    const formDataToSend = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value);
     });
 
-    const result = await res.json();
+    if (files.cv) formDataToSend.append('cv', files.cv);
+    if (files.transkripNilai) formDataToSend.append('transkripNilai', files.transkripNilai);
+    if (files.suratPermohonan) formDataToSend.append('suratPermohonan', files.suratPermohonan);
 
-    if (res.ok) {
-      alert('Biodata berhasil diperbarui!');
-    } else {
-      alert(result.message || 'Gagal memperbarui biodata.');
+    try {
+      const res = await fetch('http://localhost:3000/auth/profile', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        alert('Biodata berhasil diperbarui!');
+      } else {
+        alert(result.message || 'Gagal memperbarui biodata.');
+      }
+    } catch (error) {
+      console.error('Error updating biodata:', error);
+      alert('Terjadi kesalahan saat menyimpan biodata.');
     }
-  } catch (error) {
-    console.error('Error updating biodata:', error);
-    alert('Terjadi kesalahan saat menyimpan biodata.');
-  }
-};
+  };
 
   // const handleSubmit = (e) => {
   //   e.preventDefault();
@@ -133,13 +145,13 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="nimNis" className="block text-gray-700 text-sm font-bold mb-2">
+              <label htmlFor="nimNisn" className="block text-gray-700 text-sm font-bold mb-2">
                 NIM / NISN: <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                id="nimNis"
-                name="nimNis"
+                id="nimNisn"
+                name="nimNisn"
                 value={formData.nimNisn}
                 onChange={handleChange}
                 className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
