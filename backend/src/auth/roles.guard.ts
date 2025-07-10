@@ -16,8 +16,15 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    // Cek role di user.role atau user.role.name
-    const userRole = user.role?.name || user.role;
-    return requiredRoles.includes(userRole?.toLowerCase());
+    // Ambil role dari user.role atau user.role.name
+    let userRole = user.role?.name || user.role;
+    if (Array.isArray(userRole)) {
+      userRole = userRole[0]; // ambil role pertama jika array
+    }
+    if (!userRole) return false;
+    // Bandingkan lowercase
+    return requiredRoles
+      .map((r) => r.toLowerCase())
+      .includes(userRole.toLowerCase());
   }
 }

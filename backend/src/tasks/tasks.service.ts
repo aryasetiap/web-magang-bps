@@ -15,9 +15,9 @@ import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto'; //
 export class TasksService {
   constructor(private prisma: PrismaService) {}
 
-  create(creatorId: number, createTaskDto: CreateTaskDto) {
-    const { title, description, deadline } = createTaskDto;
-    return this.prisma.task.create({
+  async create(creatorId: number, createTaskDto: CreateTaskDto) {
+    const { title, description, deadline, internIds } = createTaskDto;
+    const task = await this.prisma.task.create({
       data: {
         title,
         description,
@@ -25,6 +25,20 @@ export class TasksService {
         createdBy: creatorId,
       },
     });
+
+    // Jika internIds disediakan, langsung assign
+    if (internIds && internIds.length > 0) {
+      const assignmentsData = internIds.map((internId) => ({
+        taskId: task.id,
+        userId: internId,
+      }));
+      await this.prisma.taskAssignment.createMany({
+        data: assignmentsData,
+        skipDuplicates: true,
+      });
+    }
+
+    return task;
   }
 
   async assignTask(taskId: number, assignTaskDto: AssignTaskDto) {
