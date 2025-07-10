@@ -1,23 +1,29 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common'; // 1. Import ValidationPipe
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // 2. Terapkan ValidationPipe secara global
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Secara otomatis menghapus properti yang tidak ada di DTO
-      forbidNonWhitelisted: true, // Melempar error jika ada properti yang tidak seharusnya ada
-      transform: true, // Secara otomatis mengubah payload menjadi instance dari DTO class
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  // ✅ Aktifkan CORS untuk frontend React (sesuaikan port-nya)
+  // Mengaktifkan CORS untuk frontend (sesuaikan port jika perlu)
   app.enableCors({
-    origin: 'http://localhost:3001', // jika frontend kamu jalan di port ini
-    credentials: true,               // jika kamu kirim cookie / auth
+    origin: 'http://localhost:3001', // Ganti dengan port frontend Anda
+    credentials: true,
+  });
+
+  // Menyajikan folder 'uploads' sebagai aset statis
+  app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
+    prefix: '/uploads/',
   });
 
   await app.listen(3000);
