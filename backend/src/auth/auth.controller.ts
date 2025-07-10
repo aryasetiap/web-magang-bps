@@ -5,7 +5,6 @@ import {
   UseGuards,
   Get,
   Request,
-  Req,
   Patch,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -32,10 +31,13 @@ export class AuthController {
     return this.authService.login(loginUserDto);
   }
 
+  // 1. Modifikasi method getProfile
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   getProfile(@Request() req) {
-    return req.user;
+    // Ambil ID dari token dan panggil service
+    const userId = req.user.userId;
+    return this.usersService.getProfile(userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -49,7 +51,7 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
+  async googleAuth(@Request() req) {
     // Guard akan me-redirect, method ini tidak akan berjalan.
   }
 

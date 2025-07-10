@@ -137,4 +137,35 @@ export class UsersService {
       },
     });
   }
+
+  // 1. Tambahkan method baru ini
+  async getProfile(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        // Tambahkan semua field biodata di sini
+        namaLengkap: true,
+        nimNisn: true,
+        asalInstitusi: true,
+        jurusanProdi: true,
+        nomorTelepon: true,
+        alamat: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+    }
+
+    return user;
+  }
 }
