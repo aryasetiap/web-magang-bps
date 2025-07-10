@@ -38,24 +38,72 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
   };
 
   // Handle submit form
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Di sini Anda akan mengirim formData dan files ke API backend.
-    // Contoh simulasi pengiriman data:
-    console.log('Data Identitas Diri:', formData);
-    console.log('Berkas CV:', files.cv ? files.cv.name : 'Belum diunggah');
-    console.log('Berkas Transkrip Nilai/Rapor:', files.transkripNilai ? files.transkripNilai.name : 'Belum diunggah');
-    console.log('Berkas Surat Permohonan:', files.suratPermohonan ? files.suratPermohonan.name : 'Belum diunggah');
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Anda bisa menambahkan validasi di sini untuk memastikan file wajib sudah diunggah
-    if (!files.cv || !files.transkripNilai || !files.suratPermohonan) {
-        alert('Mohon lengkapi semua berkas yang wajib diunggah.');
-        return;
+  if (!files.cv || !files.transkripNilai || !files.suratPermohonan) {
+    alert('Mohon lengkapi semua berkas yang wajib diunggah.');
+    return;
+  }
+
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    alert('Token tidak ditemukan. Silakan login ulang.');
+    return;
+  }
+
+  const formDataToSend = new FormData();
+
+  // Tambahkan data identitas ke formData
+  Object.entries(formData).forEach(([key, value]) => {
+    formDataToSend.append(key, value);
+  });
+
+  // Tambahkan file
+  formDataToSend.append('cv', files.cv);
+  formDataToSend.append('transkripNilai', files.transkripNilai);
+  formDataToSend.append('suratPermohonan', files.suratPermohonan);
+
+  try {
+    const res = await fetch('http://localhost:3000/auth/profile', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formDataToSend,
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      alert('Biodata berhasil diperbarui!');
+    } else {
+      alert(result.message || 'Gagal memperbarui biodata.');
     }
+  } catch (error) {
+    console.error('Error updating biodata:', error);
+    alert('Terjadi kesalahan saat menyimpan biodata.');
+  }
+};
 
-    alert('Data biodata dan berkas berhasil disimpan (simulasi)!');
-    // Anda bisa menambahkan logika redirect atau pesan sukses di sini
-  };
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   // Di sini Anda akan mengirim formData dan files ke API backend.
+  //   // Contoh simulasi pengiriman data:
+  //   console.log('Data Identitas Diri:', formData);
+  //   console.log('Berkas CV:', files.cv ? files.cv.name : 'Belum diunggah');
+  //   console.log('Berkas Transkrip Nilai/Rapor:', files.transkripNilai ? files.transkripNilai.name : 'Belum diunggah');
+  //   console.log('Berkas Surat Permohonan:', files.suratPermohonan ? files.suratPermohonan.name : 'Belum diunggah');
+
+  //   // Anda bisa menambahkan validasi di sini untuk memastikan file wajib sudah diunggah
+  //   if (!files.cv || !files.transkripNilai || !files.suratPermohonan) {
+  //       alert('Mohon lengkapi semua berkas yang wajib diunggah.');
+  //       return;
+  //   }
+
+  //   alert('Data biodata dan berkas berhasil disimpan (simulasi)!');
+  //   // Anda bisa menambahkan logika redirect atau pesan sukses di sini
+  // };
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
@@ -195,7 +243,7 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                required // Tambahkan kembali required di sini
+                // required
               />
               {files.cv && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.cv.name}</p>}
             </div>
@@ -215,7 +263,7 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                required // Tambahkan kembali required di sini
+                // required 
               />
               {files.transkripNilai && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.transkripNilai.name}</p>}
             </div>
@@ -235,7 +283,7 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                required // Tambahkan kembali required di sini
+                // required 
               />
               {files.suratPermohonan && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.suratPermohonan.name}</p>}
             </div>

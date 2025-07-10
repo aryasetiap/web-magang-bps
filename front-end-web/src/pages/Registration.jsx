@@ -1,45 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
 import BrandLogo from '../components/BrandLogo';
-import kantorBPS from '../assets/kantor-bps-3.jpg'
+import kantorBPS from '../assets/kantor-bps-3.jpg';
 
 function Registration() {
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullname] = useState('');
-
   const navigate = useNavigate();
 
-  const handleEmailRegistration = (e) => {
+  const handleEmailRegistration = async (e) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      alert("Konfirmasi password tidak cocok.");
+    if (!email || !fullName || !password || !confirmPassword) {
+      alert('Mohon lengkapi semua bidang.');
       return;
     }
 
-    if (email && password && fullName) {
-      // Kirim data ke backend
-      fetch('http://localhost:3000/auth/register', {
+    if (password !== confirmPassword) {
+      alert('Konfirmasi password tidak cocok.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data?.success || data?.token) {
-          alert("Registrasi berhasil! Silakan login.");
-          navigate('/login');
-        } else {
-          alert(data.message || "Registrasi gagal.");
-        }
-      })
-      .catch(err => {
-        alert("Terjadi kesalahan: " + err.message);
+        body: JSON.stringify({ email, name: fullName, password }),
       });
-    } else {
-      alert("Mohon lengkapi semua bidang.");
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Registrasi berhasil! Silakan login.');
+        navigate('/login');
+      } else {
+        alert(data?.message || 'Registrasi gagal.');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Terjadi kesalahan saat registrasi.');
     }
   };
 
@@ -50,10 +51,16 @@ function Registration() {
   return (
     <div 
       className="min-h-screen flex items-center justify-center bg-gray-100 p-4"
-      style={{ backgroundImage: `url(${kantorBPS})`, backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -1}}
+      style={{
+        backgroundImage: `url(${kantorBPS})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        zIndex: -1
+      }}
     >
       <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
       <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative">
+        
         {/* Tombol Kembali */}
         <a href="/" className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200">
           <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -63,7 +70,7 @@ function Registration() {
 
         <div className="text-center mb-8 mt-4">
           <div className="container mx-auto flex justify-center text-left">
-            <a href="/"><BrandLogo textClassName='text-xl' /></a>
+            <a href="/"><BrandLogo textClassName="text-xl" /></a>
           </div>
           <h2 className="mt-4 text-2xl font-bold text-gray-800">Daftar Akun Baru</h2>
         </div>
@@ -74,7 +81,7 @@ function Registration() {
             <input
               type="email"
               id="regEmail"
-              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
               placeholder="nama@contoh.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -87,10 +94,10 @@ function Registration() {
             <input
               type="text"
               id="regName"
-              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
               placeholder="John Doe"
               value={fullName}
-              onChange={(e) => setFullname(e.target.value)}
+              onChange={(e) => setFullName(e.target.value)}
               required
             />
           </div>
@@ -100,7 +107,7 @@ function Registration() {
             <input
               type="password"
               id="regPassword"
-              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -113,7 +120,7 @@ function Registration() {
             <input
               type="password"
               id="confirmPassword"
-              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+              className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -135,7 +142,6 @@ function Registration() {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        {/* Tombol Daftar dengan Google */}
         <div className="mb-6 flex justify-center">
           <button
             onClick={handleGoogleRegister}
@@ -151,7 +157,7 @@ function Registration() {
         </div>
 
         <p className="text-center text-gray-600 text-sm mt-6">
-          Sudah punya akun?{" "}
+          Sudah punya akun?{' '}
           <a href="/login" className="text-bps-blue hover:underline font-semibold">
             Masuk
           </a>

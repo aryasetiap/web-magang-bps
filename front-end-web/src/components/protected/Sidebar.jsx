@@ -54,16 +54,13 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
   // Pilih menu yang akan ditampilkan berdasarkan role
   let currentMenus = [];
   switch (userRole) {
-    case 'intern':
+    case 'Intern':
       currentMenus = internMenus;
       break;
-    case 'Mahasiswa':
-      currentMenus = internMenus; // Jika role 'Mahasiswa', tampilkan menu intern
-      break;
-    case 'admin':
+    case 'Admin':
       currentMenus = adminMenus;
       break;
-    case 'staff':
+    case 'Staff':
       currentMenus = staffMenus;
       break;
     default:

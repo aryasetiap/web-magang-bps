@@ -62,7 +62,7 @@ function App() {
 
         {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
         <Route path="/dashboard" element={
-          <ProtectedRoute allowedRoles={['Mahasiswa', 'intern']}>
+          <ProtectedRoute allowedRoles={['Mahasiswa', 'Intern']}>
             {/* UnifiedDashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
             <DashboardLayout userRole={userRole} />
           </ProtectedRoute>
@@ -98,7 +98,7 @@ function App() {
 
         {/* Rute Dashboard Staff BPS - Dilindungi */}
         <Route path="/staff" element={
-          <ProtectedRoute allowedRoles={['staff']}>
+          <ProtectedRoute allowedRoles={['staff', 'Staff']}>
             {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
             <DashboardLayout userRole={userRole} />
           </ProtectedRoute>
