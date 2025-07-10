@@ -1,14 +1,38 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { PrismaService } from '../prisma/prisma.service'; // 1. Impor PrismaService
+import { PrismaService } from '../prisma/prisma.service';
+import { AssignTaskDto } from './dto/assign-task.dto'; // 1. Impor DTO
 
 @Injectable()
 export class TasksService {
-  // 2. Suntikkan PrismaService melalui constructor
   constructor(private prisma: PrismaService) {}
 
-  // 3. Implementasikan method create
+  // 2. Implementasikan method assignTask
+  async assignTask(taskId: number, assignTaskDto: AssignTaskDto) {
+    const { internIds } = assignTaskDto;
+
+    // Opsional: Verifikasi apakah tugasnya ada
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+    });
+    if (!task) {
+      throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
+    }
+
+    // Siapkan data untuk dimasukkan ke tabel TaskAssignment
+    const assignmentsData = internIds.map((internId) => ({
+      taskId: taskId,
+      userId: internId,
+    }));
+
+    // Gunakan createMany untuk membuat beberapa record sekaligus secara efisien
+    return this.prisma.taskAssignment.createMany({
+      data: assignmentsData,
+      skipDuplicates: true, // Jika penugasan sudah ada, lewati (tidak error)
+    });
+  }
+
   create(creatorId: number, createTaskDto: CreateTaskDto) {
     const { title, description, deadline } = createTaskDto;
 
@@ -16,8 +40,8 @@ export class TasksService {
       data: {
         title,
         description,
-        deadline: new Date(deadline), // Konversi string tanggal ke objek Date
-        createdBy: creatorId, // Simpan ID pembuat tugas
+        deadline: new Date(deadline),
+        createdBy: creatorId,
       },
     });
   }
