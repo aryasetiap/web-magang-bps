@@ -8,24 +8,23 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 1. Mendapatkan peran apa saja yang dibutuhkan untuk mengakses endpoint ini.
-    //    Kita akan definisikan 'roles' ini nanti menggunakan decorator kustom.
-    const requiredRoles = this.reflector.get<string[]>(
-      'roles',
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
-    );
+      context.getClass(),
+    ]);
     if (!requiredRoles) {
-      // Jika sebuah endpoint tidak mendefinisikan peran apa pun, kita anggap publik.
       return true;
     }
-
-    // 2. Mendapatkan objek 'user' dari request.
-    //    Ingat, objek ini sudah divalidasi dan ditempelkan oleh JwtAuthGuard sebelumnya.
     const { user } = context.switchToHttp().getRequest();
-
-    // 3. Membandingkan peran user dengan peran yang dibutuhkan.
-    //    Mengecek apakah peran yang dimiliki user (`user.role`) ada di dalam
-    //    daftar peran yang diizinkan (`requiredRoles`).
-    return requiredRoles.some((role) => user.role?.includes(role));
+    // Ambil role dari user.role atau user.role.name
+    let userRole = user.role?.name || user.role;
+    if (Array.isArray(userRole)) {
+      userRole = userRole[0]; // ambil role pertama jika array
+    }
+    if (!userRole) return false;
+    // Bandingkan lowercase
+    return requiredRoles
+      .map((r) => r.toLowerCase())
+      .includes(userRole.toLowerCase());
   }
 }

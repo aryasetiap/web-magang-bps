@@ -9,6 +9,7 @@ import { InternshipApplicationsModule } from './internship-applications/internsh
 import { AttendancesModule } from './attendances/attendances.module';
 import { LogbooksModule } from './logbooks/logbooks.module';
 import { TasksModule } from './tasks/tasks.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TasksModule } from './tasks/tasks.module';
     AttendancesModule,
     LogbooksModule,
     TasksModule,
+    SubmissionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

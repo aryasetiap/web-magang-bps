@@ -1,17 +1,86 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto'; // 1. Impor DTO Paginasi
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  create(createUserDto: CreateUserDto) {
-    // Logika untuk create user
-    return 'This action adds a new user';
+  // [MODIFIKASI] Implementasikan method create
+  async create(createUserDto: CreateUserDto) {
+    const { name, email, password, roleName } = createUserDto;
+
+    // 1. Cek apakah email sudah ada
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new ConflictException(
+        `User dengan email ${email} sudah terdaftar.`,
+      );
+    }
+
+    // 2. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Cari role berdasarkan nama
+    const role = await this.prisma.role.findUnique({
+      where: { name: roleName },
+    });
+    if (!role) {
+      throw new NotFoundException(`Peran '${roleName}' tidak ditemukan.`);
+    }
+
+    // 4. Buat user baru
+    const newUser = await this.prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        roleId: role.id,
+      },
+    });
+
+    // 5. Kembalikan data user tanpa password
+    const { password: _, ...result } = newUser;
+    return result;
+  }
+
+  async getProfile(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        namaLengkap: true,
+        nimNisn: true,
+        asalInstitusi: true,
+        jurusanProdi: true,
+        nomorTelepon: true,
+        alamat: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+    }
+
+    return user;
   }
 
   // 2. Modifikasi method findAll secara menyeluruh
@@ -69,7 +138,7 @@ export class UsersService {
     const user = await this.prisma.user.findFirst({
       where: {
         id: id,
-        // deletedAt: null,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -106,17 +175,6 @@ export class UsersService {
           name: true,
           email: true,
           namaLengkap: true,
-          nimNisn: true,
-          asalInstitusi: true,
-          jurusanProdi: true,
-          nomorTelepon: true,
-          alamat: true,
-          updatedAt: true,
-          role: {
-            select: {
-              name: true,
-            },
-          },
         },
       });
     } catch (error) {
@@ -129,7 +187,7 @@ export class UsersService {
     }
   }
 
-  async remove(id: number) {
+  remove(id: number) {
     return this.prisma.user.update({
       where: { id: id },
       data: {

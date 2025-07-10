@@ -1,39 +1,31 @@
-import { IsString, IsEmail, MinLength, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
+
+// Enum ini untuk validasi, memastikan hanya peran ini yang bisa dibuat
+export enum CreatableRoles {
+  STAFF_BPS = 'Staff BPS',
+  ADMIN = 'Admin',
+}
 
 export class CreateUserDto {
   @IsString()
+  @IsNotEmpty({ message: 'Nama tidak boleh kosong.' })
   name: string;
 
-  @IsEmail()
+  @IsEmail({}, { message: 'Format email tidak valid.' })
   email: string;
 
   @IsString()
-  @MinLength(8)
+  @MinLength(8, { message: 'Password minimal harus 8 karakter.' })
   password: string;
 
-  @IsString()
-  @IsOptional()
-  namaLengkap?: string;
-
-  @IsString()
-  @IsOptional()
-  nimNisn?: string;
-
-  @IsString()
-  @IsOptional()
-  asalInstitusi?: string;
-
-  @IsString()
-  @IsOptional()
-  jurusanProdi?: string;
-
-  @IsString()
-  @IsOptional()
-  nomorTelepon?: string;
-
-  @IsString()
-  @IsOptional()
-  alamat?: string;
-
-  // roleId akan kita tangani secara terpisah, tidak dari sini
+  @IsEnum(CreatableRoles, {
+    message: 'Peran harus salah satu dari: Staff BPS, Admin',
+  })
+  roleName: CreatableRoles;
 }
