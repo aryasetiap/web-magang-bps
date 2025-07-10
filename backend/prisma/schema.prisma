@@ -87,20 +87,21 @@ model Role {
 
 model InternshipApplication {
   id                Int              @id @default(autoincrement())
-  status            StatusInternship @default(pending) // [PERBAIKAN] Menambahkan status default
+  status            StatusInternship @default(pending)
   cvPath            String           @map("cv_path")
   transcriptPath    String           @map("transcript_path")
   requestLetterPath String           @map("request_letter_path")
   verifiedAt        DateTime?        @map("verified_at")
+  feedback          String?          @db.Text // <-- TAMBAHKAN BARIS INI
 
   // --- Relations ---
   // An application belongs to one user (the applicant)
-  applicant User @relation("ApplicantApplication", fields: [userId], references: [id])
-  userId    Int  @unique @map("user_id")
+  applicant  User    @relation("ApplicantApplication", fields: [userId], references: [id])
+  userId     Int     @unique @map("user_id")
 
   // An application is verified by one user (the coordinator)
-  verifier   User? @relation("VerifierApplications", fields: [verifiedBy], references: [id])
-  verifiedBy Int?  @map("verified_by")
+  verifier   User?   @relation("VerifierApplications", fields: [verifiedBy], references: [id])
+  verifiedBy Int?    @map("verified_by")
 
   @@map("internship_applications")
 }
