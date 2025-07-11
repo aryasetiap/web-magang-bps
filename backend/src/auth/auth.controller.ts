@@ -5,12 +5,15 @@ import {
   Get,
   Patch,
   UseGuards,
+  Req,
   Request,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
   Headers,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -141,16 +144,30 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Request() req) {
-    // Guard akan me-redirect, method ini tidak akan berjalan.
+  async googleAuth(@Req() req) {
+    // Initiates Google OAuth flow
   }
 
-  // HANYA SATU ENDPOINT CALLBACK INI YANG DIPERLUKAN
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  googleAuthCallback(@Request() req) {
-    // req.user diisi oleh GoogleStrategy.validate
-    // Kita panggil service yang sudah kita buat untuk menangani logika ini.
-    return this.authService.googleLogin(req.user);
+  async googleCallback(@Req() req, @Res() res: Response) {
+    try {
+      const { user, access_token } = await this.authService.googleLogin(
+        req.user,
+      );
+
+      // HARUS redirect ke frontend, bukan return JSON
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const encodedUser = encodeURIComponent(JSON.stringify(user));
+
+      res.redirect(
+        `${frontendUrl}/auth/callback?token=${access_token}&user=${encodedUser}`,
+      );
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`,
+      );
+    }
   }
 }
