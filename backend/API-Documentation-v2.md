@@ -400,9 +400,18 @@
 
 #### PATCH `/attendances/clock-out`
 
-**Deskripsi:** Melakukan presensi pulang
+**Deskripsi:** Melakukan presensi pulang dengan validasi lokasi
 
 **Headers:** `Authorization: Bearer {jwt_token}`
+
+**Request Body:**
+
+```json
+{
+  "latitude": -5.371217822527355,
+  "longitude": 105.0494688446529
+}
+```
 
 **Response Success (200):**
 
@@ -413,10 +422,28 @@
     "id": 1,
     "clockIn": "2025-01-15T08:00:00Z",
     "clockOut": "2025-01-15T17:00:00Z",
-    "latitude": -5.235,
-    "longitude": 105.1572,
-    "userId": 1
+    "latitude": -5.371217822527355,
+    "longitude": 105.0494688446529,
+    "clockOutLatitude": -5.371217822527355,
+    "clockOutLongitude": 105.0494688446529,
+    "ipAddress": "::1",
+    "userId": 1,
+    "createdAt": "2025-07-11T08:50:47.952Z",
+    "updatedAt": "2025-07-11T09:09:02.186Z"
+  },
+  "clockOutCoordinates": {
+    "latitude": -5.371217822527355,
+    "longitude": 105.0494688446529
   }
+}
+```
+
+**Response Error (403):**
+
+```json
+{
+  "statusCode": 403,
+  "message": "Anda harus berada dalam radius 30 meter dari kantor. Jarak Anda: 120 meter."
 }
 ```
 
@@ -424,6 +451,7 @@
 
 ```json
 {
+  "statusCode": 404,
   "message": "Tidak ditemukan data presensi masuk untuk hari ini. Silakan clock-in terlebih dahulu."
 }
 ```

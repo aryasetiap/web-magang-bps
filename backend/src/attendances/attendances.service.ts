@@ -3,30 +3,12 @@ import {
   ConflictException,
   ForbiddenException,
   InternalServerErrorException,
-  NotFoundException, // 1. Tambahkan NotFoundException ke daftar import
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClockInDto } from './dto/clock-in.dto';
-
-// Helper function untuk menghitung jarak (tidak ada perubahan di sini)
-function getDistanceInMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const R = 6371e3;
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
+import { ClockOutDto } from './dto/clock-out.dto';
 
 @Injectable()
 export class AttendancesService {
@@ -34,6 +16,37 @@ export class AttendancesService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
+
+  // Perbaiki getter dengan null checking dan default values
+  private get officeLatitude(): number {
+    const latitude = this.configService.get<string>('OFFICE_LATITUDE');
+    if (!latitude) {
+      throw new Error(
+        'OFFICE_LATITUDE not configured in environment variables',
+      );
+    }
+    return parseFloat(latitude);
+  }
+
+  private get officeLongitude(): number {
+    const longitude = this.configService.get<string>('OFFICE_LONGITUDE');
+    if (!longitude) {
+      throw new Error(
+        'OFFICE_LONGITUDE not configured in environment variables',
+      );
+    }
+    return parseFloat(longitude);
+  }
+
+  private get allowedRadiusMeters(): number {
+    const radius = this.configService.get<string>('OFFICE_RADIUS_METERS');
+    if (!radius) {
+      throw new Error(
+        'OFFICE_RADIUS_METERS not configured in environment variables',
+      );
+    }
+    return parseInt(radius);
+  }
 
   async clockIn(userId: number, clockInDto: ClockInDto, ip: string) {
     // --- Validasi 1: Cek apakah user sudah clock-in hari ini (tidak ada perubahan) ---
@@ -65,7 +78,7 @@ export class AttendancesService {
       );
     }
 
-    const distance = getDistanceInMeters(
+    const distance = this.calculateDistance(
       clockInDto.latitude,
       clockInDto.longitude,
       officeLat,
@@ -93,44 +106,40 @@ export class AttendancesService {
   }
 
   // 2. Tambahkan method baru ini
-  async clockOut(userId: number) {
-    // --- Cari data presensi masuk hari ini ---
+  async clockOut(userId: number, clockOutDto: ClockOutDto, ipAddress: string) {
+    // Validasi lokasi presensi pulang
+    this.validateLocation(clockOutDto.latitude, clockOutDto.longitude);
+
+    // Cari attendance record yang belum clock-out untuk hari ini
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set waktu ke awal hari
-
+    today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1); // Set waktu ke awal hari berikutnya
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const attendanceToUpdate = await this.prisma.attendance.findFirst({
+    const attendance = await this.prisma.attendance.findFirst({
       where: {
         userId: userId,
         clockIn: {
           gte: today,
           lt: tomorrow,
         },
+        clockOut: null,
       },
     });
 
-    // --- Validasi ---
-    if (!attendanceToUpdate) {
+    if (!attendance) {
       throw new NotFoundException(
         'Tidak ditemukan data presensi masuk untuk hari ini. Silakan clock-in terlebih dahulu.',
       );
     }
 
-    if (attendanceToUpdate.clockOut) {
-      throw new ConflictException(
-        'Anda sudah melakukan presensi pulang hari ini.',
-      );
-    }
-
-    // --- Jika valid, update record dengan waktu clock-out ---
+    // Update attendance dengan data clock-out DAN koordinat clock-out
     return this.prisma.attendance.update({
-      where: {
-        id: attendanceToUpdate.id, // Update berdasarkan ID unik presensi
-      },
+      where: { id: attendance.id },
       data: {
         clockOut: new Date(),
+        clockOutLatitude: clockOutDto.latitude,
+        clockOutLongitude: clockOutDto.longitude,
       },
     });
   }
@@ -161,5 +170,42 @@ export class AttendancesService {
 
   findOne(id: number) {
     return `This action returns a #${id} attendance`;
+  }
+
+  // Method helper untuk validasi lokasi
+  private validateLocation(latitude: number, longitude: number): void {
+    const distance = this.calculateDistance(
+      latitude,
+      longitude,
+      this.officeLatitude,
+      this.officeLongitude,
+    );
+
+    if (distance > this.allowedRadiusMeters) {
+      throw new ForbiddenException(
+        `Anda harus berada dalam radius ${this.allowedRadiusMeters} meter dari kantor. Jarak Anda: ${Math.round(distance)} meter.`,
+      );
+    }
+  }
+
+  // Method helper untuk menghitung jarak
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    const R = 6371e3; // Radius bumi dalam meter
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
   }
 }
