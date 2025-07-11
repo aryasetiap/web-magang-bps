@@ -27,10 +27,11 @@ enum StatusLogbook {
 }
 
 enum StatusFinalProject {
-  belum_submit
+  draft
   submitted
-  lulus
-  revisi
+  reviewed
+  accepted
+  revision
 }
 
 enum StatusSubmission {
@@ -74,13 +75,14 @@ model User {
   internshipApplication InternshipApplication? @relation("ApplicantApplication")
 
   // A user has many attendances, logbooks, submissions, etc.
-  attendances     Attendance[]
-  logbooks        Logbook[]
-  submissions     Submission[]
-  finalProject    FinalProject?
-  uploadedDocs    Document[]
-  certificate     Certificate?
-  taskAssignments TaskAssignment[]
+  attendances           Attendance[]
+  logbooks              Logbook[]
+  submissions           Submission[]
+  uploadedDocs          Document[]
+  certificate           Certificate?
+  taskAssignments       TaskAssignment[]
+  finalProjects         FinalProject[]   @relation
+  reviewedFinalProjects FinalProject[]   @relation("FinalProjectReviewer")
 }
 
 model Role {
@@ -192,14 +194,23 @@ model Submission {
 }
 
 model FinalProject {
-  id       Int                @id @default(autoincrement())
-  filePath String             @map("file_path")
-  repoLink String?            @map("repo_link")
-  status   StatusFinalProject @default(belum_submit) // [PERBAIKAN] Menambahkan status default
+  id          Int                @id @default(autoincrement())
+  title       String
+  description String?
+  filePath    String?            @map("file_path")
+  status      StatusFinalProject @default(draft)
+  grade       Float?
+  feedback    String?
+  submittedAt DateTime?          @map("submitted_at")
+  reviewedAt  DateTime?          @map("reviewed_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
 
-  // --- Relations ---
-  user   User @relation(fields: [userId], references: [id])
-  userId Int  @unique @map("user_id") // A user has only one final project
+  // Relations
+  user       User  @relation(fields: [userId], references: [id])
+  userId     Int   @map("user_id")
+  reviewedBy User? @relation("FinalProjectReviewer", fields: [reviewerId], references: [id])
+  reviewerId Int?  @map("reviewer_id")
 
   @@map("final_projects")
 }
