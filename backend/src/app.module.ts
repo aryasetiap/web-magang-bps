@@ -12,6 +12,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { FinalProjectsModule } from './final-projects/final-projects.module';
 import { CertificatesModule } from './certificates/certificates.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -29,6 +30,9 @@ import { CertificatesModule } from './certificates/certificates.module';
     SubmissionsModule,
     FinalProjectsModule,
     CertificatesModule, // Tambahkan ini
+    MulterModule.register({
+      dest: './uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

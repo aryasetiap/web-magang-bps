@@ -1,22 +1,22 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { PassportModule } from '@nestjs/passport';
+import { UsersModule } from '../users/users.module'; // Import UsersModule
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
-import { GoogleStrategy } from './google.strategy';
-import { UsersModule } from '../users/users.module'; // <-- Impor UsersModule
 
 @Module({
   imports: [
-    UsersModule, // <-- Tambahkan UsersModule di sini
+    UsersModule, // Tambahkan ini
     PassportModule,
     JwtModule.register({
-      secret: 'INI_RAHASIA_SEKALI_JANGAN_DITIRU',
-      signOptions: { expiresIn: '1d' },
+      secret: process.env.JWT_SECRET || 'defaultSecret',
+      signOptions: { expiresIn: '24h' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
 export class AuthModule {}

@@ -8,6 +8,11 @@
 !/uploads/certificate-templates/
 !/uploads/certificate-templates/**
 
+# Upload files
+uploads/
+!uploads/.gitkeep
+!uploads/profile-photos/.gitkeep
+
 # compiled output
 /dist
 /node_modules

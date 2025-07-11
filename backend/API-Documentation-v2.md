@@ -165,6 +165,61 @@
 
 ---
 
+#### PATCH `/auth/profile`
+
+**Deskripsi:** Update profil user dengan upload foto profil (opsional)
+
+**Headers:** `Authorization: Bearer {jwt_token}`
+
+**Content-Type:** `multipart/form-data`
+
+**Request Body (Form Data):**
+
+| Field         | Type   | Required | Description                             |
+| ------------- | ------ | -------- | --------------------------------------- |
+| name          | string | No       | Nama user                               |
+| namaLengkap   | string | No       | Nama lengkap user                       |
+| nimNisn       | string | No       | NIM/NISN user                           |
+| asalInstitusi | string | No       | Asal institusi user                     |
+| jurusanProdi  | string | No       | Jurusan/Program Studi                   |
+| nomorTelepon  | string | No       | Nomor telepon                           |
+| alamat        | string | No       | Alamat user                             |
+| profilePhoto  | file   | No       | File foto profil (JPG/PNG/GIF, max 2MB) |
+
+**Response Success (200):**
+
+```json
+{
+  "message": "Profil berhasil diperbarui",
+  "user": {
+    "id": 1,
+    "name": "John Doe Updated",
+    "email": "john@example.com",
+    "profilePhoto": "uploads/profile-photos/profile-1625123456-123456789.jpg",
+    "namaLengkap": "John Doe Lengkap",
+    "nimNisn": "12345678",
+    "asalInstitusi": "Universitas ABC",
+    "jurusanProdi": "Teknik Informatika",
+    "nomorTelepon": "081234567890",
+    "alamat": "Jl. ABC No. 123",
+    "role": {
+      "name": "Intern"
+    }
+  }
+}
+```
+
+**Response Error (400):**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Hanya file gambar yang diperbolehkan (JPG, JPEG, PNG, GIF)"
+}
+```
+
+---
+
 ### 1.3 Pendaftaran Magang
 
 #### POST `/internship-applications`
