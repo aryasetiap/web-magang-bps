@@ -94,7 +94,7 @@ export class AuthService {
 
   async googleLogin(req) {
     if (!req.user) {
-      return 'No user from google';
+      throw new UnauthorizedException('No user from google');
     }
 
     const user = await this.validateGoogleUser(req.user);
@@ -106,7 +106,6 @@ export class AuthService {
     };
 
     return {
-      message: 'User information from google',
       user: {
         id: user.id,
         name: user.name,

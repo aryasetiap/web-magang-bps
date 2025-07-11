@@ -50,8 +50,8 @@ function LoginPage({ setUserRole }) {
           role === 'admin'
             ? '/admin'
             : role === 'staff'
-            ? '/staff/dashboard'
-            : '/dashboard'
+              ? '/staff/dashboard'
+              : '/dashboard'
         );
       }, 1500);
     }
@@ -59,142 +59,73 @@ function LoginPage({ setUserRole }) {
 
   // ✅ Login Email/Password
   const handleEmailLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const res = await fetch('http://localhost:3000/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      const token = data.access_token;
-      const decoded = jwtDecode(token); // hasil: { sub, email, role, iat, exp }
-      const role = decoded.role;
-
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userRole', role);
-      setUserRole(role);
-
-      setAlert({
-        isOpen: true,
-        title: 'Login Berhasil!',
-        message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
-        type: 'success',
-        autoCloseDelay: 1500,
+    try {
+      const res = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      setTimeout(() => {
-        closeAlert();
-        navigate(
-          role === 'Admin'
-            ? '/admin'
-            : role === 'Staff'
-            ? '/staff/dashboard'
-            : '/dashboard'
-        );
-      }, 1500);
-    } else {
-      throw new Error(data.message || 'Email atau password salah.');
+      const data = await res.json();
+
+      if (res.ok) {
+        const token = data.access_token;
+        const decoded = jwtDecode(token); // hasil: { sub, email, role, iat, exp }
+        const role = decoded.role;
+
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userRole', role);
+        setUserRole(role);
+
+        setAlert({
+          isOpen: true,
+          title: 'Login Berhasil!',
+          message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
+          type: 'success',
+          autoCloseDelay: 1500,
+        });
+
+        setTimeout(() => {
+          closeAlert();
+          navigate(
+            role === 'Admin'
+              ? '/admin'
+              : role === 'Staff'
+                ? '/staff/dashboard'
+                : '/dashboard'
+          );
+        }, 1500);
+      } else {
+        throw new Error(data.message || 'Email atau password salah.');
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setAlert({
+        isOpen: true,
+        title: 'Login Gagal!',
+        message: err.message || 'Terjadi kesalahan saat login. Mohon coba lagi.',
+        type: 'error',
+      });
     }
-  } catch (err) {
-    console.error("Login error:", err);
-    setAlert({
-      isOpen: true,
-      title: 'Login Gagal!',
-      message: err.message || 'Terjadi kesalahan saat login. Mohon coba lagi.',
-      type: 'error',
-    });
-  }
-};
+  };
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:3000/auth/google"; // ke backend
+    try {
+      // Redirect langsung ke backend OAuth endpoint
+      const googleOAuthUrl = process.env.REACT_APP_GOOGLE_LOGIN_URL || 'http://localhost:3000/auth/google';
+
+      console.log('Redirecting to Google OAuth:', googleOAuthUrl);
+
+      // Redirect ke backend yang akan handle OAuth flow
+      window.location.href = googleOAuthUrl;
+    } catch (error) {
+      console.error('Error initiating Google OAuth:', error);
+      alert('Terjadi kesalahan saat memulai login Google');
+    }
   };
-
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-  // const navigate = useNavigate();
-
-  // const [alert, setAlert] = useState({
-  //   isOpen: false,
-  //   title: "",
-  //   message: "",
-  //   type: "",
-  //   autoCloseDelay: 0,
-  //   onConfirm: null,
-  //   showCancelButton: false,
-  // });
-
-  // const closeAlert = () => {
-  //   setAlert((prev) => ({ ...prev, isOpen: false }));
-  // };
-
-  // const handleEmailLogin = (e) => {
-  //   e.preventDefault();
-
-  //   const users = [
-  //     {
-  //       email: "admin@example.com",
-  //       password: "admin123",
-  //       role: "admin",
-  //       redirectPath: "/admin",
-  //     },
-  //     {
-  //       email: "intern@example.com",
-  //       password: "intern123",
-  //       role: "intern",
-  //       redirectPath: "/dashboard",
-  //     },
-  //     {
-  //       email: "staff@example.com",
-  //       password: "staff123",
-  //       role: "staff",
-  //       redirectPath: "/staff",
-  //     },
-  //   ];
-
-  //   let authenticatedUser = null;
-  //   for (const user of users) {
-  //     if (user.email === email && user.password === password) {
-  //       authenticatedUser = user;
-  //       break;
-  //     }
-  //   }
-
-  //   if (authenticatedUser) {
-  //     // Set role in localStorage for persistence across refreshes
-  //     localStorage.setItem("userRole", authenticatedUser.role);
-  //     // Also update the global userRole state in App.js
-  //     if (setUserRole) {
-  //       setUserRole(authenticatedUser.role);
-  //     }
-
-  //     setAlert({
-  //       isOpen: true,
-  //       title: "Login Berhasil!",
-  //       message: `Selamat datang, ${authenticatedUser.role}! Anda akan diarahkan ke dashboard ${authenticatedUser.role}.`,
-  //       type: "success",
-  //       autoCloseDelay: 1500,
-  //     });
-
-  //     setTimeout(() => {
-  //       closeAlert();
-  //       navigate(authenticatedUser.redirectPath);
-  //     }, 1500);
-  //   } else {
-  //     setAlert({
-  //       isOpen: true,
-  //       title: "Login Gagal!",
-  //       message: "Email atau password salah. Silakan coba lagi.",
-  //       type: "error",
-  //     });
-  //   }
-  // };
 
   return (
     <div

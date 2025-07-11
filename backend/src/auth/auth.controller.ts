@@ -5,11 +5,13 @@ import {
   Get,
   Patch,
   UseGuards,
+  Req, // Tambahkan Req di sini
   Request,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
   Headers,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -28,6 +30,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
+import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -147,8 +150,30 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Request() req) {
-    // Handle Google OAuth callback
-    return this.authService.googleLogin(req);
+  async googleCallback(@Req() req, @Res() res: Response) {
+    try {
+      // Process Google login
+      const result = await this.authService.googleLogin(req);
+
+      // Get frontend URL from environment
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const callbackUrl = `${frontendUrl}/auth/callback`;
+
+      // Encode user data untuk URL
+      const encodedUser = encodeURIComponent(JSON.stringify(result.user));
+
+      // Redirect dengan token dan user sebagai query params
+      res.redirect(
+        `${callbackUrl}?token=${result.access_token}&user=${encodedUser}`,
+      );
+    } catch (error) {
+      // Handle error - redirect to frontend error page
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      res.redirect(
+        `${frontendUrl}/auth/error?message=${encodeURIComponent(
+          'Authentication failed',
+        )}`,
+      );
+    }
   }
 }

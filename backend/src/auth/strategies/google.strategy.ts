@@ -10,9 +10,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private configService: ConfigService) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL');
+    // Pastikan callback URL mengarah ke backend endpoint
+    const callbackURL =
+      configService.get<string>('GOOGLE_CALLBACK_URL') ||
+      'http://localhost:3000/auth/google/callback';
 
-    if (!clientID || !clientSecret || !callbackURL) {
+    if (!clientID || !clientSecret) {
       throw new Error(
         'Google OAuth credentials are not properly configured in environment variables',
       );

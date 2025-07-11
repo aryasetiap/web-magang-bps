@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/Registration';
 import ForgotPasswordPage from './pages/ForgotPassword';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
 // Import Unified Dashboard Layout (Layout gabungan untuk semua role dashboard)
 import DashboardLayout from './components/protected/DashboardLayout'
@@ -56,70 +57,76 @@ function App() {
   };
 
   return (
-    
-      <Routes>
-        {/* Rute Publik (dapat diakses tanpa login) */}
-        <Route path="/" element={<Home/>} />
-        <Route path="/login" element={<LoginPage setUserRole={updateGlobalUserRole} />} />
-        <Route path="/register" element={<RegistrationPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Rute Publik (dapat diakses tanpa login) */}
+          <Route path="/" element={<Home />} />
 
-        {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute allowedRoles={['Mahasiswa', 'Intern']}>
-            {/* UnifiedDashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
-            <DashboardLayout userRole={userRole} />
-          </ProtectedRoute>
-        }>
-          <Route index element={<InternDashboard />} /> {/* Halaman default /dashboard */}
-          <Route path="biodata" element={<BiodataPage />} />
-          <Route path="submissions" element={<SubmissionStatusPage />} />
-          <Route path="activities" element={<ActivitiesPage />} />
-          <Route path="intern-reports" element={<InternReportPage />} />
-          <Route path="certificate" element={<CertificatePage />} />
-        </Route>
+          {/* Login & Register routes */}
+          <Route path="/login" element={<LoginPage setUserRole={updateGlobalUserRole} />} />
+          <Route path="/register" element={<RegistrationPage />} />
 
-        {/* Rute Dashboard Admin - Dilindungi */}
-        <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin', 'Admin']}>
-            {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
-            <DashboardLayout userRole={userRole} />
-          </ProtectedRoute>
-        }>
-          <Route index element={<AdminDashboard />} /> {/* Halaman default /admin */}
-          {/* Tambahkan rute khusus Admin lainnya di sini */}
-          <Route path="accounts" element={<AdminAccountsPage />} />
-          <Route path="settings" element={<AdminManagementSettingsPage />} />
-          <Route path="applicants" element={<AdminApplicantsPage />} />
-          <Route path="monitoring" element={<AdminMonitoringPage />} />
-          <Route path="assignments" element={<AdminAssignmentsPage />} />
-          <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
-          <Route path="graduation" element={<AdminGraduationPage />} />
-          <Route path="reports" element={<AdminReportsPage />} />
-          <Route path="master-docs" element={<AdminMasterDocsPage />} />
-          <Route path="cert-settings" element={<AdminCertSettingsPage />} />
-        </Route>
+          {/* OAuth Callback route */}
+          <Route path="/auth/callback" element={<AuthCallbackPage setUserRole={updateGlobalUserRole} />} />
 
-        {/* Rute Dashboard Staff BPS - Dilindungi */}
-        <Route path="/staff" element={
-          <ProtectedRoute allowedRoles={['staff', 'Staff']}>
-            {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
-            <DashboardLayout userRole={userRole} />
-          </ProtectedRoute>
-        }>
-          <Route index element={<StaffDashboard />} /> {/* Halaman default /staff */}
-          {/* Tambahkan rute khusus Staff BPS lainnya di sini */}
-          <Route path="assignments" element={<StaffAssignments />} />
+          {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute allowedRoles={['Mahasiswa', 'Intern']}>
+              {/* UnifiedDashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
+              <DashboardLayout userRole={userRole} />
+            </ProtectedRoute>
+          }>
+            <Route index element={<InternDashboard />} /> {/* Halaman default /dashboard */}
+            <Route path="biodata" element={<BiodataPage />} />
+            <Route path="submissions" element={<SubmissionStatusPage />} />
+            <Route path="activities" element={<ActivitiesPage />} />
+            <Route path="intern-reports" element={<InternReportPage />} />
+            <Route path="certificate" element={<CertificatePage />} />
+          </Route>
 
-        </Route>
+          {/* Rute Dashboard Admin - Dilindungi */}
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin', 'Admin']}>
+              {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
+              <DashboardLayout userRole={userRole} />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminDashboard />} /> {/* Halaman default /admin */}
+            {/* Tambahkan rute khusus Admin lainnya di sini */}
+            <Route path="accounts" element={<AdminAccountsPage />} />
+            <Route path="settings" element={<AdminManagementSettingsPage />} />
+            <Route path="applicants" element={<AdminApplicantsPage />} />
+            <Route path="monitoring" element={<AdminMonitoringPage />} />
+            <Route path="assignments" element={<AdminAssignmentsPage />} />
+            <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
+            <Route path="graduation" element={<AdminGraduationPage />} />
+            <Route path="reports" element={<AdminReportsPage />} />
+            <Route path="master-docs" element={<AdminMasterDocsPage />} />
+            <Route path="cert-settings" element={<AdminCertSettingsPage />} />
+          </Route>
 
-        {/* Rute Catch-all untuk halaman tidak ditemukan (opsional) */}
-        <Route path="*" element={<NotFoundPage />} />
-        <Route path="/forbidden" element={<ForbiddenPage />} />
-        <Route path="/server-error" element={<ServerErrorPage />} />
+          {/* Rute Dashboard Staff BPS - Dilindungi */}
+          <Route path="/staff" element={
+            <ProtectedRoute allowedRoles={['staff', 'Staff']}>
+              {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
+              <DashboardLayout userRole={userRole} />
+            </ProtectedRoute>
+          }>
+            <Route index element={<StaffDashboard />} /> {/* Halaman default /staff */}
+            {/* Tambahkan rute khusus Staff BPS lainnya di sini */}
+            <Route path="assignments" element={<StaffAssignments />} />
 
-      </Routes>
-    
+          </Route>
+
+          {/* Rute Catch-all untuk halaman tidak ditemukan (opsional) */}
+          <Route path="*" element={<NotFoundPage />} />
+          <Route path="/forbidden" element={<ForbiddenPage />} />
+          <Route path="/server-error" element={<ServerErrorPage />} />
+
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
