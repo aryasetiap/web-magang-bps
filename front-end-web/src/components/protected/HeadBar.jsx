@@ -1,8 +1,13 @@
-import React, { useState, Fragment } from 'react'; // Tambahkan Fragment
-import { Menu, Dialog, Transition } from '@headlessui/react'; // Tambahkan Dialog, Transition
-import { useNavigate, useLocation } from 'react-router-dom';
-import { UserCircleIcon, PhotoIcon, KeyIcon } from '@heroicons/react/24/outline'; // Tambahkan ikon
-import AlertDialog from '../AlertDialog';
+import React, { useState, Fragment, useEffect } from "react";
+import { Menu, Dialog, Transition } from "@headlessui/react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  UserCircleIcon,
+  PhotoIcon,
+  KeyIcon,
+  Bars3Icon,
+} from "@heroicons/react/24/outline"; // Tambahkan ikon
+import AlertDialog from "../AlertDialog";
 
 // Menerima prop isCollapsed dan userRole dari parent layout
 function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
@@ -11,32 +16,56 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
   const [alert, setAlert] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    type: '',
+    title: "",
+    message: "",
+    type: "",
     autoCloseDelay: 0,
     onConfirm: null,
     showCancelButton: false,
   });
 
-  // State untuk modal profil
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [currentUserName, setCurrentUserName] = useState('Nama Pengguna'); // Dummy initial name
-  const [profilePhoto, setProfilePhoto] = useState('https://via.placeholder.com/150/F8D7DA/000000?text=JD'); // Dummy initial photo
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [currentUserName, setCurrentUserName] = useState("Nama Pengguna");
+  const [profilePhoto, setProfilePhoto] = useState(
+    "https://via.placeholder.com/150/F8D7DA/000000?text=JD"
+  );
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
+  const token = localStorage.getItem("authToken");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!token) return;
+      try {
+        const res = await fetch("http://localhost:3000/auth/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setCurrentUserName(data.name || "Pengguna");
+          // setProfilePhoto(data.photoUrl || "https://via.placeholder.com/150/F8D7DA/000000?text=JD"); // Uncomment nanti jika photo tersedia
+        }
+      } catch (err) {
+        console.error("Gagal memuat profil:", err);
+      }
+    };
+
+    fetchProfile();
+  }, [token]);
 
   const closeAlert = () => {
-    setAlert(prev => ({ ...prev, isOpen: false }));
+    setAlert((prev) => ({ ...prev, isOpen: false }));
   };
 
   function openProfileModal() {
     setIsProfileModalOpen(true);
-    // Reset password fields when opening modal
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmNewPassword('');
+    setOldPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
   }
 
   function closeProfileModal() {
@@ -45,15 +74,13 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
-    // Simulasi update nama/foto
     alert(`Profil diperbarui! Nama: ${currentUserName}`);
-    // Di aplikasi nyata: Kirim data ke backend
     closeProfileModal();
     setAlert({
       isOpen: true,
-      title: 'Profil Diperbarui',
-      message: 'Nama dan foto profil Anda berhasil diperbarui.',
-      type: 'success',
+      title: "Profil Diperbarui",
+      message: "Nama dan foto profil Anda berhasil diperbarui.",
+      type: "success",
       autoCloseDelay: 1500,
     });
   };
@@ -61,31 +88,29 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
   const handleChangePassword = (e) => {
     e.preventDefault();
     if (!oldPassword || !newPassword || !confirmNewPassword) {
-      alert('Semua bidang password harus diisi.');
+      alert("Semua bidang password harus diisi.");
       return;
     }
     if (newPassword.length < 6) {
-      alert('Password baru minimal 6 karakter.');
+      alert("Password baru minimal 6 karakter.");
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      alert('Konfirmasi password baru tidak cocok.');
+      alert("Konfirmasi password baru tidak cocok.");
       return;
     }
     if (oldPassword === newPassword) {
-        alert('Password baru tidak boleh sama dengan password lama.');
-        return;
+      alert("Password baru tidak boleh sama dengan password lama.");
+      return;
     }
 
-    // Simulasi ganti password
-    alert('Password berhasil diubah!');
-    // Di aplikasi nyata: Kirim oldPassword, newPassword ke backend
+    alert("Password berhasil diubah!");
     closeProfileModal();
     setAlert({
       isOpen: true,
-      title: 'Password Diubah',
-      message: 'Kata sandi Anda berhasil diubah.',
-      type: 'success',
+      title: "Password Diubah",
+      message: "Kata sandi Anda berhasil diubah.",
+      type: "success",
       autoCloseDelay: 1500,
     });
   };
@@ -95,21 +120,20 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfilePhoto(reader.result); // Menggunakan URL data untuk preview
+        setProfilePhoto(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-
   const handleLogout = () => {
     setAlert({
       isOpen: true,
-      title: 'Konfirmasi Logout',
-      message: 'Apakah Anda yakin ingin logout dari sistem?',
-      type: 'confirm',
-      confirmButtonText: 'Ya, Logout',
-      cancelButtonText: 'Tidak',
+      title: "Konfirmasi Logout",
+      message: "Apakah Anda yakin ingin logout dari sistem?",
+      type: "confirm",
+      confirmButtonText: "Ya, Logout",
+      cancelButtonText: "Tidak",
       onConfirm: confirmLogout,
       showCancelButton: true,
     });
@@ -119,40 +143,50 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     closeAlert();
     setAlert({
       isOpen: true,
-      title: 'Logout Berhasil',
-      message: 'Anda telah berhasil logout.',
-      type: 'success',
+      title: "Logout Berhasil",
+      message: "Anda telah berhasil logout.",
+      type: "success",
       autoCloseDelay: 1500,
     });
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('authToken'); 
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("authToken");
     setTimeout(() => {
       closeAlert();
-      navigate('/login');
+      navigate("/login");
     }, 1500);
   };
 
   const getRoleRootPath = (role) => {
     switch (role) {
-      case 'admin': return '/admin';
-      case 'staff': return '/staff';
-      case 'intern': return '/dashboard';
-      default: return '/';
+      case "admin":
+        return "/admin";
+      case "staff":
+        return "/staff";
+      case "intern":
+        return "/dashboard";
+      default:
+        return "/";
     }
   };
 
   const roleRootPath = getRoleRootPath(userRole);
   const currentPath = location.pathname;
 
-  const pathnames = currentPath.split('/').filter(x => x);
+  const pathnames = currentPath.split("/").filter((x) => x);
   const breadcrumbs = pathnames.map((value, index) => {
     const last = index === pathnames.length - 1;
-    const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-    const displayName = value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, ' ');
+    const to = `/${pathnames.slice(0, index + 1).join("/")}`;
+    const displayName =
+      value.charAt(0).toUpperCase() + value.slice(1).replace(/-/g, " ");
 
     return (
       <span key={to} className="flex items-center">
-        <a href={to} className={`text-gray-600 hover:text-bps-blue ${last ? 'font-semibold' : ''}`}>
+        <a
+          href={to}
+          className={`text-gray-600 hover:text-bps-blue ${
+            last ? "font-semibold" : ""
+          }`}
+        >
           {displayName}
         </a>
         {!last && <span className="mx-2 text-gray-400">/</span>}
@@ -163,30 +197,41 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
   return (
     <header
       className={`bg-white shadow-sm p-4 flex justify-between items-center rounded-lg fixed top-0 right-0 z-40 transition-all duration-300 ease-in-out
-        ${isCollapsed ? 'ml-2 left-24' : 'ml-6 left-64'}`}
+        ${isCollapsed ? "ml-2 left-24" : "ml-6 left-64"}`}
     >
       <div className="flex items-center h-full">
-        {/* <button
+        <button
           onClick={toggleSidebar}
           className="p-2 mr-4 text-gray-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-bps-blue"
           aria-label="Toggle Sidebar"
         >
           <Bars3Icon className="h-6 w-6" />
-        </button> */}
+        </button>
 
         <nav aria-label="breadcrumb" className="flex text-sm">
           {currentPath === roleRootPath ? (
             <span className="text-gray-600 font-semibold">
-              {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : ''}
+              {userRole === "admin"
+                ? "Admin Dashboard"
+                : userRole === "staff"
+                ? "Staff Dashboard"
+                : ""}
             </span>
           ) : (
             <>
-              <a href={roleRootPath} className="text-gray-600 hover:text-bps-blue mr-2">
-                {userRole === 'admin' ? 'Admin Dashboard' : userRole === 'staff' ? 'Staff Dashboard' : ''}
+              <a
+                href={roleRootPath}
+                className="text-gray-600 hover:text-bps-blue mr-2"
+              >
+                {userRole === "admin"
+                  ? "Admin Dashboard"
+                  : userRole === "staff"
+                  ? "Staff Dashboard"
+                  : ""}
               </a>
               <span className="text-gray-400 mr-2"></span>
               {breadcrumbs.filter((_, idx) => {
-                const rootSegment = roleRootPath.split('/').filter(Boolean)[0];
+                const rootSegment = roleRootPath.split("/").filter(Boolean)[0];
                 return !(idx === 0 && pathnames[0] === rootSegment);
               })}
             </>
@@ -228,7 +273,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                 <button
                   onClick={openProfileModal} // Panggil fungsi untuk membuka modal profil
                   className={`${
-                    active ? 'bg-bps-blue text-white' : 'text-gray-900'
+                    active ? "bg-bps-blue text-white" : "text-gray-900"
                   } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Profil Saya
@@ -240,7 +285,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                 <button
                   onClick={handleLogout}
                   className={`${
-                    active ? 'bg-red-500 text-white' : 'text-gray-900'
+                    active ? "bg-red-500 text-white" : "text-gray-900"
                   } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Logout
@@ -291,21 +336,35 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"> {/* Ubah max-w-md ke max-w-xl */}
-                  <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-gray-900 mb-4">
+                <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  {" "}
+                  {/* Ubah max-w-md ke max-w-xl */}
+                  <Dialog.Title
+                    as="h3"
+                    className="text-2xl font-bold leading-6 text-gray-900 mb-4"
+                  >
                     Profil Saya
                   </Dialog.Title>
-
                   {/* Kontainer untuk 2 kolom */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Tambahkan grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {" "}
+                    {/* Tambahkan grid */}
                     {/* Bagian Informasi Umum */}
                     <div className="p-4 border rounded-lg bg-gray-50">
                       <h4 className="text-xl font-semibold text-gray-800 mb-3 flex items-center">
-                        <UserCircleIcon className="h-6 w-6 mr-2" /> Informasi Umum
+                        <UserCircleIcon className="h-6 w-6 mr-2" /> Informasi
+                        Umum
                       </h4>
                       <div className="flex flex-col items-center mb-4">
-                        <img src={profilePhoto} alt="Foto Profil" className="h-24 w-24 rounded-full object-cover mb-3 border-2 border-bps-blue" />
-                        <label htmlFor="profilePhotoInput" className="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-full flex items-center">
+                        <img
+                          src={profilePhoto}
+                          alt="Foto Profil"
+                          className="h-24 w-24 rounded-full object-cover mb-3 border-2 border-bps-blue"
+                        />
+                        <label
+                          htmlFor="profilePhotoInput"
+                          className="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-full flex items-center"
+                        >
                           <PhotoIcon className="h-4 w-4 mr-1" /> Ganti Foto
                           <input
                             id="profilePhotoInput"
@@ -318,7 +377,12 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                       </div>
                       <form onSubmit={handleUpdateProfile}>
                         <div className="mb-4">
-                          <label htmlFor="userName" className="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap:</label>
+                          <label
+                            htmlFor="userName"
+                            className="block text-gray-700 text-sm font-bold mb-2"
+                          >
+                            Nama Lengkap:
+                          </label>
                           <input
                             type="text"
                             id="userName"
@@ -336,15 +400,21 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                         </button>
                       </form>
                     </div>
-
                     {/* Bagian Ubah Kata Sandi */}
-                    <div className="p-4 border rounded-lg bg-gray-50"> {/* Hapus mb-4 */}
+                    <div className="p-4 border rounded-lg bg-gray-50">
+                      {" "}
+                      {/* Hapus mb-4 */}
                       <h4 className="text-xl font-semibold text-gray-800 mb-3 flex items-center">
                         <KeyIcon className="h-6 w-6 mr-2" /> Ubah Kata Sandi
                       </h4>
                       <form onSubmit={handleChangePassword}>
                         <div className="mb-4">
-                          <label htmlFor="oldPassword" className="block text-gray-700 text-sm font-bold mb-2">Kata Sandi Lama:</label>
+                          <label
+                            htmlFor="oldPassword"
+                            className="block text-gray-700 text-sm font-bold mb-2"
+                          >
+                            Kata Sandi Lama:
+                          </label>
                           <input
                             type="password"
                             id="oldPassword"
@@ -355,7 +425,12 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                           />
                         </div>
                         <div className="mb-4">
-                          <label htmlFor="newPassword" className="block text-gray-700 text-sm font-bold mb-2">Kata Sandi Baru:</label>
+                          <label
+                            htmlFor="newPassword"
+                            className="block text-gray-700 text-sm font-bold mb-2"
+                          >
+                            Kata Sandi Baru:
+                          </label>
                           <input
                             type="password"
                             id="newPassword"
@@ -366,12 +441,19 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                           />
                         </div>
                         <div className="mb-6">
-                          <label htmlFor="confirmNewPassword" className="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Kata Sandi Baru:</label>
+                          <label
+                            htmlFor="confirmNewPassword"
+                            className="block text-gray-700 text-sm font-bold mb-2"
+                          >
+                            Konfirmasi Kata Sandi Baru:
+                          </label>
                           <input
                             type="password"
                             id="confirmNewPassword"
                             value={confirmNewPassword}
-                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            onChange={(e) =>
+                              setConfirmNewPassword(e.target.value)
+                            }
                             className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
                             required
                           />
@@ -384,8 +466,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                         </button>
                       </form>
                     </div>
-                  </div> {/* Tutup div grid */}
-
+                  </div>{" "}
+                  {/* Tutup div grid */}
                   <div className="mt-4 flex justify-end">
                     <button
                       type="button"
