@@ -1,5 +1,11 @@
-# PDF
+# PDF files (except template)
 *.pdf
+!uploads/certificate-templates/certificate-template.pdf
+
+# Uploads directory (except certificate templates)
+/uploads/*
+!/uploads/certificate-templates/
+!/uploads/certificate-templates/**
 
 # compiled output
 /dist

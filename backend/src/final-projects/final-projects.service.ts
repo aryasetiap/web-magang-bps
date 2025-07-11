@@ -13,45 +13,42 @@ import * as fs from 'fs';
 export class FinalProjectsService {
   constructor(private prisma: PrismaService) {}
 
-  // Create final project
   async create(
     userId: number,
     createFinalProjectDto: CreateFinalProjectDto,
     file?: Express.Multer.File,
   ) {
-    return this.prisma.finalProject.create({
-      data: {
-        title: createFinalProjectDto.title,
-        description: createFinalProjectDto.description,
-        filePath: file?.path,
-        userId,
-        status: file ? 'submitted' : 'draft',
-        submittedAt: file ? new Date() : null,
-      },
-    });
+    const data: any = {
+      title: createFinalProjectDto.title,
+      description: createFinalProjectDto.description,
+      userId,
+    };
+
+    if (file) {
+      data.filePath = file.path;
+      data.status = 'submitted';
+      data.submittedAt = new Date();
+    } else {
+      data.status = 'draft';
+    }
+
+    return this.prisma.finalProject.create({ data });
   }
 
-  // Get all final projects for current user
-  async findByUser(userId: number) {
+  async findAllForUser(userId: number) {
     return this.prisma.finalProject.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      include: {
-        reviewedBy: {
-          select: { id: true, name: true },
-        },
-      },
     });
   }
 
-  // Get all final projects for admin
   async findAllForAdmin(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.finalProject.findMany({
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { submittedAt: 'desc' },
         include: {
           user: {
             select: { id: true, name: true, email: true },
@@ -63,7 +60,6 @@ export class FinalProjectsService {
       }),
       this.prisma.finalProject.count(),
     ]);
-
     return {
       data,
       total,
@@ -72,7 +68,6 @@ export class FinalProjectsService {
     };
   }
 
-  // Get final project by ID
   async findOne(id: number, userId?: number) {
     const finalProject = await this.prisma.finalProject.findUnique({
       where: { id },
@@ -90,7 +85,7 @@ export class FinalProjectsService {
       throw new NotFoundException('Final project tidak ditemukan');
     }
 
-    // If userId provided, check if user owns the project
+    // Jika userId diberikan, pastikan user hanya bisa akses miliknya
     if (userId && finalProject.userId !== userId) {
       throw new ForbiddenException(
         'Anda tidak memiliki akses ke final project ini',
@@ -100,7 +95,6 @@ export class FinalProjectsService {
     return finalProject;
   }
 
-  // Update final project (only by owner)
   async update(
     id: number,
     userId: number,
@@ -109,35 +103,37 @@ export class FinalProjectsService {
   ) {
     const finalProject = await this.findOne(id, userId);
 
-    // Check if can be updated
-    if (finalProject.status === 'accepted') {
+    // Hanya bisa update jika status draft, revision, atau submitted
+    if (['accepted'].includes(finalProject.status)) {
       throw new ForbiddenException(
         'Final project yang sudah diterima tidak dapat diubah',
       );
     }
 
-    // Delete old file if new file uploaded
-    if (file && finalProject.filePath && fs.existsSync(finalProject.filePath)) {
-      fs.unlinkSync(finalProject.filePath);
+    const updateData: any = {
+      ...updateFinalProjectDto,
+    };
+
+    // Jika ada file baru, hapus file lama dan update path
+    if (file) {
+      if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {
+        fs.unlinkSync(finalProject.filePath);
+      }
+      updateData.filePath = file.path;
+      updateData.status = 'submitted';
+      updateData.submittedAt = new Date();
     }
 
     return this.prisma.finalProject.update({
       where: { id },
-      data: {
-        title: updateFinalProjectDto.title,
-        description: updateFinalProjectDto.description,
-        filePath: file?.path || finalProject.filePath,
-        status: file ? 'submitted' : finalProject.status,
-        submittedAt: file ? new Date() : finalProject.submittedAt,
-      },
+      data: updateData,
     });
   }
 
-  // Review final project (admin only)
   async review(
     id: number,
     reviewerId: number,
-    reviewFinalProjectDto: ReviewFinalProjectDto,
+    reviewDto: ReviewFinalProjectDto,
   ) {
     const finalProject = await this.findOne(id);
 
@@ -150,20 +146,19 @@ export class FinalProjectsService {
     return this.prisma.finalProject.update({
       where: { id },
       data: {
-        status: reviewFinalProjectDto.status,
-        grade: reviewFinalProjectDto.grade,
-        feedback: reviewFinalProjectDto.feedback,
-        reviewerId,
+        status: reviewDto.status,
+        grade: reviewDto.grade,
+        feedback: reviewDto.feedback,
+        reviewedById: reviewerId,
         reviewedAt: new Date(),
       },
     });
   }
 
-  // Delete final project
   async remove(id: number, userId: number) {
     const finalProject = await this.findOne(id, userId);
 
-    // Delete file if exists
+    // Hapus file jika ada
     if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {
       fs.unlinkSync(finalProject.filePath);
     }
