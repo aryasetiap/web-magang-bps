@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
-function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
+function BiodataPage() {
+  // Pastikan nama fungsi adalah BiodataPage
   // State untuk data identitas diri
-   const [formData, setFormData] = useState({
-    namaLengkap: '',
-    nimNisn: '',
-    asalInstitusi: '',
-    jurusanProdi: '',
-    nomorTelepon: '',
-    email: '',
-    alamat: '',
+  const [formData, setFormData] = useState({
+    namaLengkap: "",
+    nimNisn: "",
+    asalInstitusi: "",
+    jurusanProdi: "",
+    nomorTelepon: "",
+    email: "",
+    alamat: "",
   });
 
   const [files, setFiles] = useState({
@@ -18,14 +19,14 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
     suratPermohonan: null,
   });
 
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem("authToken");
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!token) return;
       try {
-        const res = await fetch('http://localhost:3000/auth/profile', {
-          method: 'GET',
+        const res = await fetch("http://localhost:3000/auth/profile", {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -33,17 +34,17 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
         const data = await res.json();
         if (res.ok) {
           setFormData({
-            namaLengkap: data.namaLengkap || '',
-            nimNisn: data.nimNisn || '',
-            asalInstitusi: data.asalInstitusi || '',
-            jurusanProdi: data.jurusanProdi || '',
-            nomorTelepon: data.nomorTelepon || '',
-            email: data.email || '',
-            alamat: data.alamat || '',
+            namaLengkap: data.namaLengkap || "",
+            nimNisn: data.nimNisn || "",
+            asalInstitusi: data.asalInstitusi || "",
+            jurusanProdi: data.jurusanProdi || "",
+            nomorTelepon: data.nomorTelepon || "",
+            email: data.email || "",
+            alamat: data.alamat || "",
           });
         }
       } catch (err) {
-        console.error('Gagal mengambil data biodata:', err);
+        console.error("Gagal mengambil data biodata:", err);
       }
     };
 
@@ -63,7 +64,7 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!token) {
-      alert('Token tidak ditemukan. Silakan login ulang.');
+      alert("Token tidak ditemukan. Silakan login ulang.");
       return;
     }
 
@@ -72,13 +73,15 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
       formDataToSend.append(key, value);
     });
 
-    if (files.cv) formDataToSend.append('cv', files.cv);
-    if (files.transkripNilai) formDataToSend.append('transkripNilai', files.transkripNilai);
-    if (files.suratPermohonan) formDataToSend.append('suratPermohonan', files.suratPermohonan);
+    if (files.cv) formDataToSend.append("cv", files.cv);
+    if (files.transkripNilai)
+      formDataToSend.append("transkripNilai", files.transkripNilai);
+    if (files.suratPermohonan)
+      formDataToSend.append("suratPermohonan", files.suratPermohonan);
 
     try {
-      const res = await fetch('http://localhost:3000/auth/profile', {
-        method: 'PATCH',
+      const res = await fetch("http://localhost:3000/auth/profile", {
+        method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -88,13 +91,13 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
       const result = await res.json();
 
       if (res.ok) {
-        alert('Biodata berhasil diperbarui!');
+        alert("Biodata berhasil diperbarui!");
       } else {
-        alert(result.message || 'Gagal memperbarui biodata.');
+        alert(result.message || "Gagal memperbarui biodata.");
       }
     } catch (error) {
-      console.error('Error updating biodata:', error);
-      alert('Terjadi kesalahan saat menyimpan biodata.');
+      console.error("Error updating biodata:", error);
+      alert("Terjadi kesalahan saat menyimpan biodata.");
     }
   };
 
@@ -121,17 +124,23 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
     <div className="bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-3xl font-bold text-bps-blue mb-6">Biodata Diri</h2>
       <p className="text-gray-700 mb-6">
-        Mohon lengkapi data identitas diri dan unggah berkas yang diperlukan untuk kelengkapan data magang.
-        Bidang dengan tanda (<span className="text-red-500">*</span>) wajib diisi.
+        Mohon lengkapi data identitas diri dan unggah berkas yang diperlukan
+        untuk kelengkapan data magang. Bidang dengan tanda (
+        <span className="text-red-500">*</span>) wajib diisi.
       </p>
 
       <form onSubmit={handleSubmit}>
         {/* Bagian Identitas Diri */}
         <div className="mb-8 p-6 border rounded-lg bg-gray-50">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-4">Identitas Diri</h3>
+          <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+            Identitas Diri
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="namaLengkap" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="namaLengkap"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Nama Lengkap: <span className="text-red-500">*</span>
               </label>
               <input
@@ -145,7 +154,10 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="nimNisn" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="nimNisn"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 NIM / NISN: <span className="text-red-500">*</span>
               </label>
               <input
@@ -159,8 +171,12 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="asalInstitusi" className="block text-gray-700 text-sm font-bold mb-2">
-                Asal Sekolah / Universitas: <span className="text-red-500">*</span>
+              <label
+                htmlFor="asalInstitusi"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Asal Sekolah / Universitas:{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -173,7 +189,10 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="jurusanProdi" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="jurusanProdi"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Jurusan / Program Studi: <span className="text-red-500">*</span>
               </label>
               <input
@@ -187,7 +206,10 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="nomorTelepon" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="nomorTelepon"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Nomor Telepon: <span className="text-red-500">*</span>
               </label>
               <input
@@ -201,7 +223,10 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="email"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Email: <span className="text-red-500">*</span>
               </label>
               <input
@@ -215,7 +240,10 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
               />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="alamat" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="alamat"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Alamat Lengkap: <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -233,14 +261,20 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
 
         {/* Bagian Unggah Berkas */}
         <div className="mb-8 p-6 border rounded-lg bg-gray-50">
-          <h3 className="text-2xl font-semibold text-gray-800 mb-4">Unggah Berkas</h3>
+          <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+            Unggah Berkas
+          </h3>
           <p className="text-gray-600 text-sm mb-4">
             Unggah berkas dalam format PDF. Ukuran maksimal 2MB per berkas.
-            Berkas dengan tanda (<span className="text-red-500">*</span>) wajib diunggah.
+            Berkas dengan tanda (<span className="text-red-500">*</span>) wajib
+            diunggah.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="cv" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="cv"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Curriculum Vitae (CV): <span className="text-red-500">*</span>
               </label>
               <input
@@ -257,10 +291,17 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   hover:file:bg-bps-light-blue"
                 // required
               />
-              {files.cv && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.cv.name}</p>}
+              {files.cv && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Terpilih: {files.cv.name}
+                </p>
+              )}
             </div>
             <div>
-              <label htmlFor="transkripNilai" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="transkripNilai"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Transkrip Nilai / Rapor: <span className="text-red-500">*</span>
               </label>
               <input
@@ -275,12 +316,19 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                // required 
+                // required
               />
-              {files.transkripNilai && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.transkripNilai.name}</p>}
+              {files.transkripNilai && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Terpilih: {files.transkripNilai.name}
+                </p>
+              )}
             </div>
             <div>
-              <label htmlFor="suratPermohonan" className="block text-gray-700 text-sm font-bold mb-2">
+              <label
+                htmlFor="suratPermohonan"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
                 Surat Permohonan Magang: <span className="text-red-500">*</span>
               </label>
               <input
@@ -295,9 +343,13 @@ function BiodataPage() { // Pastikan nama fungsi adalah BiodataPage
                   file:text-sm file:font-semibold
                   file:bg-bps-blue file:text-white
                   hover:file:bg-bps-light-blue"
-                // required 
+                // required
               />
-              {files.suratPermohonan && <p className="mt-2 text-sm text-gray-600">Terpilih: {files.suratPermohonan.name}</p>}
+              {files.suratPermohonan && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Terpilih: {files.suratPermohonan.name}
+                </p>
+              )}
             </div>
           </div>
         </div>
