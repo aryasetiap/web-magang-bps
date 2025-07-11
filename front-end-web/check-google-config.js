@@ -1,4 +1,5 @@
 const axios = require('axios');
+const fetch = require('node-fetch');
 
 async function checkGoogleOAuthConfig() {
     console.log('🔍 Checking Google OAuth Configuration...\n');
@@ -86,4 +87,43 @@ async function checkGoogleOAuthConfig() {
     console.log('   4. Confirm callback URL is configured in Google Console');
 }
 
+async function checkUpdatedGoogleOAuth() {
+    console.log('🔍 Checking Updated Google OAuth Implementation...\n');
+
+    try {
+        // Test Google OAuth endpoint
+        console.log('1. Testing Google OAuth endpoint...');
+        const response = await fetch('http://localhost:3000/auth/google', {
+            method: 'GET',
+            redirect: 'manual'
+        });
+
+        if (response.status === 302) {
+            const location = response.headers.get('location');
+            console.log('✅ Google OAuth redirects to:', location);
+
+            if (location && location.includes('accounts.google.com')) {
+                console.log('✅ Correctly redirects to Google OAuth\n');
+            }
+        }
+
+        // Test health of auth endpoints
+        console.log('2. Testing auth endpoint health...');
+        const healthCheck = await fetch('http://localhost:3000/auth/profile', {
+            headers: { 'Authorization': 'Bearer test' }
+        });
+
+        console.log(`Auth endpoint status: ${healthCheck.status}`);
+
+        console.log('\n📋 Next: Test full OAuth flow in browser');
+        console.log('1. Go to http://localhost:3000/auth/google');
+        console.log('2. Complete Google login');
+        console.log('3. Check if it redirects to frontend with token');
+
+    } catch (error) {
+        console.error('❌ Error checking OAuth:', error.message);
+    }
+}
+
 checkGoogleOAuthConfig();
+checkUpdatedGoogleOAuth();
