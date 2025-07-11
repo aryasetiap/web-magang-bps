@@ -10,6 +10,7 @@ import { AttendancesModule } from './attendances/attendances.module';
 import { LogbooksModule } from './logbooks/logbooks.module';
 import { TasksModule } from './tasks/tasks.module';
 import { SubmissionsModule } from './submissions/submissions.module';
+import { FinalProjectsModule } from './final-projects/final-projects.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
     LogbooksModule,
     TasksModule,
     SubmissionsModule,
+    FinalProjectsModule, // Pastikan ini ada
   ],
   controllers: [AppController],
   providers: [AppService],
