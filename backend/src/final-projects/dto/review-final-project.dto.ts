@@ -1,25 +1,12 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsNumber,
-  IsString,
-  Min,
-  Max,
-} from 'class-validator';
+import { IsString, IsNumber, IsIn } from 'class-validator';
 
 export class ReviewFinalProjectDto {
-  @IsEnum(['accepted', 'revision'], {
-    message: 'Status harus berupa accepted atau revision',
-  })
-  status: 'accepted' | 'revision';
+  @IsIn(['reviewed', 'accepted', 'revision'])
+  status: 'reviewed' | 'accepted' | 'revision';
 
-  @IsOptional()
-  @IsNumber({}, { message: 'Grade harus berupa angka' })
-  @Min(0, { message: 'Grade minimal 0' })
-  @Max(100, { message: 'Grade maksimal 100' })
-  grade?: number;
+  @IsNumber()
+  grade: number;
 
-  @IsOptional()
   @IsString()
-  feedback?: string;
+  feedback: string;
 }

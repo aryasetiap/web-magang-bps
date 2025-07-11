@@ -9,6 +9,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import * as bcrypt from 'bcrypt';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UsersService {
@@ -61,7 +64,72 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
+        profilePhoto: true, // Tambahkan field ini
+        namaLengkap: true,
+        nimNisn: true,
+        asalInstitusi: true,
+        jurusanProdi: true,
+        nomorTelepon: true,
+        alamat: true,
         createdAt: true,
+        role: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+    }
+
+    return user;
+  }
+
+  // Method baru untuk update profile dengan foto
+  async updateProfile(
+    id: number,
+    updateProfileDto: UpdateProfileDto,
+    profilePhoto?: Express.Multer.File,
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { profilePhoto: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+    }
+
+    const updateData: any = { ...updateProfileDto };
+
+    // Jika ada file foto baru
+    if (profilePhoto) {
+      // Hapus foto lama jika ada dan file exists
+      if (user.profilePhoto) {
+        const oldPhotoPath = path.resolve(user.profilePhoto);
+        if (fs.existsSync(oldPhotoPath)) {
+          try {
+            fs.unlinkSync(oldPhotoPath);
+          } catch (error) {
+            console.error('Error deleting old profile photo:', error);
+          }
+        }
+      }
+
+      // Simpan path foto baru (relative path)
+      updateData.profilePhoto = profilePhoto.path.replace(/\\/g, '/');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        profilePhoto: true,
         namaLengkap: true,
         nimNisn: true,
         asalInstitusi: true,
@@ -76,11 +144,7 @@ export class UsersService {
       },
     });
 
-    if (!user) {
-      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
-    }
-
-    return user;
+    return updatedUser;
   }
 
   // 2. Modifikasi method findAll secara menyeluruh

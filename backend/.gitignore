@@ -1,5 +1,17 @@
-# PDF
+# PDF files (except template)
 *.pdf
+!uploads/certificate-templates/certificate-template.pdf
+!Dokumentasi API Aplikasi Magang BPS (v2.0).pdf
+
+# Uploads directory (except certificate templates)
+/uploads/*
+!/uploads/certificate-templates/
+!/uploads/certificate-templates/**
+
+# Upload files
+uploads/
+!uploads/.gitkeep
+!uploads/profile-photos/.gitkeep
 
 # compiled output
 /dist

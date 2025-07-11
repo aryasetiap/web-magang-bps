@@ -11,6 +11,8 @@ import { LogbooksModule } from './logbooks/logbooks.module';
 import { TasksModule } from './tasks/tasks.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { FinalProjectsModule } from './final-projects/final-projects.module';
+import { CertificatesModule } from './certificates/certificates.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -26,7 +28,11 @@ import { FinalProjectsModule } from './final-projects/final-projects.module';
     LogbooksModule,
     TasksModule,
     SubmissionsModule,
-    FinalProjectsModule, // Pastikan ini ada
+    FinalProjectsModule,
+    CertificatesModule, // Tambahkan ini
+    MulterModule.register({
+      dest: './uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

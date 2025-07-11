@@ -1,19 +1,20 @@
 // src/auth/jwt.strategy.ts
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private configService: ConfigService) {
     super({
       // Menentukan cara token diekstrak dari request
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       // Memastikan token tidak dihiraukan jika sudah kadaluwarsa
       ignoreExpiration: false,
       // Kunci rahasia untuk memverifikasi tanda tangan token
-      secretOrKey: 'INI_RAHASIA_SEKALI_JANGAN_DITIRU', // HARUS SAMA DENGAN DI auth.module.ts
+      secretOrKey: configService.get<string>('JWT_SECRET') || 'defaultSecret',
     });
   }
 
@@ -21,6 +22,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     // payload adalah hasil dekripsi dari token JWT
     // Apa pun yang di-return dari sini akan ditempelkan oleh Passport ke object Request sebagai `req.user`
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+    return {
+      userId: payload.sub || payload.userId,
+      email: payload.email,
+      role: payload.role,
+    };
   }
 }

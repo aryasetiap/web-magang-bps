@@ -41,48 +41,71 @@ enum StatusSubmission {
   revisi // Tambahkan status revisi
 }
 
+enum StatusCertificate {
+  generated // Baru di-generate record
+  signed // Sudah di-upload file PDF signed
+  issued // Sudah diterbitkan ke intern
+}
+
 // 4. Data Models: Defines the tables in your database.
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String // Stored as a hash, not plaintext
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at") // [PENAMBAHAN] Untuk soft delete
-
-  // Tambahan field untuk mahasiswa/siswa
-  namaLengkap   String? @map("nama_lengkap")
-  nimNisn       String? @map("nim_nisn")
-  asalInstitusi String? @map("asal_institusi")
-  jurusanProdi  String? @map("jurusan_prodi")
-  nomorTelepon  String? @map("nomor_telepon")
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  profilePhoto  String? // Field baru untuk foto profil
+  namaLengkap   String?
+  nimNisn       String?
+  asalInstitusi String?
+  jurusanProdi  String?
+  nomorTelepon  String?
   alamat        String?
+  roleId        Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
-  // --- Relations ---
-  // A user has one role
-  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
-  roleId Int  @map("role_id")
+  role Role @relation(fields: [roleId], references: [id])
 
-  // A user can be the verifier for many applications
-  verifiedApplications InternshipApplication[] @relation("VerifierApplications")
-
-  // A user can create many tasks
-  createdTasks Task[] @relation("CreatedTasks")
-
-  // A user can have one internship application
+  // Relations - BERSIHKAN DUPLIKASI
+  // User sebagai applicant (one-to-one)
   internshipApplication InternshipApplication? @relation("ApplicantApplication")
 
-  // A user has many attendances, logbooks, submissions, etc.
-  attendances           Attendance[]
-  logbooks              Logbook[]
-  submissions           Submission[]
-  uploadedDocs          Document[]
-  certificate           Certificate?
-  taskAssignments       TaskAssignment[]
-  finalProjects         FinalProject[]   @relation
-  reviewedFinalProjects FinalProject[]   @relation("FinalProjectReviewer")
+  // User sebagai verifier (one-to-many)
+  verifiedApplications InternshipApplication[] @relation("VerifierApplications")
+
+  // User attendance records
+  attendances Attendance[]
+
+  // User logbook entries
+  logbooks Logbook[]
+
+  // User created tasks (as staff/coordinator)
+  createdTasks Task[] @relation("CreatedTasks")
+
+  // User task assignments
+  taskAssignments TaskAssignment[]
+
+  // User submissions
+  submissions Submission[]
+
+  // User final projects (as student)
+  finalProjects FinalProject[]
+
+  // User reviewed final projects (as reviewer)
+  reviewedFinalProjects FinalProject[] @relation("FinalProjectReviewer")
+
+  // User uploaded documents
+  uploadedDocuments Document[]
+
+  // User certificate (one-to-one)
+  certificate Certificate?
+
+  // User generated certificates (as admin)
+  generatedCertificates Certificate[] @relation("CertificateGenerator")
+
+  @@map("users")
 }
 
 model Role {
@@ -101,7 +124,7 @@ model InternshipApplication {
   transcriptPath    String           @map("transcript_path")
   requestLetterPath String           @map("request_letter_path")
   verifiedAt        DateTime?        @map("verified_at")
-  feedback          String?          @db.Text // <-- TAMBAHKAN BARIS INI
+  feedback          String?          @db.Text
 
   // --- Relations ---
   // An application belongs to one user (the applicant)
@@ -116,12 +139,16 @@ model InternshipApplication {
 }
 
 model Attendance {
-  id        Int       @id @default(autoincrement())
-  clockIn   DateTime  @map("clock_in")
-  clockOut  DateTime? @map("clock_out")
-  ipAddress String    @map("ip_address")
-  latitude  Float? // <-- TAMBAHKAN BARIS INI
-  longitude Float? // <-- TAMBAHKAN BARIS INI
+  id                Int       @id @default(autoincrement())
+  clockIn           DateTime  @map("clock_in")
+  clockOut          DateTime? @map("clock_out")
+  ipAddress         String    @map("ip_address")
+  latitude          Float?
+  longitude         Float?
+  clockOutLatitude  Float?    @map("clock_out_latitude")
+  clockOutLongitude Float?    @map("clock_out_longitude")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   // --- Relations ---
   user   User @relation(fields: [userId], references: [id])
@@ -134,7 +161,7 @@ model Logbook {
   id      Int           @id @default(autoincrement())
   logDate DateTime      @map("log_date") @db.Date
   content String        @db.Text
-  status  StatusLogbook @default(draft) // [PERBAIKAN] Menambahkan status default
+  status  StatusLogbook @default(draft)
 
   // --- Relations ---
   user   User @relation(fields: [userId], references: [id])
@@ -181,7 +208,7 @@ model Submission {
   filePath String?          @map("file_path")
   grade    Float?
   feedback String?
-  status   StatusSubmission @default(not_submitted) // Tambahkan/ubah field status
+  status   StatusSubmission @default(not_submitted)
 
   // --- Relations ---
   task   Task @relation(fields: [taskId], references: [id])
@@ -196,21 +223,21 @@ model Submission {
 model FinalProject {
   id          Int                @id @default(autoincrement())
   title       String
-  description String?
+  description String?            @db.Text
   filePath    String?            @map("file_path")
   status      StatusFinalProject @default(draft)
   grade       Float?
-  feedback    String?
+  feedback    String?            @db.Text
   submittedAt DateTime?          @map("submitted_at")
   reviewedAt  DateTime?          @map("reviewed_at")
   createdAt   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime           @updatedAt @map("updated_at")
 
-  // Relations
-  user       User  @relation(fields: [userId], references: [id])
-  userId     Int   @map("user_id")
-  reviewedBy User? @relation("FinalProjectReviewer", fields: [reviewerId], references: [id])
-  reviewerId Int?  @map("reviewer_id")
+  // --- Relations ---
+  user         User  @relation(fields: [userId], references: [id])
+  userId       Int   @map("user_id")
+  reviewedBy   User? @relation("FinalProjectReviewer", fields: [reviewedById], references: [id])
+  reviewedById Int?  @map("reviewed_by_id")
 
   @@map("final_projects")
 }
@@ -228,13 +255,24 @@ model Document {
 }
 
 model Certificate {
-  id                Int      @id @default(autoincrement())
-  certificateNumber String   @unique @map("certificate_number")
-  generatedAt       DateTime @default(now()) @map("generated_at")
+  id                Int               @id @default(autoincrement())
+  certificateNumber String            @unique @map("certificate_number")
+  internName        String            @map("intern_name")
+  predicate         String?
+  status            StatusCertificate @default(generated)
+  templatePath      String?           @map("template_path")
+  signedFilePath    String?           @map("signed_file_path")
+  generatedAt       DateTime          @default(now()) @map("generated_at")
+  signedAt          DateTime?         @map("signed_at")
+  issuedAt          DateTime?         @map("issued_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
 
   // --- Relations ---
-  user   User @relation(fields: [userId], references: [id])
-  userId Int  @unique @map("user_id") // A user has only one certificate
+  user          User  @relation(fields: [userId], references: [id])
+  userId        Int   @unique @map("user_id")
+  generatedBy   User? @relation("CertificateGenerator", fields: [generatedById], references: [id])
+  generatedById Int?  @map("generated_by_id")
 
   @@map("certificates")
 }
