@@ -11,6 +11,7 @@ import { LogbooksModule } from './logbooks/logbooks.module';
 import { TasksModule } from './tasks/tasks.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { FinalProjectsModule } from './final-projects/final-projects.module';
+import { CertificatesModule } from './certificates/certificates.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { FinalProjectsModule } from './final-projects/final-projects.module';
     LogbooksModule,
     TasksModule,
     SubmissionsModule,
-    FinalProjectsModule, // Pastikan ini ada
+    FinalProjectsModule,
+    CertificatesModule, // Tambahkan ini
   ],
   controllers: [AppController],
   providers: [AppService],

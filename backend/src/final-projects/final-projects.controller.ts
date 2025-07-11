@@ -8,10 +8,10 @@ import {
   Delete,
   UseGuards,
   Request,
-  ParseIntPipe,
   Query,
   UseInterceptors,
   UploadedFile,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FinalProjectsService } from './final-projects.service';
@@ -21,11 +21,6 @@ import { ReviewFinalProjectDto } from './dto/review-final-project.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import {
-  finalProjectStorage,
-  finalProjectFileFilter,
-  finalProjectLimits,
-} from './multer-config';
 
 @Controller('final-projects')
 @UseGuards(AuthGuard('jwt'))
@@ -36,13 +31,7 @@ export class FinalProjectsController {
   @Post()
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: finalProjectStorage,
-      fileFilter: finalProjectFileFilter,
-      limits: finalProjectLimits,
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   create(
     @Request() req,
     @Body() createFinalProjectDto: CreateFinalProjectDto,
@@ -60,15 +49,15 @@ export class FinalProjectsController {
   @Get()
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  findByUser(@Request() req) {
+  findAllForUser(@Request() req) {
     const userId = req.user.userId;
-    return this.finalProjectsService.findByUser(userId);
+    return this.finalProjectsService.findAllForUser(userId);
   }
 
   // Get all final projects for admin (Admin/Staff)
   @Get('all')
-  @Roles('Admin', 'Staff BPS')
   @UseGuards(RolesGuard)
+  @Roles('Admin', 'Staff BPS') // Perbaiki nama role
   findAllForAdmin(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
@@ -83,35 +72,25 @@ export class FinalProjectsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
     const userId = req.user.userId;
-    const userRole = req.user.role?.name || req.user.role;
+    const userRole = req.user.role;
 
     // Admin can see all, intern can only see their own
-    if (
-      userRole.toLowerCase() === 'admin' ||
-      userRole.toLowerCase() === 'staff bps'
-    ) {
-      return this.finalProjectsService.findOne(id);
-    } else {
-      return this.finalProjectsService.findOne(id, userId);
-    }
+    return this.finalProjectsService.findOne(
+      id,
+      userRole === 'admin' ? undefined : userId,
+    );
   }
 
   // Update final project (Intern)
   @Patch(':id')
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: finalProjectStorage,
-      fileFilter: finalProjectFileFilter,
-      limits: finalProjectLimits,
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   update(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
     @Body() updateFinalProjectDto: UpdateFinalProjectDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     const userId = req.user.userId;
     return this.finalProjectsService.update(
@@ -124,19 +103,15 @@ export class FinalProjectsController {
 
   // Review final project (Admin/Staff)
   @Patch(':id/review')
-  @Roles('Admin', 'Staff BPS')
   @UseGuards(RolesGuard)
+  @Roles('Admin', 'Staff BPS') // Perbaiki nama role
   review(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
-    @Body() reviewFinalProjectDto: ReviewFinalProjectDto,
+    @Body() reviewDto: ReviewFinalProjectDto,
   ) {
     const reviewerId = req.user.userId;
-    return this.finalProjectsService.review(
-      id,
-      reviewerId,
-      reviewFinalProjectDto,
-    );
+    return this.finalProjectsService.review(id, reviewerId, reviewDto);
   }
 
   // Delete final project (Intern)

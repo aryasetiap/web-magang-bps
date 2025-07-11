@@ -1,8 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreateFinalProjectDto {
   @IsString()
-  @IsNotEmpty()
   title: string;
 
   @IsOptional()
