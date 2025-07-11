@@ -87,4 +87,24 @@ export class LogbooksService {
       where: { id: id },
     });
   }
+
+  // Menemukan semua logbook untuk admin dengan paginasi
+  async findAllForAdmin(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.logbook.findMany({
+        skip,
+        take: limit,
+        orderBy: { id: 'desc' }, // Ganti dengan field tanggal jika ada, misal createdAt
+        include: { user: true },
+      }),
+      this.prisma.logbook.count(),
+    ]);
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
 }

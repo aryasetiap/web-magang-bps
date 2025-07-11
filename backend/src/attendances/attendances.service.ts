@@ -135,6 +135,25 @@ export class AttendancesService {
     });
   }
 
+  async findAllForAdmin(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.prisma.attendance.findMany({
+        skip,
+        take: limit,
+        orderBy: { clockIn: 'desc' },
+        include: { user: true },
+      }),
+      this.prisma.attendance.count(),
+    ]);
+    return {
+      data,
+      total,
+      page,
+      lastPage: Math.ceil(total / limit),
+    };
+  }
+
   // Kita tambahkan kembali method lain sebagai placeholder agar controller tidak error
   findAll(userId: number) {
     return `This action returns all attendances for user #${userId}`;

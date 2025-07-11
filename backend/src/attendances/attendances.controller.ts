@@ -1,17 +1,20 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Param,
+  Query,
   UseGuards,
   Request,
+  Body,
   Ip,
-  Patch, // <-- pastikan Patch diimpor
+  Post,
+  Patch,
+  Param,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { ClockInDto } from './dto/clock-in.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('attendances')
 @UseGuards(AuthGuard('jwt'))
@@ -39,11 +42,20 @@ export class AttendancesController {
     return this.attendancesService.findAll(userId);
   }
 
-  // Endpoint untuk melihat detail satu presensi
+  // PASTIKAN INI DULU
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async getAllAttendances(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.attendancesService.findAllForAdmin(Number(page), Number(limit));
+  }
+
+  // BARU INI
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.attendancesService.findOne(+id);
   }
-
-  // Kita hapus method create, update, remove yang lama karena tidak digunakan
 }

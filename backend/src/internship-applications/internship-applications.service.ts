@@ -131,15 +131,18 @@ export class InternshipApplicationsService {
     };
   }
 
+  // Modifikasi method updateStatus
   async updateStatus(
     id: number,
     adminId: number,
     updateApplicationStatusDto: UpdateApplicationStatusDto,
   ) {
+    // Kita akan update status, dan juga mencatat siapa & kapan verifikasi dilakukan
     return this.prisma.internshipApplication.update({
       where: { id: id },
       data: {
         status: updateApplicationStatusDto.status,
+        feedback: updateApplicationStatusDto.feedback, // <-- TAMBAHKAN BARIS INI
         verifiedBy: adminId,
         verifiedAt: new Date(),
       },
