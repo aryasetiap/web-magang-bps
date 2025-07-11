@@ -74,7 +74,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
-    alert(`Profil diperbarui! Nama: ${currentUserName}`);
+    // alert(`Profil diperbarui! Nama: ${currentUserName}`);
     closeProfileModal();
     setAlert({
       isOpen: true,
@@ -104,7 +104,6 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
       return;
     }
 
-    alert("Password berhasil diubah!");
     closeProfileModal();
     setAlert({
       isOpen: true,
