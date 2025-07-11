@@ -5,7 +5,7 @@ import {
   Get,
   Patch,
   UseGuards,
-  Req, // Tambahkan Req di sini
+  Req,
   Request,
   UseInterceptors,
   UploadedFile,
@@ -13,6 +13,7 @@ import {
   Headers,
   Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -30,7 +31,6 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -144,7 +144,7 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Request() req) {
+  async googleAuth(@Req() req) {
     // Initiates Google OAuth flow
   }
 
@@ -152,27 +152,21 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req, @Res() res: Response) {
     try {
-      // Process Google login
-      const result = await this.authService.googleLogin(req);
+      const { user, access_token } = await this.authService.googleLogin(
+        req.user,
+      );
 
-      // Get frontend URL from environment
+      // HARUS redirect ke frontend, bukan return JSON
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-      const callbackUrl = `${frontendUrl}/auth/callback`;
+      const encodedUser = encodeURIComponent(JSON.stringify(user));
 
-      // Encode user data untuk URL
-      const encodedUser = encodeURIComponent(JSON.stringify(result.user));
-
-      // Redirect dengan token dan user sebagai query params
       res.redirect(
-        `${callbackUrl}?token=${result.access_token}&user=${encodedUser}`,
+        `${frontendUrl}/auth/callback?token=${access_token}&user=${encodedUser}`,
       );
     } catch (error) {
-      // Handle error - redirect to frontend error page
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       res.redirect(
-        `${frontendUrl}/auth/error?message=${encodeURIComponent(
-          'Authentication failed',
-        )}`,
+        `${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`,
       );
     }
   }

@@ -92,18 +92,20 @@ export class AuthService {
     };
   }
 
-  async googleLogin(req) {
-    if (!req.user) {
+  async googleLogin(googleUser: any) {
+    if (!googleUser) {
       throw new UnauthorizedException('No user from google');
     }
 
-    const user = await this.validateGoogleUser(req.user);
+    const user = await this.validateGoogleUser(googleUser);
 
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role.name,
     };
+
+    const access_token = this.jwtService.sign(payload);
 
     return {
       user: {
@@ -114,7 +116,7 @@ export class AuthService {
           name: user.role.name,
         },
       },
-      access_token: this.jwtService.sign(payload),
+      access_token,
     };
   }
 
