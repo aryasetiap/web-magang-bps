@@ -1,8 +1,8 @@
 // src/auth/google.strategy.ts (Versi Final yang Benar)
 
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
-import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -10,22 +10,22 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private configService: ConfigService) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL');
 
-    if (!clientID || !clientSecret) {
+    if (!clientID || !clientSecret || !callbackURL) {
       throw new Error(
-        'GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET tidak ditemukan di file .env',
+        'Google OAuth credentials are not properly configured in environment variables',
       );
     }
 
     super({
       clientID,
       clientSecret,
-      callbackURL: 'http://localhost:3000/auth/google/callback', // Ini URL yang benar
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }
 
-  // Method validate ini TIDAK perlu passReqToCallback, kita sederhanakan
   async validate(
     accessToken: string,
     refreshToken: string,
@@ -33,9 +33,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ): Promise<any> {
     const { name, emails, photos } = profile;
-
-    // Kita hanya mem-packing data yang dibutuhkan oleh AuthService
-    const userPayload = {
+    const user = {
       email: emails[0].value,
       firstName: name.givenName,
       lastName: name.familyName,
@@ -43,7 +41,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       accessToken,
     };
 
-    // 'done' akan menempelkan 'userPayload' ini ke req.user
-    done(null, userPayload);
+    done(null, user);
   }
 }

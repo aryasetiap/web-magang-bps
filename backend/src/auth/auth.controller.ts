@@ -142,15 +142,13 @@ export class AuthController {
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleAuth(@Request() req) {
-    // Guard akan me-redirect, method ini tidak akan berjalan.
+    // Initiates Google OAuth flow
   }
 
-  // HANYA SATU ENDPOINT CALLBACK INI YANG DIPERLUKAN
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  googleAuthCallback(@Request() req) {
-    // req.user diisi oleh GoogleStrategy.validate
-    // Kita panggil service yang sudah kita buat untuk menangani logika ini.
-    return this.authService.googleLogin(req.user);
+  async googleAuthRedirect(@Request() req) {
+    // Handle Google OAuth callback
+    return this.authService.googleLogin(req);
   }
 }
