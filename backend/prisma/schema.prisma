@@ -125,6 +125,8 @@ model InternshipApplication {
   requestLetterPath String           @map("request_letter_path")
   verifiedAt        DateTime?        @map("verified_at")
   feedback          String?          @db.Text
+  startDate         DateTime? // Tanggal mulai magang
+  endDate           DateTime? // Tanggal selesai magang
 
   // --- Relations ---
   // An application belongs to one user (the applicant)
