@@ -36,7 +36,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
   // Sinkronkan nama & foto dari context setiap kali profile berubah
   React.useEffect(() => {
-    setCurrentUserName(profile?.namaLengkap || profile?.name || "Pengguna");
+    setCurrentUserName(profile?.namaLengkap || profile?.namaLengkap || "Pengguna");
     setProfilePhoto(
       profile?.profilePhoto
         ? `http://localhost:3000/${profile.profilePhoto.replace(/\\/g, "/")}`
@@ -65,7 +65,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
     try {
       const formData = new FormData();
-      formData.append("name", currentUserName);
+      formData.append("namaLengkap", currentUserName);
       if (profilePhoto && profilePhoto.startsWith("data:")) {
         // Convert base64 to file
         const arr = profilePhoto.split(",");
