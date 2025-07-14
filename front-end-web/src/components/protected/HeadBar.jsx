@@ -36,7 +36,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
   // Sinkronkan nama & foto dari context setiap kali profile berubah
   React.useEffect(() => {
-    setCurrentUserName(profile?.namaLengkap || profile?.namaLengkap || "Pengguna");
+    setCurrentUserName(profile?.namaLengkap || profile?.name || "Pengguna");
     setProfilePhoto(
       profile?.profilePhoto
         ? `http://localhost:3000/${profile.profilePhoto.replace(/\\/g, "/")}`

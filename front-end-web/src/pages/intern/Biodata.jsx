@@ -39,7 +39,7 @@ function BiodataPage() {
   useEffect(() => {
     if (profile) {
       setFormData({
-        namaLengkap: profile.namaLengkap || profile.name || "",
+        namaLengkap: profile.namaLengkap || "",
         nimNisn: profile.nimNisn || "",
         asalInstitusi: profile.asalInstitusi || "",
         jurusanProdi: profile.jurusanProdi || "",
@@ -69,8 +69,31 @@ function BiodataPage() {
     const file = selectedFiles[0];
     if (!file) return;
 
+    // Validasi file: hanya PDF, max 2MB
+    if (file.type !== "application/pdf") {
+      setAlert({
+        isOpen: true,
+        title: "Format Salah",
+        message: "Hanya file PDF yang diperbolehkan.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAlert({
+        isOpen: true,
+        title: "Ukuran File Terlalu Besar",
+        message: "Ukuran file maksimal 2MB.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
+      return;
+    }
+
     setFiles((prev) => ({ ...prev, [name]: file }));
 
+    // Simpan base64 ke localStorage (opsional, hanya untuk preview, tidak dikirim ke backend)
     try {
       const base64 = await convertFileToBase64(file);
       localStorage.setItem(`${name}FileBase64`, base64);
@@ -94,30 +117,41 @@ function BiodataPage() {
     }
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("namaLengkap", formData.namaLengkap);
-      formDataToSend.append("nimNisn", formData.nimNisn);
-      formDataToSend.append("asalInstitusi", formData.asalInstitusi);
-      formDataToSend.append("jurusanProdi", formData.jurusanProdi);
-      formDataToSend.append("nomorTelepon", formData.nomorTelepon);
-      formDataToSend.append("alamat", formData.alamat);
-
-      if (files.cv) formDataToSend.append("cv", files.cv);
-      if (files.transkripNilai)
-        formDataToSend.append("transkripNilai", files.transkripNilai);
-      if (files.suratPermohonan)
-        formDataToSend.append("suratPermohonan", files.suratPermohonan);
-
-      const res = await fetch("http://localhost:3000/auth/profile", {
+      // 1. Update biodata ke /auth/profile (tanpa file cv, transkrip, surat)
+      const biodataRes = await fetch("http://localhost:3000/auth/profile", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          namaLengkap: formData.namaLengkap,
+          nimNisn: formData.nimNisn,
+          asalInstitusi: formData.asalInstitusi,
+          jurusanProdi: formData.jurusanProdi,
+          nomorTelepon: formData.nomorTelepon,
+          alamat: formData.alamat,
+        }),
+      });
+      const biodataData = await biodataRes.json();
+      if (!biodataRes.ok) throw new Error(biodataData.message || "Gagal update biodata.");
+
+      // 2. Upload berkas magang ke /internship-applications
+      const formDataToSend = new FormData();
+      if (files.cv) formDataToSend.append("cv", files.cv);
+      if (files.transkripNilai) formDataToSend.append("transcript", files.transkripNilai); // field harus transcript
+      if (files.suratPermohonan) formDataToSend.append("requestLetter", files.suratPermohonan); // field harus requestLetter
+
+      const berkasRes = await fetch("http://localhost:3000/internship-applications", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Jangan set Content-Type!
         },
         body: formDataToSend,
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Gagal update biodata.");
+      const berkasData = await berkasRes.json();
+      if (!berkasRes.ok) throw new Error(berkasData.message || "Gagal upload berkas magang.");
 
       setAlert({
         isOpen: true,
@@ -127,7 +161,6 @@ function BiodataPage() {
         autoCloseDelay: 3000,
       });
 
-      // Fetch ulang profil global agar HeadBar ikut update
       setTimeout(() => {
         fetchProfile();
       }, 1000);
