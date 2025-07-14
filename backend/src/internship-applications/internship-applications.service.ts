@@ -25,6 +25,18 @@ export class InternshipApplicationsService {
   ) {
     this.validateFiles(files);
 
+    // Validasi periode magang jika ada
+    if (
+      createInternshipApplicationDto.startDate &&
+      createInternshipApplicationDto.endDate
+    ) {
+      this.validateInternshipPeriod(
+        createInternshipApplicationDto.startDate,
+        createInternshipApplicationDto.endDate,
+        false, // false = tidak untuk admin
+      );
+    }
+
     const existingApplication =
       await this.prisma.internshipApplication.findUnique({
         where: { userId: userId },
@@ -49,12 +61,17 @@ export class InternshipApplicationsService {
         cvPath: cvPath,
         transcriptPath: transcriptPath,
         requestLetterPath: requestLetterPath,
+        startDate: createInternshipApplicationDto.startDate
+          ? new Date(createInternshipApplicationDto.startDate)
+          : null,
+        endDate: createInternshipApplicationDto.endDate
+          ? new Date(createInternshipApplicationDto.endDate)
+          : null,
       },
     });
   }
 
   async findAll(paginationQuery: PaginationQueryDto) {
-    // [PERBAIKAN] Sediakan nilai default saat destructuring untuk meyakinkan TypeScript
     const { page = 1, limit = 10 } = paginationQuery;
     const skip = (page - 1) * limit;
 
@@ -131,21 +148,41 @@ export class InternshipApplicationsService {
     };
   }
 
-  // Modifikasi method updateStatus
   async updateStatus(
     id: number,
     adminId: number,
     updateApplicationStatusDto: UpdateApplicationStatusDto,
   ) {
-    // Kita akan update status, dan juga mencatat siapa & kapan verifikasi dilakukan
+    // Validasi periode magang jika admin set periode
+    if (
+      updateApplicationStatusDto.startDate &&
+      updateApplicationStatusDto.endDate
+    ) {
+      this.validateInternshipPeriod(
+        updateApplicationStatusDto.startDate,
+        updateApplicationStatusDto.endDate,
+        true, // true = untuk admin
+      );
+    }
+
+    const updateData: any = {
+      status: updateApplicationStatusDto.status,
+      feedback: updateApplicationStatusDto.feedback,
+      verifiedBy: adminId,
+      verifiedAt: new Date(),
+    };
+
+    // Tambah periode magang jika ada
+    if (updateApplicationStatusDto.startDate) {
+      updateData.startDate = new Date(updateApplicationStatusDto.startDate);
+    }
+    if (updateApplicationStatusDto.endDate) {
+      updateData.endDate = new Date(updateApplicationStatusDto.endDate);
+    }
+
     return this.prisma.internshipApplication.update({
       where: { id: id },
-      data: {
-        status: updateApplicationStatusDto.status,
-        feedback: updateApplicationStatusDto.feedback, // <-- TAMBAHKAN BARIS INI
-        verifiedBy: adminId,
-        verifiedAt: new Date(),
-      },
+      data: updateData,
     });
   }
 
@@ -185,6 +222,45 @@ export class InternshipApplicationsService {
           `Ukuran file terlalu besar: ${file.originalname}. Ukuran maksimum adalah 2 MB.`,
         );
       }
+    }
+  }
+
+  // Method baru untuk validasi periode magang
+  private validateInternshipPeriod(
+    startDate: string,
+    endDate: string,
+    isAdmin: boolean,
+  ) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const now = new Date();
+
+    // Validasi startDate < endDate
+    if (start >= end) {
+      throw new BadRequestException(
+        'Tanggal mulai magang harus sebelum tanggal selesai magang.',
+      );
+    }
+
+    // Validasi minimal 1 bulan
+    const oneMonthLater = new Date(start);
+    oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+    if (end < oneMonthLater) {
+      throw new BadRequestException('Durasi magang minimal 1 bulan.');
+    }
+
+    // Validasi maksimal 6 bulan
+    const sixMonthsLater = new Date(start);
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+    if (end > sixMonthsLater) {
+      throw new BadRequestException('Durasi magang maksimal 6 bulan.');
+    }
+
+    // Validasi startDate tidak di masa lalu (kecuali admin)
+    if (!isAdmin && start < now) {
+      throw new BadRequestException(
+        'Tanggal mulai magang tidak boleh di masa lalu.',
+      );
     }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate } from 'react-router-dom';
 import BrandLogo from '../components/BrandLogo';
 import kantorBPS from '../assets/kantor-bps-3.jpg';
 import AlertDialog from '../components/AlertDialog';
@@ -9,22 +9,24 @@ function Registration() {
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
   // inisialisasikan alert
-  
+
   const [alert, setAlert] = useState({
-      isOpen: false,
-      title: '',
-      message: '',
-      type: '',
-      autoCloseDelay: 0,
-      onConfirm: null,
-      showCancelButton: false,
-    });
-  
-    const closeAlert = () => {
-      setAlert(prev => ({ ...prev, isOpen: false }));
-    };
+    isOpen: false,
+    title: '',
+    message: '',
+    type: '',
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+
+  const closeAlert = () => {
+    setAlert(prev => ({ ...prev, isOpen: false }));
+  };
 
 
   const handleEmailRegistration = async (e) => {
@@ -39,7 +41,7 @@ function Registration() {
         type: 'warning',
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
-        showCancelButton: false,  
+        showCancelButton: false,
       });
 
       // alert('Mohon lengkapi semua bidang.');
@@ -55,7 +57,7 @@ function Registration() {
         type: 'error',
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
-        showCancelButton: false,  
+        showCancelButton: false,
       });
 
       // alert('Konfirmasi password tidak cocok.');
@@ -72,21 +74,23 @@ function Registration() {
       const data = await res.json();
 
       if (res.ok) {
-        // Tampilkan alert sukses
         setAlert({
           isOpen: true,
           title: 'Berhasil',
           message: 'Registrasi berhasil! Silakan login.',
           type: 'success',
-          onConfirm: () => {  
+          autoCloseDelay: 1500,
+          onConfirm: () => {
             closeAlert();
-            navigate('/login'); 
+            navigate('/login');
           },
           showCancelButton: false,
-          autoCloseDelay: 0,
         });
-        // alert('Registrasi berhasil! Silakan login.');
-        // navigate('/login');
+        setTimeout(() => {
+          closeAlert();
+          navigate('/login');
+        }, 1500);
+        return;
       } else {
         // Tampilkan alert gagal
         setAlert({
@@ -120,8 +124,30 @@ function Registration() {
     window.location.href = 'http://localhost:3000/auth/google';
   };
 
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Registrasi berhasil! Silakan login.");
+        navigate("/login");
+      } else {
+        setError(data.message || "Registrasi gagal");
+      }
+    } catch (err) {
+      setError("Terjadi kesalahan jaringan");
+    }
+    setLoading(false);
+  };
+
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center bg-gray-100 p-4"
       style={{
         backgroundImage: `url(${kantorBPS})`,
@@ -132,7 +158,7 @@ function Registration() {
     >
       <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
       <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative">
-        
+
         {/* Tombol Kembali */}
         <a href="/" className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200">
           <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -223,8 +249,7 @@ function Registration() {
               src="https://developers.google.com/identity/images/g-logo.png"
               alt="Google Logo"
               className="w-5 h-5 mr-2"
-            />
-            Daftar dengan Google
+            /> Daftar dengan Google
           </button>
         </div>
 
@@ -236,17 +261,17 @@ function Registration() {
         </p>
       </div>
       <AlertDialog
-      isOpen={alert.isOpen}
-      title={alert.title}
-      message={alert.message}
-      type={alert.type}
-      autoCloseDelay={alert.autoCloseDelay}
-      onConfirm={alert.onConfirm}
-      showCancelButton={alert.showCancelButton}
-      onClose={closeAlert}
-    />
+        isOpen={alert.isOpen}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+        onClose={closeAlert}
+      />
     </div>
-    
+
   );
 }
 

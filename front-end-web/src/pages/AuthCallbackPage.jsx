@@ -19,123 +19,73 @@ const AuthCallbackPage = ({ setUserRole }) => {
 
     useEffect(() => {
         const handleOAuthCallback = async () => {
-            try {
-                console.log('Processing OAuth callback...');
-                console.log('Search params:', Array.from(searchParams.entries()));
+            const token = searchParams.get('token');
+            const userString = searchParams.get('user');
+            const error = searchParams.get('error');
 
-                // Ambil parameter dari URL
-                const token = searchParams.get('token');
-                const userString = searchParams.get('user');
-                const error = searchParams.get('error');
+            if (error) {
+                setAlert({
+                    isOpen: true,
+                    title: 'Login Google Gagal!',
+                    message: `Terjadi kesalahan: ${error}`,
+                    type: 'error',
+                });
+                setTimeout(() => {
+                    closeAlert();
+                    navigate('/login');
+                }, 3000);
+                return;
+            }
 
-                if (error) {
-                    console.error('OAuth Error:', error);
+            if (token && userString) {
+                try {
+                    const userData = JSON.parse(decodeURIComponent(userString));
+                    localStorage.setItem('authToken', token);
+                    localStorage.setItem('userRole', userData.role?.name || 'Mahasiswa');
+                    if (setUserRole) setUserRole(userData.role?.name || 'Mahasiswa');
                     setAlert({
                         isOpen: true,
-                        title: 'Login Google Gagal!',
-                        message: `Terjadi kesalahan: ${error}`,
-                        type: 'error',
+                        title: 'Login Google Berhasil!',
+                        message: `Selamat datang, ${userData.name}! Anda akan diarahkan ke dashboard.`,
+                        type: 'success',
+                        autoCloseDelay: 1500,
                     });
-
                     setTimeout(() => {
                         closeAlert();
-                        navigate('/login');
-                    }, 3000);
-                    return;
-                }
-
-                if (token && userString) {
-                    try {
-                        // Decode user data dari URL parameter
-                        const userData = JSON.parse(decodeURIComponent(userString));
-
-                        console.log('Received user data:', userData);
-
-                        // Simpan ke localStorage (sesuai dengan pola LoginPage)
-                        localStorage.setItem('authToken', token);
-                        localStorage.setItem('userRole', userData.role?.name || 'Mahasiswa');
-
-                        // Update parent state
-                        if (setUserRole) {
-                            setUserRole(userData.role?.name || 'Mahasiswa');
-                        }
-
-                        console.log('Google OAuth berhasil:', userData);
-
-                        // Tampilkan alert sukses
-                        setAlert({
-                            isOpen: true,
-                            title: 'Login Google Berhasil!',
-                            message: `Selamat datang, ${userData.name}! Anda akan diarahkan ke dashboard.`,
-                            type: 'success',
-                            autoCloseDelay: 1500,
-                        });
-
-                        // Redirect berdasarkan role (sesuai dengan pola LoginPage)
-                        setTimeout(() => {
-                            closeAlert();
-                            const role = userData.role?.name;
-                            console.log('Redirecting user with role:', role);
-
-                            navigate(
-                                role === 'Admin'
-                                    ? '/admin'
-                                    : role === 'Staff'
-                                        ? '/staff'
-                                        : '/dashboard'
-                            );
-                        }, 1500);
-                    } catch (parseError) {
-                        console.error('Error parsing user data:', parseError);
-                        setAlert({
-                            isOpen: true,
-                            title: 'Login Gagal!',
-                            message: 'Data user tidak valid',
-                            type: 'error',
-                        });
-
-                        setTimeout(() => {
-                            closeAlert();
-                            navigate('/login');
-                        }, 3000);
-                    }
-                } else {
-                    console.error('Token atau user data tidak ditemukan dalam URL');
-                    console.log('Available params:', {
-                        token: searchParams.get('token'),
-                        user: searchParams.get('user'),
-                        error: searchParams.get('error'),
-                        all: Array.from(searchParams.entries())
-                    });
-
+                        const role = userData.role?.name;
+                        navigate(
+                            role === 'Admin'
+                                ? '/admin'
+                                : role === 'Staff'
+                                    ? '/staff'
+                                    : '/dashboard'
+                        );
+                    }, 1500);
+                } catch {
                     setAlert({
                         isOpen: true,
                         title: 'Login Gagal!',
-                        message: 'Data login tidak lengkap dari Google',
+                        message: 'Data user tidak valid',
                         type: 'error',
                     });
-
                     setTimeout(() => {
                         closeAlert();
                         navigate('/login');
                     }, 3000);
                 }
-            } catch (error) {
-                console.error('Error processing OAuth callback:', error);
+            } else {
                 setAlert({
                     isOpen: true,
                     title: 'Login Gagal!',
-                    message: 'Terjadi kesalahan saat memproses login',
+                    message: 'Data login tidak lengkap dari Google',
                     type: 'error',
                 });
-
                 setTimeout(() => {
                     closeAlert();
                     navigate('/login');
                 }, 3000);
             }
         };
-
         handleOAuthCallback();
     }, [searchParams, navigate, setUserRole]);
 

@@ -1,7 +1,13 @@
 // src/internship-applications/dto/update-application-status.dto.ts
 
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { StatusInternship } from '@prisma/client'; // Impor Enum dari Prisma Client
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsDateString,
+  ValidateIf,
+} from 'class-validator';
+import { StatusInternship } from '@prisma/client';
 
 export class UpdateApplicationStatusDto {
   @IsEnum(StatusInternship, {
@@ -9,8 +15,16 @@ export class UpdateApplicationStatusDto {
   })
   status: StatusInternship;
 
-  // [PENAMBAHAN] Tambahkan field feedback yang opsional
   @IsOptional()
   @IsString({ message: 'Feedback harus berupa teks.' })
   feedback?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'Format tanggal mulai magang tidak valid' })
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString({}, { message: 'Format tanggal selesai magang tidak valid' })
+  @ValidateIf((o) => o.startDate !== undefined)
+  endDate?: string;
 }

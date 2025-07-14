@@ -44,7 +44,9 @@ import ServerErrorPage from "./pages/error/ServerError";
 
 function App() {
   // State global untuk menyimpan role pengguna.
-  const [userRole, setUserRole] = useState(localStorage.getItem("userRole"));
+  const [userRole, setUserRole] = useState(
+    localStorage.getItem("userRole") || ""
+  );
 
   // Fungsi untuk memperbarui role pengguna secara global (dipanggil dari LoginPage)
   const updateGlobalUserRole = (role) => {
@@ -81,7 +83,6 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute allowedRoles={["Mahasiswa", "Intern"]}>
-                {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
                 <DashboardLayout userRole={userRole} />
               </ProtectedRoute>
             }

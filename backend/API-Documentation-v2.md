@@ -224,7 +224,7 @@
 
 #### POST `/internship-applications`
 
-**Deskripsi:** Submit pendaftaran magang dengan berkas
+**Deskripsi:** Submit pendaftaran magang dengan berkas dan periode magang (opsional)
 
 **Headers:**
 
@@ -236,104 +236,99 @@
 - `cv` (file: PDF, max 2MB)
 - `transcript` (file: PDF, max 2MB)
 - `requestLetter` (file: PDF, max 2MB)
+- `startDate` (string, optional): Tanggal mulai magang (format: YYYY-MM-DD)
+- `endDate` (string, optional): Tanggal selesai magang (format: YYYY-MM-DD)
 
 **Response Success (201):**
 
 ```json
 {
-  "message": "Pendaftaran magang berhasil diajukan",
-  "application": {
-    "id": 1,
-    "status": "pending",
-    "cvPath": "/uploads/cv_file.pdf",
-    "transcriptPath": "/uploads/transcript_file.pdf",
-    "requestLetterPath": "/uploads/request_letter.pdf",
-    "userId": 1
-  }
+  "id": 1,
+  "status": "pending",
+  "cvPath": "/uploads/cv_file.pdf",
+  "transcriptPath": "/uploads/transcript_file.pdf",
+  "requestLetterPath": "/uploads/request_letter.pdf",
+  "startDate": "2025-02-01T00:00:00.000Z",
+  "endDate": "2025-04-30T00:00:00.000Z",
+  "userId": 1,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-15T10:30:00Z"
 }
 ```
+
+**Response Success (tanpa periode):**
+
+```json
+{
+  "id": 2,
+  "status": "pending",
+  "cvPath": "/uploads/cv_file.pdf",
+  "transcriptPath": "/uploads/transcript_file.pdf",
+  "requestLetterPath": "/uploads/request_letter.pdf",
+  "startDate": null,
+  "endDate": null,
+  "userId": 2,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-15T10:30:00Z"
+}
+```
+
+**Response Error (400) - Validasi Periode:**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Tanggal mulai magang harus sebelum tanggal selesai magang.",
+  "error": "Bad Request"
+}
+```
+
+**Response Error (400) - Durasi Terlalu Pendek:**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Durasi magang minimal 1 bulan.",
+  "error": "Bad Request"
+}
+```
+
+**Response Error (400) - Durasi Terlalu Panjang:**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Durasi magang maksimal 6 bulan.",
+  "error": "Bad Request"
+}
+```
+
+**Response Error (400) - Tanggal Masa Lalu:**
+
+```json
+{
+  "statusCode": 400,
+  "message": "Tanggal mulai magang tidak boleh di masa lalu.",
+  "error": "Bad Request"
+}
+```
+
+**Business Rules Periode Magang:**
+
+- Kedua field `startDate` dan `endDate` bersifat opsional
+- Jika diisi, `startDate` harus sebelum `endDate`
+- Durasi minimal: 1 bulan
+- Durasi maksimal: 6 bulan
+- `startDate` tidak boleh di masa lalu (untuk mahasiswa)
+- Format tanggal: ISO 8601 (YYYY-MM-DD)
 
 ---
 
 ### 1.4 Endpoint Admin
 
-#### GET `/users`
-
-**Deskripsi:** Mendapatkan daftar semua user (Admin only)
-
-**Headers:** `Authorization: Bearer {jwt_token}`
-
-**Query Parameters:**
-
-- `page` (optional): Halaman (default: 1)
-- `limit` (optional): Items per halaman (default: 10)
-
-**Response Success (200):**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "John Doe",
-      "email": "john@example.com",
-      "namaLengkap": "John Doe",
-      "asalInstitusi": "Universitas ABC",
-      "role": {
-        "name": "Mahasiswa"
-      }
-    }
-  ],
-  "meta": {
-    "totalItems": 50,
-    "itemCount": 10,
-    "itemsPerPage": 10,
-    "currentPage": 1,
-    "totalPages": 5
-  }
-}
-```
-
----
-
-#### POST `/users`
-
-**Deskripsi:** Membuat user baru dengan role spesifik (Admin only)
-
-**Headers:** `Authorization: Bearer {jwt_token}`
-
-**Request Body:**
-
-```json
-{
-  "name": "Jane Staff",
-  "email": "jane@bps.go.id",
-  "password": "password123",
-  "roleName": "admin"
-}
-```
-
-**Response Success (201):**
-
-```json
-{
-  "message": "User berhasil dibuat",
-  "user": {
-    "id": 2,
-    "name": "Jane Staff",
-    "email": "jane@bps.go.id",
-    "role": {
-      "name": "admin"
-    }
-  }
-}
-```
-
----
-
 #### GET `/internship-applications`
 
-**Deskripsi:** Mendapatkan semua pendaftaran magang (Admin only)
+**Deskripsi:** Mendapatkan semua pendaftaran magang dengan periode magang (Admin only)
 
 **Headers:** `Authorization: Bearer {jwt_token}`
 
@@ -353,13 +348,30 @@
       "cvPath": "/uploads/cv_file.pdf",
       "transcriptPath": "/uploads/transcript_file.pdf",
       "requestLetterPath": "/uploads/request_letter.pdf",
+      "startDate": "2025-02-01T00:00:00.000Z",
+      "endDate": "2025-04-30T00:00:00.000Z",
       "verifiedAt": null,
       "feedback": null,
+      "createdAt": "2025-01-15T10:30:00Z",
       "applicant": {
         "name": "John Doe",
         "email": "john@example.com",
         "namaLengkap": "John Doe",
         "asalInstitusi": "Universitas ABC"
+      }
+    },
+    {
+      "id": 2,
+      "status": "accepted",
+      "startDate": null,
+      "endDate": null,
+      "verifiedAt": "2025-01-14T08:00:00Z",
+      "feedback": "Diterima tanpa periode spesifik",
+      "applicant": {
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "namaLengkap": "Jane Smith",
+        "asalInstitusi": "Institut XYZ"
       }
     }
   ],
@@ -375,9 +387,47 @@
 
 ---
 
+#### GET `/internship-applications/:id`
+
+**Deskripsi:** Mendapatkan detail pendaftaran magang berdasarkan ID dengan periode magang
+
+**Headers:** `Authorization: Bearer {jwt_token}`
+
+**Response Success (200):**
+
+```json
+{
+  "id": 1,
+  "status": "pending",
+  "cvPath": "/uploads/cv_file.pdf",
+  "transcriptPath": "/uploads/transcript_file.pdf",
+  "requestLetterPath": "/uploads/request_letter.pdf",
+  "cvUrl": "http://localhost:3000/uploads/cv_file.pdf",
+  "transcriptUrl": "http://localhost:3000/uploads/transcript_file.pdf",
+  "requestLetterUrl": "http://localhost:3000/uploads/request_letter.pdf",
+  "startDate": "2025-02-01T00:00:00.000Z",
+  "endDate": "2025-04-30T00:00:00.000Z",
+  "verifiedAt": null,
+  "feedback": null,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "applicant": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "namaLengkap": "John Doe",
+    "nimNisn": "123456789",
+    "asalInstitusi": "Universitas ABC",
+    "jurusanProdi": "Teknik Informatika",
+    "nomorTelepon": "081234567890",
+    "alamat": "Jl. Contoh No. 123"
+  }
+}
+```
+
+---
+
 #### PATCH `/internship-applications/:id/status`
 
-**Deskripsi:** Update status pendaftaran magang (Admin only)
+**Deskripsi:** Update status pendaftaran magang dengan opsi set periode (Admin only)
 
 **Headers:** `Authorization: Bearer {jwt_token}`
 
@@ -386,7 +436,18 @@
 ```json
 {
   "status": "accepted",
-  "feedback": "Dokumen lengkap dan memenuhi syarat"
+  "feedback": "Dokumen lengkap dan memenuhi syarat",
+  "startDate": "2025-03-01",
+  "endDate": "2025-05-30"
+}
+```
+
+**Request Body (tanpa periode):**
+
+```json
+{
+  "status": "rejected",
+  "feedback": "Dokumen tidak lengkap"
 }
 ```
 
@@ -394,16 +455,23 @@
 
 ```json
 {
-  "message": "Status pendaftaran berhasil diperbarui",
-  "application": {
-    "id": 1,
-    "status": "accepted",
-    "feedback": "Dokumen lengkap dan memenuhi syarat",
-    "verifiedAt": "2025-01-15T10:30:00Z",
-    "verifiedBy": 2
-  }
+  "id": 1,
+  "status": "accepted",
+  "feedback": "Dokumen lengkap dan memenuhi syarat",
+  "startDate": "2025-03-01T00:00:00.000Z",
+  "endDate": "2025-05-30T00:00:00.000Z",
+  "verifiedAt": "2025-01-15T10:30:00Z",
+  "verifiedBy": 2,
+  "userId": 1
 }
 ```
+
+**Business Rules Admin:**
+
+- Admin dapat set/update periode magang saat approve/reject
+- Admin dapat set tanggal di masa lalu (untuk kasus khusus)
+- Validasi durasi tetap berlaku (1-6 bulan)
+- Periode yang di-set admin akan override periode dari mahasiswa
 
 ---
 
@@ -1749,8 +1817,8 @@ Semua endpoint dengan paginasi menggunakan struktur response standar:
 #### **InternshipApplication Status:**
 
 - `pending`: Menunggu verifikasi
-- `accepted`: Diterima
-- `rejected`: Ditolak
+- `diterima`: Diterima
+- `ditolak`: Ditolak
 
 #### **Logbook Status:**
 
@@ -1876,7 +1944,39 @@ API mendukung CORS untuk domain frontend yang dikonfigurasi. Default: `http://lo
 - Satu intern hanya bisa punya satu sertifikat
 - Certificate number auto-generated dengan format `CERT-{YEAR}-{MMDD}-{RANDOM}`
 
+### 6.10 Periode Magang
+
+#### **Field Specifications:**
+
+- **startDate**: DateTime (nullable) - Tanggal mulai magang
+- **endDate**: DateTime (nullable) - Tanggal selesai magang
+- **Format**: ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
+- **Input Format**: YYYY-MM-DD (akan dikonversi ke DateTime)
+
+#### **Validation Rules:**
+
+- Kedua field bersifat opsional
+- Jika diisi, `startDate` < `endDate`
+- Durasi minimal: 1 bulan
+- Durasi maksimal: 6 bulan
+- Mahasiswa tidak boleh set tanggal masa lalu
+- Admin boleh set tanggal masa lalu
+
+#### **Use Cases:**
+
+1. **Mahasiswa pendaftar** - Bisa optional mengisi periode yang diinginkan
+2. **Admin approval** - Bisa set periode saat approve application
+3. **Periode tidak spesifik** - Kedua field null, periode ditentukan kemudian
+4. **Update periode** - Admin bisa update periode via endpoint status
+
+#### **Business Logic:**
+
+- Aplikasi existing (sebelum update) akan memiliki periode null
+- Backward compatibility terjaga
+- Response API selalu include kedua field (null jika tidak diset)
+- Validasi business rule hanya jalan jika kedua field diisi
+
 ---
 
-**API Documentation v2.0** - Last updated: Januari 2025  
+**API Documentation v2.1** - Last updated: Januari 2025 (Periode Magang Update)  
 For technical support, contact: dev@bps-magang.go.id

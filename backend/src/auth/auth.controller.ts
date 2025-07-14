@@ -47,9 +47,17 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'Login user' })
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+    const { access_token, user } = await this.authService.login(loginDto);
+    return {
+      access_token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: { name: user.role.name }, // pastikan role adalah object { name: ... }
+      },
+    };
   }
 
   @UseGuards(AuthGuard('jwt'))
