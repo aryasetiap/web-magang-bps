@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AlertDialog from "../../components/AlertDialog";
+import { useProfile } from "../../contexts/ProfileContext";
 
 function BiodataPage() {
+  const { profile, fetchProfile } = useProfile();
+
   const [formData, setFormData] = useState({
     namaLengkap: "",
     nimNisn: "",
@@ -32,52 +35,20 @@ function BiodataPage() {
 
   const token = localStorage.getItem("authToken");
 
+  // Sinkronkan formData dengan profile context setiap kali profile berubah
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!token) {
-        setAlert({
-          isOpen: true,
-          title: "Sesi Habis",
-          message: "Anda perlu login kembali untuk melihat biodata.",
-          type: "error",
-          autoCloseDelay: 2000,
-        });
-        return;
-      }
-
-      try {
-        const res = await fetch("http://localhost:3000/auth/profile", {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setFormData({
-            namaLengkap: data.namaLengkap || "",
-            nimNisn: data.nimNisn || "",
-            asalInstitusi: data.asalInstitusi || "",
-            jurusanProdi: data.jurusanProdi || "",
-            nomorTelepon: data.nomorTelepon || "",
-            email: data.email || "",
-            alamat: data.alamat || "",
-          });
-        } else {
-          throw new Error(data.message || "Gagal mengambil data biodata.");
-        }
-      } catch (err) {
-        console.error("Gagal mengambil data biodata:", err);
-        setAlert({
-          isOpen: true,
-          title: "Gagal Mengambil Data",
-          message: err.message || "Terjadi kesalahan saat memuat biodata.",
-          type: "error",
-          autoCloseDelay: 3000,
-        });
-      }
-    };
-
-    fetchProfile();
-  }, [token]);
+    if (profile) {
+      setFormData({
+        namaLengkap: profile.namaLengkap || profile.name || "",
+        nimNisn: profile.nimNisn || "",
+        asalInstitusi: profile.asalInstitusi || "",
+        jurusanProdi: profile.jurusanProdi || "",
+        nomorTelepon: profile.nomorTelepon || "",
+        email: profile.email || "",
+        alamat: profile.alamat || "",
+      });
+    }
+  }, [profile]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -123,21 +94,13 @@ function BiodataPage() {
     }
 
     try {
-      const { email, ...formDataWithoutEmail } = formData;
-      const profileRes = await fetch("http://localhost:3000/auth/profile", {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formDataWithoutEmail),
-      });
-
-      const profileData = await profileRes.json();
-      if (!profileRes.ok)
-        throw new Error(profileData.message || "Gagal update biodata.");
-
       const formDataToSend = new FormData();
+      formDataToSend.append("namaLengkap", formData.namaLengkap);
+      formDataToSend.append("nimNisn", formData.nimNisn);
+      formDataToSend.append("asalInstitusi", formData.asalInstitusi);
+      formDataToSend.append("jurusanProdi", formData.jurusanProdi);
+      formDataToSend.append("nomorTelepon", formData.nomorTelepon);
+      formDataToSend.append("alamat", formData.alamat);
 
       if (files.cv) formDataToSend.append("cv", files.cv);
       if (files.transkripNilai)
@@ -145,20 +108,16 @@ function BiodataPage() {
       if (files.suratPermohonan)
         formDataToSend.append("suratPermohonan", files.suratPermohonan);
 
-      // const internshipRes = await fetch(
-      //   "http://localhost:3000/internship-applications",
-      //   {
-      //     method: "POST",
-      //     headers: {
-      //       Authorization: `Bearer ${token}`,
-      //     },
-      //     body: formDataToSend,
-      //   }
-      // );
+      const res = await fetch("http://localhost:3000/auth/profile", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
 
-      // const internshipData = await internshipRes.json();
-      // if (!internshipRes.ok)
-      //   throw new Error(internshipData.message || "Gagal upload berkas.");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Gagal update biodata.");
 
       setAlert({
         isOpen: true,
@@ -168,19 +127,11 @@ function BiodataPage() {
         autoCloseDelay: 3000,
       });
 
-      // setFiles((prev) => ({
-      //   ...prev,
-      //   cv: null,
-      //   transkripNilai: null,
-      //   suratPermohonan: null,
-      //   cvUrl: internshipData.cvUrl || prev.cvUrl,
-      //   transkripNilaiUrl:
-      //     internshipData.transkripNilaiUrl || prev.transkripNilaiUrl,
-      //   suratPermohonanUrl:
-      //     internshipData.suratPermohonanUrl || prev.suratPermohonanUrl,
-      // }));
+      // Fetch ulang profil global agar HeadBar ikut update
+      setTimeout(() => {
+        fetchProfile();
+      }, 1000);
     } catch (error) {
-      console.error(error);
       setAlert({
         isOpen: true,
         title: "Gagal",
@@ -272,8 +223,8 @@ function BiodataPage() {
                   {fileKey === "cv"
                     ? "Curriculum Vitae (CV)"
                     : fileKey === "transkripNilai"
-                    ? "Transkrip Nilai / Rapor"
-                    : "Surat Permohonan Magang"}
+                      ? "Transkrip Nilai / Rapor"
+                      : "Surat Permohonan Magang"}
                   :<span className="text-red-500">*</span>
                 </label>
                 <input
