@@ -4,7 +4,8 @@ import AlertDialog from '../AlertDialog'; // Pastikan path ini sesuai dengan str
 
 function ProtectedRoute({ children, allowedRoles }) {
   const navigate = useNavigate(); // Inisialisasi useNavigate
-  const userRole = localStorage.getItem('userRole'); // Mengambil role dari localStorage
+  const token = localStorage.getItem("authToken");
+  const userRole = localStorage.getItem("userRole");
 
   // State untuk AlertDialog
   const [alert, setAlert] = useState({
@@ -24,7 +25,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 
   // Efek untuk menangani logika proteksi rute
   useEffect(() => {
-    if (!userRole) {
+    if (!token) {
       // Jika tidak ada role (belum login), langsung arahkan ke halaman login
       // Tanpa alert karena ini adalah kondisi default untuk akses yang tidak diautentikasi
       navigate('/login', { replace: true });
@@ -48,11 +49,11 @@ function ProtectedRoute({ children, allowedRoles }) {
 
       return () => clearTimeout(timer); // Cleanup timer
     }
-  }, [userRole, allowedRoles, navigate]); // Dependensi useEffect
+  }, [token, userRole, allowedRoles, navigate]); // Dependensi useEffect
 
   // Jika belum ada userRole atau role tidak diizinkan, jangan render children dulu
   // Biarkan useEffect yang menangani redirect
-  if (!userRole || (allowedRoles && !allowedRoles.includes(userRole))) {
+  if (!token || (allowedRoles && !allowedRoles.includes(userRole))) {
     return (
       <>
         {/* Render AlertDialog di sini */}

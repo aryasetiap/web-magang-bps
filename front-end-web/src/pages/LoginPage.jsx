@@ -8,6 +8,8 @@ import { jwtDecode } from "jwt-decode";
 function LoginPage({ setUserRole }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -58,73 +60,46 @@ function LoginPage({ setUserRole }) {
   }, [location, navigate, setUserRole]);
 
   // ✅ Login Email/Password
-  const handleEmailLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
+    setLoading(true);
+    setError('');
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
+      if (res.ok && data.access_token) {
+        localStorage.setItem("authToken", data.access_token);
+        // Ambil role dari data.user.role.name
+        const role = data.user.role?.name || "Mahasiswa";
+        localStorage.setItem("userRole", role);
+        if (setUserRole) setUserRole(role);
 
-      if (res.ok) {
-        const token = data.access_token;
-        const decoded = jwtDecode(token); // hasil: { sub, email, role, iat, exp }
-        const role = decoded.role;
-
-        localStorage.setItem('authToken', token);
-        localStorage.setItem('userRole', role);
-        setUserRole(role);
-
-        setAlert({
-          isOpen: true,
-          title: 'Login Berhasil!',
-          message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
-          type: 'success',
-          autoCloseDelay: 1500,
-        });
-
-        setTimeout(() => {
-          closeAlert();
-          navigate(
-            role === 'Admin'
-              ? '/admin'
-              : role === 'Staff'
-                ? '/staff/dashboard'
-                : '/dashboard'
-          );
-        }, 1500);
+        // Redirect sesuai role
+        if (role === "Intern" || role === "Mahasiswa") {
+          navigate("/dashboard");
+        } else if (role === "Admin") {
+          navigate("/admin");
+        } else if (role === "Staff") {
+          navigate("/staff");
+        } else {
+          navigate("/");
+        }
       } else {
-        throw new Error(data.message || 'Email atau password salah.');
+        setError(data.message || "Login gagal");
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setAlert({
-        isOpen: true,
-        title: 'Login Gagal!',
-        message: err.message || 'Terjadi kesalahan saat login. Mohon coba lagi.',
-        type: 'error',
-      });
+      setError("Terjadi kesalahan jaringan");
     }
+    setLoading(false);
   };
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
-    try {
-      // Redirect langsung ke backend OAuth endpoint
-      const googleOAuthUrl = process.env.REACT_APP_GOOGLE_LOGIN_URL || 'http://localhost:3000/auth/google';
-
-      console.log('Redirecting to Google OAuth:', googleOAuthUrl);
-
-      // Redirect ke backend yang akan handle OAuth flow
-      window.location.href = googleOAuthUrl;
-    } catch (error) {
-      console.error('Error initiating Google OAuth:', error);
-      alert('Terjadi kesalahan saat memulai login Google');
-    }
+    window.location.href = 'http://localhost:3000/auth/google';
   };
 
   return (
@@ -169,7 +144,7 @@ function LoginPage({ setUserRole }) {
           <h2 className="mt-4 text-2xl font-bold text-gray-800">Masuk</h2>
         </div>
 
-        <form onSubmit={handleEmailLogin}>
+        <form onSubmit={handleLogin}>
           <div className="mb-4">
             <label
               htmlFor="email"
@@ -208,9 +183,15 @@ function LoginPage({ setUserRole }) {
             type="submit"
             className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg w-full transition-colors duration-200"
           >
-            Masuk
+            {loading ? 'Memuat...' : 'Masuk'}
           </button>
         </form>
+
+        {error && (
+          <div className="mt-4 text-red-600 text-sm text-center">
+            {error}
+          </div>
+        )}
 
         <div className="relative flex py-5 items-center">
           <div className="flex-grow border-t border-gray-300"></div>
