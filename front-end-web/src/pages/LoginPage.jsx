@@ -6,8 +6,8 @@ import kantorBPS from "../assets/kantor-bps-3.jpg";
 import { jwtDecode } from "jwt-decode";
 
 function LoginPage({ setUserRole }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -15,45 +15,45 @@ function LoginPage({ setUserRole }) {
 
   const [alert, setAlert] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    type: '',
+    title: "",
+    message: "",
+    type: "",
     autoCloseDelay: 0,
     onConfirm: null,
     showCancelButton: false,
   });
 
   const closeAlert = () => {
-    setAlert(prev => ({ ...prev, isOpen: false }));
+    setAlert((prev) => ({ ...prev, isOpen: false }));
   };
 
   // ✅ Menangkap token dari redirect Google OAuth
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    const role = params.get('role');
+    const token = params.get("token");
+    const role = params.get("role");
 
     if (token && role) {
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('userRole', role);
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("userRole", role);
       setUserRole(role);
 
       setAlert({
         isOpen: true,
-        title: 'Login Google Berhasil!',
+        title: "Login Google Berhasil!",
         message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
-        type: 'success',
+        type: "success",
         autoCloseDelay: 1500,
       });
 
       setTimeout(() => {
         closeAlert();
         navigate(
-          role === 'admin'
-            ? '/admin'
-            : role === 'staff'
-              ? '/staff/dashboard'
-              : '/dashboard'
+          role === "admin"
+            ? "/admin"
+            : role === "staff"
+            ? "/staff/dashboard"
+            : "/dashboard"
         );
       }, 1500);
     }
@@ -63,7 +63,7 @@ function LoginPage({ setUserRole }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await fetch("http://localhost:3000/auth/login", {
         method: "POST",
@@ -73,6 +73,7 @@ function LoginPage({ setUserRole }) {
       const data = await res.json();
       if (res.ok && data.access_token) {
         localStorage.setItem("authToken", data.access_token);
+        localStorage.setItem("userId", data.user.id);
         // Ambil role dari data.user.role.name
         const role = data.user.role?.name || "Mahasiswa";
         localStorage.setItem("userRole", role);
@@ -99,7 +100,7 @@ function LoginPage({ setUserRole }) {
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:3000/auth/google';
+    window.location.href = "http://localhost:3000/auth/google";
   };
 
   return (
@@ -183,14 +184,12 @@ function LoginPage({ setUserRole }) {
             type="submit"
             className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg w-full transition-colors duration-200"
           >
-            {loading ? 'Memuat...' : 'Masuk'}
+            {loading ? "Memuat..." : "Masuk"}
           </button>
         </form>
 
         {error && (
-          <div className="mt-4 text-red-600 text-sm text-center">
-            {error}
-          </div>
+          <div className="mt-4 text-red-600 text-sm text-center">{error}</div>
         )}
 
         <div className="relative flex py-5 items-center">

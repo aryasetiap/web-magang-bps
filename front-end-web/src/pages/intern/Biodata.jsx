@@ -134,12 +134,14 @@ function BiodataPage() {
         }),
       });
       const biodataData = await biodataRes.json();
-      if (!biodataRes.ok) throw new Error(biodataData.message || "Gagal update biodata.");
+      if (!biodataRes.ok)
+        throw new Error(biodataData.message || "Gagal update biodata.");
 
       setAlert({
         isOpen: true,
         title: "Berhasil",
-        message: "Biodata berhasil diperbarui. Berkas akan dikirim saat pengajuan.",
+        message:
+          "Biodata berhasil diperbarui. Berkas akan dikirim saat pengajuan.",
         type: "success",
         autoCloseDelay: 3000,
       });
@@ -195,7 +197,10 @@ function BiodataPage() {
                   name={id}
                   value={formData[id]}
                   onChange={handleChange}
-                  className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
+                  className={`shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 ${
+                    id === "email" ? "bg-gray-100 cursor-not-allowed" : ""
+                  } focus:outline-none focus:ring-2 focus:ring-bps-blue`}
+                  readOnly={id === "email"}
                   required
                 />
               </div>
@@ -239,8 +244,8 @@ function BiodataPage() {
                   {fileKey === "cv"
                     ? "Curriculum Vitae (CV)"
                     : fileKey === "transkripNilai"
-                      ? "Transkrip Nilai / Rapor"
-                      : "Surat Permohonan Magang"}
+                    ? "Transkrip Nilai / Rapor"
+                    : "Surat Permohonan Magang"}
                   :<span className="text-red-500">*</span>
                 </label>
                 <input

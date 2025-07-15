@@ -1,26 +1,17 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import {
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  UserCircleIcon,
-  EyeIcon,
-} from "@heroicons/react/24/outline";
+import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import AlertDialog from "../../../components/AlertDialog";
 
 function AdminAccountsPage() {
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
-
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
-  const [formRole, setFormRole] = useState("staff");
-  const [formStatus, setFormStatus] = useState("active");
+  const [formRoleName, setFormRoleName] = useState("Staff BPS");
   const [formPassword, setFormPassword] = useState("");
   const [formConfirmPassword, setFormConfirmPassword] = useState("");
 
@@ -40,7 +31,6 @@ function AdminAccountsPage() {
 
   const token = localStorage.getItem("authToken");
 
-  // --- Fetch Data Akun dari API ---
   const fetchAccounts = async () => {
     setIsLoading(true);
     setError(null);
@@ -63,29 +53,19 @@ function AdminAccountsPage() {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await res.json(); // Pastikan selalu mencoba parse JSON
+      const data = await res.json();
 
       if (res.ok) {
-        // PENTING: Periksa struktur data yang sebenarnya dari backend Anda
-        // Jika backend mengembalikan { users: [...] }, gunakan data.users
-        // Jika backend mengembalikan array langsung, gunakan data
-        const usersArray = Array.isArray(data) ? data : data.users || []; // Fallback ke array kosong jika tidak ditemukan
-
+        const usersArray = data?.data || []; // Ambil dari 'data'
         const filteredData = usersArray.filter(
           (user) =>
-            user.role === "Admin" ||
-            user.role === "Staff" ||
-            user.role === "Koordinator"
+            user.role?.name === "Staff BPS" || user.role?.name === "Admin"
         );
         setAccounts(filteredData);
       } else {
-        // Jika respons tidak sukses (misal 401, 403, 500)
-        throw new Error(
-          data.message || `Gagal mengambil data akun. Status: ${res.status}`
-        );
+        throw new Error(data.message || `Gagal mengambil data akun.`);
       }
     } catch (err) {
-      console.error("Error fetching accounts:", err);
       setError(err.message || "Terjadi kesalahan saat memuat akun.");
       setAlert({
         isOpen: true,
@@ -103,13 +83,11 @@ function AdminAccountsPage() {
     fetchAccounts();
   }, [token]);
 
-  // --- CRUD Akun ---
   function openCreateModal() {
     setEditingAccount(null);
     setFormName("");
     setFormEmail("");
-    setFormRole("staff");
-    setFormStatus("active");
+    setFormRoleName("Admin");
     setFormPassword("");
     setFormConfirmPassword("");
     setIsModalOpen(true);
@@ -119,8 +97,7 @@ function AdminAccountsPage() {
     setEditingAccount(account);
     setFormName(account.name);
     setFormEmail(account.email);
-    setFormRole(account.role);
-    setFormStatus(account.status);
+    setFormRoleName(account.role?.name);
     setFormPassword("");
     setFormConfirmPassword("");
     setIsModalOpen(true);
@@ -132,8 +109,7 @@ function AdminAccountsPage() {
 
   const handleCreateOrUpdateAccount = async (e) => {
     e.preventDefault();
-
-    if (!formName || !formEmail || !formRole) {
+    if (!formName || !formEmail || !formRoleName) {
       setAlert({
         isOpen: true,
         title: "Validasi Input",
@@ -152,47 +128,19 @@ function AdminAccountsPage() {
       return;
     }
 
-    let method = "POST";
-    let url = "http://localhost:3000/users";
+    let method = editingAccount ? "PATCH" : "POST";
+    let url = editingAccount
+      ? `http://localhost:3000/users/${editingAccount.id}`
+      : "http://localhost:3000/users";
+
     let bodyData = {
       name: formName,
       email: formEmail,
-      role: formRole,
-      status: formStatus,
+      roleName: formRoleName,
     };
 
-    if (editingAccount) {
-      method = "PATCH";
-      url = `http://localhost:3000/users/${editingAccount.id}`;
-      bodyData = {
-        name: formName,
-        email: formEmail,
-        role: formRole,
-        status: formStatus,
-      };
-      if (formPassword) {
-        if (formPassword.length < 6) {
-          setAlert({
-            isOpen: true,
-            title: "Validasi Password",
-            message: "Password baru minimal 6 karakter.",
-            type: "error",
-          });
-          return;
-        }
-        if (formPassword !== formConfirmPassword) {
-          setAlert({
-            isOpen: true,
-            title: "Validasi Password",
-            message: "Konfirmasi password baru tidak cocok.",
-            type: "error",
-          });
-          return;
-        }
-        bodyData.password = formPassword;
-      }
-    } else {
-      if (!formPassword || formPassword.length < 6) {
+    if (!editingAccount || formPassword) {
+      if (formPassword.length < 6) {
         setAlert({
           isOpen: true,
           title: "Validasi Password",
@@ -249,54 +197,6 @@ function AdminAccountsPage() {
         type: "error",
       });
     }
-  };
-
-  const handleChangeAccountStatus = (id, currentStatus, newStatus) => {
-    setAlert({
-      isOpen: true,
-      title: "Konfirmasi Perubahan Status",
-      message: `Apakah Anda yakin ingin mengubah status akun ini menjadi ${newStatus}?`,
-      type: "confirm",
-      confirmButtonText: `Ya, ${
-        newStatus === "active" ? "Aktifkan" : "Nonaktifkan"
-      }`,
-      cancelButtonText: "Batal",
-      onConfirm: async () => {
-        closeAlert();
-        try {
-          const res = await fetch(`http://localhost:3000/users/${id}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status: newStatus }),
-          });
-          const result = await res.json();
-          if (res.ok) {
-            setAlert({
-              isOpen: true,
-              title: "Berhasil!",
-              message: `Status akun berhasil diubah menjadi ${newStatus}.`,
-              type: "success",
-              autoCloseDelay: 1500,
-            });
-            fetchAccounts();
-          } else {
-            throw new Error(result.message || "Gagal mengubah status akun.");
-          }
-        } catch (err) {
-          console.error("Error changing status:", err);
-          setAlert({
-            isOpen: true,
-            title: "Gagal!",
-            message: err.message || "Terjadi kesalahan saat mengubah status.",
-            type: "error",
-          });
-        }
-      },
-      showCancelButton: true,
-    });
   };
 
   const handleDeleteAccount = (id, name) => {
@@ -374,7 +274,6 @@ function AdminAccountsPage() {
       <p className="text-gray-700 mb-6">
         Kelola akun pengguna untuk Staff BPS dan Koordinator Magang.
       </p>
-
       {/* Tombol Buat Akun Baru */}
       <div className="mb-6 text-right">
         <button
@@ -384,7 +283,6 @@ function AdminAccountsPage() {
           <PlusIcon className="h-5 w-5 mr-2" /> Buat Akun Baru
         </button>
       </div>
-
       {/* Daftar Akun */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg">
@@ -398,9 +296,6 @@ function AdminAccountsPage() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Aksi
@@ -420,65 +315,24 @@ function AdminAccountsPage() {
                   {account.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
-                  {account.role}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                    ${
-                      account.status === "active"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {account.status}
-                  </span>
+                  {account.role?.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {account.status === "active" ? (
-                    <button
-                      onClick={() =>
-                        handleChangeAccountStatus(
-                          account.id,
-                          account.status,
-                          "inactive"
-                        )
-                      }
-                      className="text-red-600 hover:text-red-900 mr-3"
-                      title="Nonaktifkan Akun"
-                    >
-                      Nonaktifkan
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() =>
-                        handleChangeAccountStatus(
-                          account.id,
-                          account.status,
-                          "active"
-                        )
-                      }
-                      className="text-green-600 hover:text-green-900 mr-3"
-                      title="Aktifkan Akun"
-                    >
-                      Aktifkan
-                    </button>
-                  )}
                   <button
                     onClick={() => openEditModal(account)}
                     className="text-indigo-600 hover:text-indigo-900 mr-3"
                     title="Edit Akun"
                   >
-                    Edit
+                    <PencilIcon className="h-5 w-5 inline-block" />
                   </button>
                   <button
                     onClick={() =>
                       handleDeleteAccount(account.id, account.name)
                     }
-                    className="text-gray-600 hover:text-gray-900"
+                    className="text-red-600 hover:text-red-900"
                     title="Hapus Akun"
                   >
-                    Hapus
+                    <TrashIcon className="text-red h-5 w-5 inline-block" />
                   </button>
                 </td>
               </tr>
@@ -493,7 +347,6 @@ function AdminAccountsPage() {
           </tbody>
         </table>
       </div>
-
       {/* Modal Buat/Edit Akun */}
       <Transition appear show={isModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={closeModal}>
@@ -570,31 +423,13 @@ function AdminAccountsPage() {
                       </label>
                       <select
                         id="role"
-                        value={formRole}
-                        onChange={(e) => setFormRole(e.target.value)}
+                        value={formRoleName}
+                        onChange={(e) => setFormRoleName(e.target.value)}
                         className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
                         required
                       >
-                        <option value="staff">Staff BPS</option>
-                        <option value="koordinator">Koordinator Magang</option>
-                      </select>
-                    </div>
-                    <div className="mb-4">
-                      <label
-                        htmlFor="status"
-                        className="block text-gray-700 text-sm font-bold mb-2"
-                      >
-                        Status Akun:
-                      </label>
-                      <select
-                        id="status"
-                        value={formStatus}
-                        onChange={(e) => setFormStatus(e.target.value)}
-                        className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-                        required
-                      >
-                        <option value="active">Aktif</option>
-                        <option value="inactive">Nonaktif</option>
+                        <option value="Staff BPS">Staff BPS</option>
+                        <option value="Admin">Admin</option>
                       </select>
                     </div>
 
@@ -660,6 +495,16 @@ function AdminAccountsPage() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+      />
     </div>
   );
 }
