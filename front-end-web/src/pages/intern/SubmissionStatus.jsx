@@ -1,5 +1,5 @@
 // File: pages/StatusAjuanPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function SubmissionStatusPage() {
@@ -11,10 +11,12 @@ function SubmissionStatusPage() {
     transkripNilai: false,
     suratPermohonan: false,
   });
+  const [feedback, setFeedback] = useState(""); // untuk alasan penolakan jika ada
 
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
+    // Ambil biodata user
     const fetchProfile = async () => {
       try {
         const res = await fetch("http://localhost:3000/auth/profile", {
@@ -26,14 +28,13 @@ function SubmissionStatusPage() {
         const data = await res.json();
         if (res.ok) {
           setBiodata(data);
-        } else {
-          console.error("Gagal mengambil biodata:", data.message);
         }
       } catch (error) {
-        console.error("Error:", error);
+        setBiodata(null);
       }
     };
 
+    // Cek file di localStorage
     const checkFiles = () => {
       setFilesExist({
         cv: !!localStorage.getItem("cvFileBase64"),
@@ -42,7 +43,7 @@ function SubmissionStatusPage() {
       });
     };
 
-    // Tambahkan fetch status pengajuan magang
+    // Ambil status pengajuan magang
     const fetchSubmissionStatus = async () => {
       try {
         const res = await fetch("http://localhost:3000/internship-applications/me", {
@@ -53,9 +54,9 @@ function SubmissionStatusPage() {
         });
         if (res.ok) {
           const result = await res.json();
-          // Cek jika ada data pengajuan
-          if (result.data && result.data.length > 0 && result.data[0].status) {
+          if (result.data && result.data.length > 0) {
             setSubmissionStatus(result.data[0].status);
+            setFeedback(result.data[0].feedback || "");
           } else {
             setSubmissionStatus("initial");
           }
@@ -72,7 +73,8 @@ function SubmissionStatusPage() {
     fetchSubmissionStatus();
   }, [token]);
 
-  const handleSubmissions = async () => {
+  // Fungsi submit pengajuan magang
+  const handleAjukan = async () => {
     const formData = new FormData();
     if (localStorage.getItem("cvFileBase64"))
       formData.append(
@@ -84,7 +86,7 @@ function SubmissionStatusPage() {
       );
     if (localStorage.getItem("transkripNilaiFileBase64"))
       formData.append(
-        "transcript", // <-- ganti dari transkripNilai
+        "transcript",
         dataURLtoFile(
           localStorage.getItem("transkripNilaiFileBase64"),
           localStorage.getItem("transkripNilaiFileName") || "transkrip.pdf"
@@ -92,7 +94,7 @@ function SubmissionStatusPage() {
       );
     if (localStorage.getItem("suratPermohonanFileBase64"))
       formData.append(
-        "requestLetter", // <-- ganti dari suratPermohonan
+        "requestLetter",
         dataURLtoFile(
           localStorage.getItem("suratPermohonanFileBase64"),
           localStorage.getItem("suratPermohonanFileName") || "surat.pdf"
@@ -108,7 +110,7 @@ function SubmissionStatusPage() {
         body: formData,
       });
       if (res.ok) {
-        alert("Ajuan Anda berhasil dikirim!");
+        alert("Ajuan Anda berhasil dikirim! Menunggu verifikasi.");
         setSubmissionStatus("pending");
         // Bersihkan localStorage setelah berhasil
         ["cv", "transkripNilai", "suratPermohonan"].forEach((key) => {
@@ -120,30 +122,30 @@ function SubmissionStatusPage() {
         alert(data.message || "Gagal mengajukan permohonan.");
       }
     } catch (error) {
-      console.error("Error:", error);
       alert("Terjadi kesalahan saat mengirim permohonan.");
     }
   };
 
+  // Helper konversi base64 ke File
   const dataURLtoFile = (dataurl, filename) => {
     const arr = dataurl.split(","),
       mime = arr[0].match(/:(.*?);/)[1],
       bstr = atob(arr[1]);
-    let n = bstr.length; // <-- Ubah dari const ke let
+    let n = bstr.length;
     const u8arr = new Uint8Array(n);
     while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new File([u8arr], filename, { type: mime });
   };
 
+  // UI
   const renderContent = () => {
-    if (!biodata) return <p>Memuat data biodata...</p>;
-
-    const BiodataItem = ({ label, value }) => (
-      <div className="grid grid-cols-2 gap-4 py-2 border-b border-blue-100 last:border-b-0">
-        <div className="font-semibold text-black-800">{label}</div>
-        <div className="text-gray-700 break-words">: {value}</div>
-      </div>
-    );
+    if (!biodata) {
+      return (
+        <div className="text-center py-10">
+          <p className="text-lg text-gray-700">Memuat data biodata...</p>
+        </div>
+      );
+    }
 
     switch (submissionStatus) {
       case "initial":
@@ -152,37 +154,38 @@ function SubmissionStatusPage() {
             <h3 className="text-2xl font-semibold text-gray-800 mb-4">
               Konfirmasi Data Ajuan Magang
             </h3>
+            <p className="text-gray-700 mb-6">
+              Mohon periksa kembali data biodata dan kelengkapan berkasmu sebelum
+              mengajukan permohonan magang.
+            </p>
             <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
               <h4 className="font-bold text-blue-800 text-lg mb-3">
                 Ringkasan Biodata:
               </h4>
-              <div className="divide-y divide-blue-100">
-                <BiodataItem label="Nama Lengkap" value={biodata.namaLengkap} />
-                <BiodataItem label="NIM / NIS" value={biodata.nimNisn} />
-                <BiodataItem
-                  label="Asal Institusi"
-                  value={biodata.asalInstitusi}
-                />
-                <BiodataItem
-                  label="Jurusan/Prodi"
-                  value={biodata.jurusanProdi}
-                />
-                <BiodataItem
-                  label="Nomor Telepon"
-                  value={biodata.nomorTelepon}
-                />
-                <BiodataItem label="Email" value={biodata.email} />
-                <div className="py-2 border-b border-blue-100">
-                  <div className="font-semibold text-black-800 mb-1">
-                    Alamat
-                  </div>
-                  <div className="text-gray-700 break-words">
-                    {biodata.alamat}
-                  </div>
-                </div>
-              </div>
-
-              <h4 className="font-bold text-blue-800 text-lg mt-6 mb-3">
+              <ul className="list-none space-y-2 text-gray-700">
+                <li>
+                  <strong>Nama Lengkap:</strong> {biodata.namaLengkap}
+                </li>
+                <li>
+                  <strong>NIM / NIS:</strong> {biodata.nimNisn}
+                </li>
+                <li>
+                  <strong>Asal Institusi:</strong> {biodata.asalInstitusi}
+                </li>
+                <li>
+                  <strong>Jurusan/Prodi:</strong> {biodata.jurusanProdi}
+                </li>
+                <li>
+                  <strong>Nomor Telepon:</strong> {biodata.nomorTelepon}
+                </li>
+                <li>
+                  <strong>Email:</strong> {biodata.email}
+                </li>
+                <li>
+                  <strong>Alamat:</strong> {biodata.alamat}
+                </li>
+              </ul>
+              <h4 className="font-bold text-blue-800 text-lg mt-4 mb-3">
                 Kelengkapan Berkas:
               </h4>
               <ul className="list-disc list-inside space-y-1 text-gray-700">
@@ -228,9 +231,8 @@ function SubmissionStatusPage() {
                 .
               </p>
             </div>
-
             <button
-              onClick={handleSubmissions}
+              onClick={handleAjukan}
               className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
               disabled={
                 !(
@@ -242,17 +244,106 @@ function SubmissionStatusPage() {
             >
               Ajukan Permohonan Magang
             </button>
+            {!(filesExist.cv && filesExist.transkripNilai && filesExist.suratPermohonan) && (
+              <p className="text-red-500 text-sm mt-2">
+                Mohon lengkapi semua berkas di halaman Biodata sebelum mengajukan.
+              </p>
+            )}
           </div>
         );
 
       case "pending":
-        return <p>Status: Menunggu Verifikasi</p>;
-      case "accepted":
-        return <p>Status: Diterima</p>;
-      case "rejected":
-        return <p>Status: Ditolak</p>;
+        return (
+          <div className="text-center py-10">
+            <h3 className="text-2xl font-semibold text-orange-600 mb-4">
+              Status Ajuan: Menunggu Verifikasi
+            </h3>
+            <p className="text-gray-700 mb-4">
+              Permohonan magang Anda telah berhasil diajukan. Kami akan segera
+              memverifikasi data dan berkasmu.
+            </p>
+            <p className="text-gray-600">
+              Mohon cek halaman ini secara berkala untuk mengetahui status terbaru
+              ajuan kamu.
+            </p>
+            <div className="mt-6">
+              <svg
+                className="animate-spin h-8 w-8 text-orange-500 mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <p className="text-gray-500 mt-2">Sedang diproses...</p>
+            </div>
+          </div>
+        );
+
+      case "diterima":
+        return (
+          <div className="text-center py-10">
+            <h3 className="text-2xl font-semibold text-green-600 mb-4">
+              Status Ajuan: Telah Diterima! 🎉
+            </h3>
+            <p className="text-gray-700 mb-4">
+              Selamat! Permohonan magang Anda di BPS Kabupaten Pringsewu telah{" "}
+              <b>DITERIMA</b>.
+            </p>
+            <p className="text-gray-600">
+              Informasi lebih lanjut mengenai jadwal dan langkah berikutnya akan
+              disampaikan melalui sistem ini atau email Anda.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
+            >
+              Kembali ke Dashboard
+            </button>
+          </div>
+        );
+
+      case "ditolak":
+        return (
+          <div className="text-center py-10">
+            <h3 className="text-2xl font-semibold text-red-600 mb-4">
+              Status Ajuan: Ditolak 😞
+            </h3>
+            <p className="text-gray-700 mb-4">
+              Mohon maaf, permohonan magang Anda di BPS Kabupaten Pringsewu telah{" "}
+              <b>DITOLAK</b>.
+            </p>
+            <p className="text-gray-600">
+              Alasan penolakan: {feedback ? feedback : "-"} Silakan periksa
+              kembali kelengkapan atau kesesuaian persyaratan.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="mt-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
+            >
+              Kembali ke Dashboard
+            </button>
+          </div>
+        );
+
       default:
-        return <p>Status tidak dikenali</p>;
+        return (
+          <div className="text-center py-10">
+            <p className="text-lg text-gray-700">Status tidak dikenali.</p>
+          </div>
+        );
     }
   };
 
