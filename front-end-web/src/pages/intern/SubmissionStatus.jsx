@@ -42,8 +42,34 @@ function SubmissionStatusPage() {
       });
     };
 
+    // Tambahkan fetch status pengajuan magang
+    const fetchSubmissionStatus = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/internship-applications/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const result = await res.json();
+          // Cek jika ada data pengajuan
+          if (result.data && result.data.length > 0 && result.data[0].status) {
+            setSubmissionStatus(result.data[0].status);
+          } else {
+            setSubmissionStatus("initial");
+          }
+        } else {
+          setSubmissionStatus("initial");
+        }
+      } catch (error) {
+        setSubmissionStatus("initial");
+      }
+    };
+
     fetchProfile();
     checkFiles();
+    fetchSubmissionStatus();
   }, [token]);
 
   const handleSubmissions = async () => {
@@ -58,7 +84,7 @@ function SubmissionStatusPage() {
       );
     if (localStorage.getItem("transkripNilaiFileBase64"))
       formData.append(
-        "transkripNilai",
+        "transcript", // <-- ganti dari transkripNilai
         dataURLtoFile(
           localStorage.getItem("transkripNilaiFileBase64"),
           localStorage.getItem("transkripNilaiFileName") || "transkrip.pdf"
@@ -66,7 +92,7 @@ function SubmissionStatusPage() {
       );
     if (localStorage.getItem("suratPermohonanFileBase64"))
       formData.append(
-        "suratPermohonan",
+        "requestLetter", // <-- ganti dari suratPermohonan
         dataURLtoFile(
           localStorage.getItem("suratPermohonanFileBase64"),
           localStorage.getItem("suratPermohonanFileName") || "surat.pdf"
@@ -102,9 +128,9 @@ function SubmissionStatusPage() {
   const dataURLtoFile = (dataurl, filename) => {
     const arr = dataurl.split(","),
       mime = arr[0].match(/:(.*?);/)[1],
-      bstr = atob(arr[1]),
-      n = bstr.length,
-      u8arr = new Uint8Array(n);
+      bstr = atob(arr[1]);
+    let n = bstr.length; // <-- Ubah dari const ke let
+    const u8arr = new Uint8Array(n);
     while (n--) u8arr[n] = bstr.charCodeAt(n);
     return new File([u8arr], filename, { type: mime });
   };

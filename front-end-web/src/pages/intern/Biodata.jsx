@@ -136,27 +136,10 @@ function BiodataPage() {
       const biodataData = await biodataRes.json();
       if (!biodataRes.ok) throw new Error(biodataData.message || "Gagal update biodata.");
 
-      // 2. Upload berkas magang ke /internship-applications
-      const formDataToSend = new FormData();
-      if (files.cv) formDataToSend.append("cv", files.cv);
-      if (files.transkripNilai) formDataToSend.append("transcript", files.transkripNilai); // field harus transcript
-      if (files.suratPermohonan) formDataToSend.append("requestLetter", files.suratPermohonan); // field harus requestLetter
-
-      const berkasRes = await fetch("http://localhost:3000/internship-applications", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Jangan set Content-Type!
-        },
-        body: formDataToSend,
-      });
-      const berkasData = await berkasRes.json();
-      if (!berkasRes.ok) throw new Error(berkasData.message || "Gagal upload berkas magang.");
-
       setAlert({
         isOpen: true,
         title: "Berhasil",
-        message: "Biodata dan berkas berhasil diperbarui.",
+        message: "Biodata berhasil diperbarui. Berkas akan dikirim saat pengajuan.",
         type: "success",
         autoCloseDelay: 3000,
       });
