@@ -84,6 +84,8 @@ export class InternshipApplicationsService {
               email: true,
               namaLengkap: true,
               asalInstitusi: true,
+              nimNisn: true, // Tambahkan ini
+              jurusanProdi: true, // Tambahkan ini
             },
           },
         },
