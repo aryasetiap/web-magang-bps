@@ -164,8 +164,12 @@ export class AttendancesService {
   }
 
   // Kita tambahkan kembali method lain sebagai placeholder agar controller tidak error
-  findAll(userId: number) {
-    return `This action returns all attendances for user #${userId}`;
+  async findAll(userId: number) {
+    const attendances = await this.prisma.attendance.findMany({
+      where: { userId },
+      orderBy: { clockIn: 'desc' },
+    });
+    return { data: attendances };
   }
 
   findOne(id: number) {
