@@ -5,12 +5,11 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
   Request,
-  Query, // 1. Impor Query
+  Query,
 } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
@@ -20,7 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto'; // 2. Impor DTO Paginasi
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 @Controller('internship-applications')
 export class InternshipApplicationsController {
@@ -28,7 +27,6 @@ export class InternshipApplicationsController {
     private readonly internshipApplicationsService: InternshipApplicationsService,
   ) {}
 
-  // ... (method create tetap sama)
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
@@ -56,7 +54,7 @@ export class InternshipApplicationsController {
     );
   }
 
-  // 3. Modifikasi method findAll
+  // Hanya Admin yang bisa akses semua data
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -64,7 +62,18 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findAll(paginationQuery);
   }
 
-  // ... (method findOne, updateStatus, dll. tetap sama)
+  // Hanya Intern yang bisa akses pengajuan miliknya sendiri
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('Intern')
+  async getMyApplication(@Request() req) {
+    const userId = req.user.userId;
+    return {
+      data: await this.internshipApplicationsService.findByUser(userId),
+    };
+  }
+
+  // Hanya Admin yang bisa akses detail aplikasi tertentu
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -72,6 +81,7 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findOne(+id);
   }
 
+  // Hanya Admin yang bisa update status aplikasi
   @Patch(':id/status')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')

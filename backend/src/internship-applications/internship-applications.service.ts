@@ -186,6 +186,13 @@ export class InternshipApplicationsService {
     });
   }
 
+  async findByUser(userId: number) {
+    return this.prisma.internshipApplication.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   private validateFiles(files: {
     cv?: Express.Multer.File[];
     transcript?: Express.Multer.File[];

@@ -22,9 +22,18 @@ export class RolesGuard implements CanActivate {
       userRole = userRole[0]; // ambil role pertama jika array
     }
     if (!userRole) return false;
+    console.log(
+      'requiredRoles:',
+      requiredRoles,
+      'userRole:',
+      userRole,
+      'path:',
+      context.switchToHttp().getRequest().url,
+    );
     // Bandingkan lowercase
-    return requiredRoles
-      .map((r) => r.toLowerCase())
-      .includes(userRole.toLowerCase());
+    const hasRole = requiredRoles.some(
+      (role) => userRole?.toLowerCase() === role.toLowerCase(),
+    );
+    return hasRole;
   }
 }
