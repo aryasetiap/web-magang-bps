@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   HomeIcon,
@@ -20,6 +20,30 @@ import {
 import BrandLogo from "../BrandLogo";
 
 function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
+  const [internshipAccepted, setInternshipAccepted] = useState(false);
+
+  useEffect(() => {
+    if (userRole === "Intern" || userRole === "Mahasiswa") {
+      const token = localStorage.getItem("authToken");
+      fetch("http://localhost:3000/internship-applications/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (
+            result.data &&
+            result.data.length > 0 &&
+            result.data[0].status === "diterima"
+          ) {
+            setInternshipAccepted(true);
+          } else {
+            setInternshipAccepted(false);
+          }
+        })
+        .catch(() => setInternshipAccepted(false));
+    }
+  }, [userRole]);
+
   // Definisikan semua menu untuk setiap role
   const internMenus = [
     { name: "Dashboard", path: "/dashboard", icon: HomeIcon, exact: true },
@@ -29,22 +53,22 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
       path: "/dashboard/submissions",
       icon: DocumentCheckIcon,
     },
-    {
+    internshipAccepted && {
       name: "Aktivitas",
       path: "/dashboard/activities",
       icon: CalendarDaysIcon,
     },
-    {
+    internshipAccepted && {
       name: "Laporan Akhir",
       path: "/dashboard/intern-reports",
       icon: DocumentTextIcon,
     },
-    {
+    internshipAccepted && {
       name: "Sertifikat",
       path: "/dashboard/certificate",
       icon: AcademicCapIcon,
     },
-  ];
+  ].filter(Boolean);
 
   const adminMenus = [
     { name: "Dashboard", path: "/admin", icon: HomeIcon, exact: true },
@@ -130,16 +154,14 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     >
       {/* Logo dan Nama Sistem di Sidebar */}
       <div
-        className={`flex items-center p-4 ${
-          isCollapsed ? "justify-center" : "justify-between"
-        }`}
+        className={`flex items-center p-4 ${isCollapsed ? "justify-center" : "justify-between"
+          }`}
       >
         <BrandLogo
           // onclick ke homepage
           onClick={() => (window.location.href = "/")}
-          className={`cursor-pointer ${
-            isCollapsed ? "w-10 h-10" : "w-12 h-12"
-          }`}
+          className={`cursor-pointer ${isCollapsed ? "w-10 h-10" : "w-12 h-12"
+            }`}
           showText={!isCollapsed} // Sembunyikan teks saat collapsed
           logoSizeClass="h-8" // Ukuran logo di sidebar
           textClassName={isCollapsed ? "text-xs text-center" : "text-sm"} // Ukuran teks nama sistem
@@ -157,9 +179,8 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
       </div>
 
       <nav
-        className={`p-4 flex-grow ${
-          isCollapsed ? "overflow-y-hidden" : "overflow-y-auto"
-        }`}
+        className={`p-4 flex-grow ${isCollapsed ? "overflow-y-hidden" : "overflow-y-auto"
+          }`}
       >
         <ul>
           {currentMenus.map((menu, index) => (
