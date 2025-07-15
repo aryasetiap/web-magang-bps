@@ -58,6 +58,39 @@ function PresenceSection() {
     setIsInRange(false);
   }, [selectedDate]);
 
+  // Tambahkan useEffect untuk update data presensi setelah checkIn/checkOut berubah
+  useEffect(() => {
+    // Jika checkInTime berubah (misal setelah presensi masuk), refresh data presensi dari backend
+    // Ini memastikan UI tombol "Dapatkan Lokasi" pada presensi pulang langsung aktif tanpa refresh manual
+    if (checkInTime !== null) {
+      const fetchAttendance = async () => {
+        try {
+          const token = localStorage.getItem('authToken');
+          const res = await fetch('http://localhost:3000/attendances', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          const attendance = (data.data || []).find(item => {
+            const date = new Date(item.clockIn);
+            return (
+              date.getFullYear() === selectedDateObject.getFullYear() &&
+              date.getMonth() === selectedDateObject.getMonth() &&
+              date.getDate() === selectedDateObject.getDate()
+            );
+          });
+          if (attendance) {
+            setCheckInTime(attendance.clockIn ? new Date(attendance.clockIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null);
+            setCheckOutTime(attendance.clockOut ? new Date(attendance.clockOut).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : null);
+          }
+        } catch (err) {
+          // Tidak perlu reset state di sini
+        }
+      };
+      fetchAttendance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkInTime]);
+
   const getDistance = (lat1, lng1, lat2, lng2) => {
     const toRad = (value) => (value * Math.PI) / 180;
     const R = 6371000;
@@ -131,13 +164,19 @@ function PresenceSection() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Gagal mengirim presensi.');
-      // Gunakan waktu dari backend
       setCheckInTime(data.attendance && data.attendance.clockIn
         ? new Date(data.attendance.clockIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         : null);
+
+      // Reset lokasi agar tombol "Dapatkan Lokasi" pada presensi pulang langsung aktif
+      setCurrentLocation(null);
+      setIsInRange(false);
+      setLocationError('');
+
       alert(`Anda berhasil presensi masuk pada pukul ${data.attendance && data.attendance.clockIn
         ? new Date(data.attendance.clockIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
         : '-'} .`);
+      window.location.reload(); // Tambahkan ini agar halaman reload otomatis
     } catch (error) {
       alert(error.message);
     }
@@ -197,14 +236,16 @@ function PresenceSection() {
         <div>
           <h4 className="font-semibold text-lg text-gray-700 mb-2">Presensi Masuk</h4>
           {!checkInTime && (
-            <button
-              onClick={getGeoLocation}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-4 rounded-lg transition-colors duration-200 text-sm mb-3"
-            >
-              Dapatkan Lokasi
-            </button>
+            <>
+              <button
+                onClick={getGeoLocation}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-4 rounded-lg transition-colors duration-200 text-sm mb-3"
+              >
+                Dapatkan Lokasi
+              </button>
+              <br />
+            </>
           )}
-          <br />
           {!checkInTime ? (
             <button
               onClick={handleCheckIn}
@@ -225,24 +266,28 @@ function PresenceSection() {
         </div>
         <div>
           <h4 className="font-semibold text-lg text-gray-700 mb-2">Presensi Pulang</h4>
-          {checkInTime && !checkOutTime && (
-            <button
-              onClick={getGeoLocation}
-              className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-4 rounded-lg transition-colors duration-200 text-sm mb-3"
-            >
-              Dapatkan Lokasi
-            </button>
+          {!checkOutTime && (
+            <>
+              {checkInTime && (
+                <button
+                  onClick={getGeoLocation}
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1.5 px-4 rounded-lg transition-colors duration-200 text-sm mb-3"
+                >
+                  Dapatkan Lokasi
+                </button>
+              )}
+              <br />
+              <button
+                onClick={handleCheckOut}
+                className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
+                  ${(!checkInTime || !currentLocation || !isInRange || !isToday) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={!checkInTime || !currentLocation || !isInRange || !isToday}
+              >
+                Presensi Pulang Sekarang
+              </button>
+            </>
           )}
-          {!checkOutTime ? (
-            <button
-              onClick={handleCheckOut}
-              className={`bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
-                ${(!checkInTime || !currentLocation || !isInRange || !isToday) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={!checkInTime || !currentLocation || !isInRange || !isToday}
-            >
-              Presensi Pulang Sekarang
-            </button>
-          ) : (
+          {checkOutTime && (
             <p className="text-lg text-green-700 font-medium">
               Pulang: <span className="font-bold">{checkOutTime}</span>
             </p>
