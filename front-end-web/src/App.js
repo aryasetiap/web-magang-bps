@@ -11,6 +11,7 @@ import AuthCallbackPage from "./pages/AuthCallbackPage";
 // Import Unified Dashboard Layout (Layout gabungan untuk semua role dashboard)
 import DashboardLayout from "./components/protected/DashboardLayout";
 import ProtectedRoute from "./components/protected/ProtectedRoute"; // Untuk melindungi rute
+import ProtectedRouteInternAccepted from "./components/protected/ProtectedRouteInternAccepted";
 
 // Import Halaman Dashboard Intern
 import InternDashboard from "./pages/intern/InternDashboard";
@@ -91,9 +92,30 @@ function App() {
             {/* Halaman default /dashboard */}
             <Route path="biodata" element={<BiodataPage />} />
             <Route path="submissions" element={<SubmissionStatusPage />} />
-            <Route path="activities" element={<ActivitiesPage />} />
-            <Route path="intern-reports" element={<InternReportPage />} />
-            <Route path="certificate" element={<CertificatePage />} />
+            <Route
+              path="activities"
+              element={
+                <ProtectedRouteInternAccepted>
+                  <ActivitiesPage />
+                </ProtectedRouteInternAccepted>
+              }
+            />
+            <Route
+              path="intern-reports"
+              element={
+                <ProtectedRouteInternAccepted>
+                  <InternReportPage />
+                </ProtectedRouteInternAccepted>
+              }
+            />
+            <Route
+              path="certificate"
+              element={
+                <ProtectedRouteInternAccepted>
+                  <CertificatePage />
+                </ProtectedRouteInternAccepted>
+              }
+            />
           </Route>
 
           {/* Rute Dashboard Admin - Dilindungi */}
