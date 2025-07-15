@@ -1,33 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import BrandLogo from '../components/BrandLogo';
-import kantorBPS from '../assets/kantor-bps-3.jpg';
-import AlertDialog from '../components/AlertDialog';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import BrandLogo from "../components/BrandLogo";
+import kantorBPS from "../assets/kantor-bps-3.jpg";
+import AlertDialog from "../components/AlertDialog";
 
 function Registration() {
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   // inisialisasikan alert
 
   const [alert, setAlert] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    type: '',
+    title: "",
+    message: "",
+    type: "",
     autoCloseDelay: 0,
     onConfirm: null,
     showCancelButton: false,
   });
 
   const closeAlert = () => {
-    setAlert(prev => ({ ...prev, isOpen: false }));
+    setAlert((prev) => ({ ...prev, isOpen: false }));
   };
-
 
   const handleEmailRegistration = async (e) => {
     e.preventDefault();
@@ -36,9 +35,9 @@ function Registration() {
       // Tampilkan alert jika ada bidang yang kosong
       setAlert({
         isOpen: true,
-        title: 'Peringatan',
-        message: 'Mohon lengkapi semua bidang.',
-        type: 'warning',
+        title: "Peringatan",
+        message: "Mohon lengkapi semua bidang.",
+        type: "warning",
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
         showCancelButton: false,
@@ -52,9 +51,9 @@ function Registration() {
       // Tampilkan alert jika konfirmasi password tidak cocok
       setAlert({
         isOpen: true,
-        title: 'Peringatan',
-        message: 'Konfirmasi password tidak cocok.',
-        type: 'error',
+        title: "Peringatan",
+        message: "Konfirmasi password tidak cocok.",
+        type: "error",
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
         showCancelButton: false,
@@ -65,9 +64,9 @@ function Registration() {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:3000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name: fullName, password }),
       });
 
@@ -76,28 +75,28 @@ function Registration() {
       if (res.ok) {
         setAlert({
           isOpen: true,
-          title: 'Berhasil',
-          message: 'Registrasi berhasil! Silakan login.',
-          type: 'success',
+          title: "Berhasil",
+          message: "Registrasi berhasil! Silakan login.",
+          type: "success",
           autoCloseDelay: 1500,
           onConfirm: () => {
             closeAlert();
-            navigate('/login');
+            navigate("/login");
           },
           showCancelButton: false,
         });
         setTimeout(() => {
           closeAlert();
-          navigate('/login');
+          navigate("/login");
         }, 1500);
         return;
       } else {
         // Tampilkan alert gagal
         setAlert({
           isOpen: true,
-          title: 'Gagal',
-          message: data?.message || 'Registrasi gagal.',
-          type: 'error',
+          title: "Gagal",
+          message: data?.message || "Registrasi gagal.",
+          type: "error",
           autoCloseDelay: 3000,
           onConfirm: closeAlert,
           showCancelButton: false,
@@ -105,13 +104,13 @@ function Registration() {
         // alert(data?.message || 'Registrasi gagal.');
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
       // Tampilkan alert jika terjadi kesalahan
       setAlert({
         isOpen: true,
-        title: 'Kesalahan',
-        message: 'Terjadi kesalahan saat registrasi.',
-        type: 'error',
+        title: "Kesalahan",
+        message: "Terjadi kesalahan saat registrasi.",
+        type: "error",
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
         showCancelButton: false,
@@ -121,61 +120,82 @@ function Registration() {
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = 'http://localhost:3000/auth/google';
+    window.location.href = "http://localhost:3000/auth/google";
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:3000/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: fullName, email, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Registrasi berhasil! Silakan login.");
-        navigate("/login");
-      } else {
-        setError(data.message || "Registrasi gagal");
-      }
-    } catch (err) {
-      setError("Terjadi kesalahan jaringan");
-    }
-    setLoading(false);
-  };
+  // const handleRegister = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   try {
+  //     const res = await fetch("http://localhost:3000/auth/register", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ name: fullName, email, password }),
+  //     });
+  //     const data = await res.json();
+  //     if (res.ok) {
+  //       alert("Registrasi berhasil! Silakan login.");
+  //       navigate("/login");
+  //     } else {
+  //       setError(data.message || "Registrasi gagal");
+  //     }
+  //   } catch (err) {
+  //     setError("Terjadi kesalahan jaringan");
+  //   }
+  //   setLoading(false);
+  // };
 
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-gray-100 p-4"
       style={{
         backgroundImage: `url(${kantorBPS})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        zIndex: -1
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        zIndex: -1,
       }}
     >
       <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
       <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative">
-
         {/* Tombol Kembali */}
-        <a href="/" className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200">
-          <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+        <a
+          href="/"
+          className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200"
+        >
+          <svg
+            className="h-7 w-7"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11 17l-5-5m0 0l5-5m-5 5h12"
+            />
           </svg>
         </a>
 
         <div className="text-center mb-8 mt-4">
           <div className="container mx-auto flex justify-center text-left">
-            <a href="/"><BrandLogo textClassName="text-xl" /></a>
+            <a href="/">
+              <BrandLogo textClassName="text-xl" />
+            </a>
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-800">Daftar Akun Baru</h2>
+          <h2 className="mt-4 text-2xl font-bold text-gray-800">
+            Daftar Akun Baru
+          </h2>
         </div>
 
         <form onSubmit={handleEmailRegistration}>
           <div className="mb-4">
-            <label htmlFor="regEmail" className="block text-gray-700 text-sm font-bold mb-2">Email:</label>
+            <label
+              htmlFor="regEmail"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Email:
+            </label>
             <input
               type="email"
               id="regEmail"
@@ -188,7 +208,12 @@ function Registration() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="regName" className="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap:</label>
+            <label
+              htmlFor="regName"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Nama Lengkap:
+            </label>
             <input
               type="text"
               id="regName"
@@ -201,7 +226,12 @@ function Registration() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="regPassword" className="block text-gray-700 text-sm font-bold mb-2">Kata Sandi:</label>
+            <label
+              htmlFor="regPassword"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Kata Sandi:
+            </label>
             <input
               type="password"
               id="regPassword"
@@ -214,7 +244,12 @@ function Registration() {
           </div>
 
           <div className="mb-6">
-            <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Kata Sandi:</label>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
+              Konfirmasi Kata Sandi:
+            </label>
             <input
               type="password"
               id="confirmPassword"
@@ -249,13 +284,17 @@ function Registration() {
               src="https://developers.google.com/identity/images/g-logo.png"
               alt="Google Logo"
               className="w-5 h-5 mr-2"
-            /> Daftar dengan Google
+            />{" "}
+            Daftar dengan Google
           </button>
         </div>
 
         <p className="text-center text-gray-600 text-sm mt-6">
-          Sudah punya akun?{' '}
-          <a href="/login" className="text-bps-blue hover:underline font-semibold">
+          Sudah punya akun?{" "}
+          <a
+            href="/login"
+            className="text-bps-blue hover:underline font-semibold"
+          >
             Masuk
           </a>
         </p>
@@ -271,7 +310,6 @@ function Registration() {
         onClose={closeAlert}
       />
     </div>
-
   );
 }
 

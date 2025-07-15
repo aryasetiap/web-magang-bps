@@ -22,7 +22,7 @@ import CertificatePage from "./pages/intern/Certificate";
 
 // Import Halaman Dashboard Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminAccountsPage from "./pages/admin/AdminAccounts";
+import AdminAccountsPage from "./pages/admin/management-settings/AdminAccounts";
 // import AdminSettingsPage from './pages/admin/AdminSettings';
 import AdminApplicantsPage from "./pages/admin/AdminApplicants";
 import AdminMonitoringPage from "./pages/admin/AdminMonitoring";
