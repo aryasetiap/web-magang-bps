@@ -1,4 +1,4 @@
-import React, { useState, Fragment, useEffect } from "react";
+import React, { useState, Fragment } from "react";
 import { Menu, Dialog, Transition } from "@headlessui/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -6,13 +6,14 @@ import {
   PhotoIcon,
   KeyIcon,
   Bars3Icon,
-} from "@heroicons/react/24/outline"; // Tambahkan ikon
+} from "@heroicons/react/24/outline";
 import AlertDialog from "../AlertDialog";
+import { useProfile } from "../../contexts/ProfileContext";
 
-// Menerima prop isCollapsed dan userRole dari parent layout
 function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile, fetchProfile } = useProfile();
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -25,37 +26,23 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
   });
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [currentUserName, setCurrentUserName] = useState("Nama Pengguna");
-  const [profilePhoto, setProfilePhoto] = useState(
-    "https://via.placeholder.com/150/F8D7DA/000000?text=JD"
-  );
+  const [currentUserName, setCurrentUserName] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   const token = localStorage.getItem("authToken");
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (!token) return;
-      try {
-        const res = await fetch("http://localhost:3000/auth/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setCurrentUserName(data.name || "Pengguna");
-          // setProfilePhoto(data.photoUrl || "https://via.placeholder.com/150/F8D7DA/000000?text=JD"); // Uncomment nanti jika photo tersedia
-        }
-      } catch (err) {
-        console.error("Gagal memuat profil:", err);
-      }
-    };
-
-    fetchProfile();
-  }, [token]);
+  // Sinkronkan nama & foto dari context setiap kali profile berubah
+  React.useEffect(() => {
+    setCurrentUserName(profile?.namaLengkap || profile?.name || "Pengguna");
+    setProfilePhoto(
+      profile?.profilePhoto
+        ? `http://localhost:3000/${profile.profilePhoto.replace(/\\/g, "/")}`
+        : "https://via.placeholder.com/150/F8D7DA/000000?text=JD"
+    );
+  }, [profile]);
 
   const closeAlert = () => {
     setAlert((prev) => ({ ...prev, isOpen: false }));
@@ -72,17 +59,55 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     setIsProfileModalOpen(false);
   }
 
-  const handleUpdateProfile = (e) => {
+  const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    // alert(`Profil diperbarui! Nama: ${currentUserName}`);
-    closeProfileModal();
-    setAlert({
-      isOpen: true,
-      title: "Profil Diperbarui",
-      message: "Nama dan foto profil Anda berhasil diperbarui.",
-      type: "success",
-      autoCloseDelay: 1500,
-    });
+    if (!token) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("namaLengkap", currentUserName);
+      if (profilePhoto && profilePhoto.startsWith("data:")) {
+        // Convert base64 to file
+        const arr = profilePhoto.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) u8arr[n] = bstr.charCodeAt(n);
+        const file = new File([u8arr], "profile-photo.png", { type: mime });
+        formData.append("profilePhoto", file);
+      }
+
+      const res = await fetch("http://localhost:3000/auth/profile", {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Gagal update profil.");
+
+      setAlert({
+        isOpen: true,
+        title: "Profil Diperbarui",
+        message: "Nama dan foto profil Anda berhasil diperbarui.",
+        type: "success",
+        autoCloseDelay: 1500,
+      });
+      closeProfileModal();
+
+      // Fetch ulang profil global agar HeadBar & Biodata ikut update
+      setTimeout(() => {
+        fetchProfile();
+      }, 1000);
+    } catch (err) {
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Terjadi kesalahan saat update profil.",
+        type: "error",
+        autoCloseDelay: 3000,
+      });
+    }
   };
 
   const handleChangePassword = (e) => {
@@ -182,9 +207,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
       <span key={to} className="flex items-center">
         <a
           href={to}
-          className={`text-gray-600 hover:text-bps-blue ${
-            last ? "font-semibold" : ""
-          }`}
+          className={`text-gray-600 hover:text-bps-blue ${last ? "font-semibold" : ""
+            }`}
         >
           {displayName}
         </a>
@@ -213,8 +237,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {userRole === "admin"
                 ? "Admin Dashboard"
                 : userRole === "staff"
-                ? "Staff Dashboard"
-                : ""}
+                  ? "Staff Dashboard"
+                  : ""}
             </span>
           ) : (
             <>
@@ -225,8 +249,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                 {userRole === "admin"
                   ? "Admin Dashboard"
                   : userRole === "staff"
-                  ? "Staff Dashboard"
-                  : ""}
+                    ? "Staff Dashboard"
+                    : ""}
               </a>
               <span className="text-gray-400 mr-2"></span>
               {breadcrumbs.filter((_, idx) => {
@@ -271,9 +295,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {({ active }) => (
                 <button
                   onClick={openProfileModal} // Panggil fungsi untuk membuka modal profil
-                  className={`${
-                    active ? "bg-bps-blue text-white" : "text-gray-900"
-                  } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  className={`${active ? "bg-bps-blue text-white" : "text-gray-900"
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Profil Saya
                 </button>
@@ -283,9 +306,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {({ active }) => (
                 <button
                   onClick={handleLogout}
-                  className={`${
-                    active ? "bg-red-500 text-white" : "text-gray-900"
-                  } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  className={`${active ? "bg-red-500 text-white" : "text-gray-900"
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Logout
                 </button>
