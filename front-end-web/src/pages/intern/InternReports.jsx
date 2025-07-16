@@ -2,24 +2,10 @@ import React, { useState, useEffect } from "react";
 import AlertDialog from "../../components/AlertDialog";
 
 function InternReports() {
-  // State untuk data laporan akhir
-  const [recapData, setRecapData] = useState(() => {
-    // Hanya inisialisasi bagian laporan akhir dari localStorage
-    const savedReport = localStorage.getItem("finalReportFile");
-    const savedReportStatus = localStorage.getItem("finalReportStatus");
-    const savedRevisiNotes = localStorage.getItem("revisiNotes");
-
-    return {
-      submittedFinalReport: savedReport ? JSON.parse(savedReport) : null,
-      finalReportStatus: savedReportStatus || "Belum Diperiksa", // Belum Diperiksa, Perlu Revisi, Disetujui
-      revisiNotes: savedRevisiNotes || "",
-    };
-  });
-
+  const [finalReport, setFinalReport] = useState(null); // Data dari backend
   const [finalReportFile, setFinalReportFile] = useState(null);
-  const [reportTitle, setReportTitle] = useState(""); // State untuk judul laporan
-  const [reportDescription, setReportDescription] = useState(""); // State untuk deskripsi laporan
-
+  const [reportTitle, setReportTitle] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
   const [alert, setAlert] = useState({
     isOpen: false,
     title: "",
@@ -28,30 +14,31 @@ function InternReports() {
     autoCloseDelay: 0,
   });
 
-  const closeAlert = () => {
-    setAlert((prev) => ({ ...prev, isOpen: false }));
-  };
+  const token = localStorage.getItem("authToken");
 
-  const token = localStorage.getItem("authToken"); // Ambil token dari localStorage
-
-  // Efek untuk memuat/menyimpan data laporan akhir ke localStorage
+  // Fetch laporan akhir dari backend
   useEffect(() => {
-    localStorage.setItem(
-      "finalReportFile",
-      JSON.stringify(recapData.submittedFinalReport)
-    );
-    localStorage.setItem("finalReportStatus", recapData.finalReportStatus);
-    if (recapData.revisiNotes) {
-      localStorage.setItem("revisiNotes", recapData.revisiNotes);
-    } else {
-      localStorage.removeItem("revisiNotes");
-    }
-  }, [recapData]);
+    const fetchFinalReport = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/final-projects", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (res.ok && data.length > 0) {
+          setFinalReport(data[0]);
+          setReportTitle(data[0].title || "");
+          setReportDescription(data[0].description || "");
+        }
+      } catch (err) {
+        console.error("Gagal mengambil laporan akhir:", err);
+      }
+    };
+    if (token) fetchFinalReport();
+  }, [token]);
 
   const handleFinalReportUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.size > 10 * 1024 * 1024) {
-      // Validasi ukuran file (10MB)
       setAlert({
         isOpen: true,
         title: "Ukuran File Terlalu Besar",
@@ -59,11 +46,10 @@ function InternReports() {
         type: "error",
         autoCloseDelay: 3000,
       });
-      setFinalReportFile(null); // Reset input file
+      setFinalReportFile(null);
       return;
     }
     if (file && file.type !== "application/pdf") {
-      // Validasi tipe file (PDF)
       setAlert({
         isOpen: true,
         title: "Format File Tidak Valid",
@@ -71,7 +57,7 @@ function InternReports() {
         type: "error",
         autoCloseDelay: 3000,
       });
-      setFinalReportFile(null); // Reset input file
+      setFinalReportFile(null);
       return;
     }
     setFinalReportFile(file);
@@ -98,8 +84,7 @@ function InternReports() {
       });
       return;
     }
-    if (!finalReportFile && !recapData.submittedFinalReport) {
-      // Wajib ada file baru atau sudah ada file
+    if (!finalReportFile && !finalReport) {
       setAlert({
         isOpen: true,
         title: "Validasi Berkas",
@@ -113,29 +98,17 @@ function InternReports() {
     const formDataToSend = new FormData();
     formDataToSend.append("title", reportTitle);
     if (reportDescription.trim()) {
-      // Deskripsi opsional
       formDataToSend.append("description", reportDescription);
     }
-
     if (finalReportFile) {
-      // Jika ada file baru dipilih
       formDataToSend.append("file", finalReportFile);
-    } else if (
-      recapData.submittedFinalReport &&
-      recapData.submittedFinalReport.name
-    ) {
-      // Jika tidak ada file baru tapi sudah ada file lama, kirim indikator ke backend
-      // Asumsi backend bisa handle: misal 'current_file_name' atau tidak perlu append jika file tidak diubah
-      // Anda perlu koordinasi dengan backend di sini
-      // formDataToSend.append('existingFile', recapData.submittedFinalReport.name);
     }
 
     try {
       const res = await fetch("http://localhost:3000/final-projects", {
-        method: recapData.submittedFinalReport ? "PATCH" : "POST", // Gunakan PATCH jika sudah ada, POST jika baru
+        method: finalReport ? "PATCH" : "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          // 'Content-Type': 'multipart/form-data' TIDAK PERLU DISET MANUAL
         },
         body: formDataToSend,
       });
@@ -143,33 +116,12 @@ function InternReports() {
       const data = await res.json();
 
       if (res.ok) {
-        // Asumsi backend mengembalikan URL file yang baru diunggah dan status
-        setRecapData((prev) => ({
-          ...prev,
-          submittedFinalReport: {
-            name: finalReportFile?.name || recapData.submittedFinalReport?.name,
-            url: data.fileUrl || "#",
-          }, // Ambil URL baru jika ada
-          finalReportStatus: "Belum Diperiksa", // Reset status setelah unggah baru/ulang
-          revisiNotes: "",
-        }));
-        // Update localStorage global juga
-        localStorage.setItem(
-          "finalReportFile",
-          JSON.stringify({
-            name: finalReportFile?.name || recapData.submittedFinalReport?.name,
-            url: data.fileUrl || "#",
-          })
-        );
-        localStorage.setItem("finalReportStatus", "Belum Diperiksa");
-        localStorage.removeItem("revisiNotes");
-
-        setFinalReportFile(null); // Reset input file
+        setFinalReport(data); // Update data laporan akhir
+        setFinalReportFile(null);
         setAlert({
           isOpen: true,
           title: "Unggah Berhasil!",
-          message:
-            "Laporan akhir Anda berhasil diunggah/diperbarui. Menunggu pemeriksaan.",
+          message: "Laporan akhir Anda berhasil diunggah/diperbarui.",
           type: "success",
           autoCloseDelay: 2500,
         });
@@ -177,7 +129,6 @@ function InternReports() {
         throw new Error(data.message || "Gagal mengunggah laporan akhir.");
       }
     } catch (error) {
-      console.error("Error submitting final report:", error);
       setAlert({
         isOpen: true,
         title: "Unggah Gagal!",
@@ -186,21 +137,6 @@ function InternReports() {
         type: "error",
         autoCloseDelay: 3000,
       });
-    }
-  };
-
-  // Fungsi simulasi untuk mengubah status laporan (untuk testing, bisa dihapus di production)
-  const simulateStatusChange = (status, notes = "") => {
-    setRecapData((prev) => ({
-      ...prev,
-      finalReportStatus: status,
-      revisiNotes: notes,
-    }));
-    localStorage.setItem("finalReportStatus", status);
-    if (notes) {
-      localStorage.setItem("revisiNotes", notes);
-    } else {
-      localStorage.removeItem("revisiNotes");
     }
   };
 
@@ -213,13 +149,10 @@ function InternReports() {
         Unggah laporan akhir magang Anda dan pantau status pemeriksaannya.
       </p>
 
-      {/* Bagian Unggah Laporan Akhir */}
       <div className="p-6 border rounded-lg bg-purple-50">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">
           Unggah Laporan Akhir
         </h3>
-
-        {/* Form untuk input judul, deskripsi, dan file */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -278,7 +211,6 @@ function InternReports() {
                         file:text-sm file:font-semibold
                         file:bg-bps-blue file:text-white
                         hover:file:bg-bps-light-blue"
-              // required // Validasi manual lebih baik untuk file
             />
             {finalReportFile && (
               <p className="mt-2 text-sm text-gray-600">
@@ -287,108 +219,74 @@ function InternReports() {
             )}
           </div>
 
-          <div className="mb-4">
-            <p className="text-gray-700 font-medium mb-2">
-              Status Laporan Akhir Anda:
-            </p>
-            <span
-              className={`px-4 py-1 rounded-full font-semibold text-sm
-                    ${
-                      recapData.finalReportStatus === "Disetujui"
-                        ? "bg-green-200 text-green-800"
-                        : recapData.finalReportStatus === "Perlu Revisi"
-                        ? "bg-red-200 text-red-800"
-                        : "bg-yellow-200 text-yellow-800"
-                    }`}
-            >
-              {recapData.finalReportStatus}
-            </span>
-            {recapData.revisiNotes &&
-              recapData.finalReportStatus === "Perlu Revisi" && (
+          {/* Status, URL, dan Feedback */}
+          {finalReport && (
+            <div className="mb-4">
+              <p className="text-gray-700 font-medium mb-2">
+                Status Laporan Akhir Anda:
+              </p>
+              <span
+                className={`px-4 py-1 rounded-full font-semibold text-sm
+                  ${
+                    finalReport.status === "approved"
+                      ? "bg-green-200 text-green-800"
+                      : finalReport.status === "revision"
+                      ? "bg-red-200 text-red-800"
+                      : "bg-yellow-200 text-yellow-800"
+                  }`}
+              >
+                {finalReport.status === "approved"
+                  ? "Disetujui"
+                  : finalReport.status === "revision"
+                  ? "Perlu Revisi"
+                  : "Belum Diperiksa"}
+              </span>
+              {finalReport.feedback && (
                 <p className="text-red-600 text-sm mt-2">
-                  Catatan Revisi: {recapData.revisiNotes}
+                  Catatan Feedback: {finalReport.feedback}
                 </p>
               )}
-          </div>
-
-          {recapData.submittedFinalReport && (
-            <div className="mb-4 text-gray-700">
-              <p>File Laporan Terakhir Diunggah:</p>
-              <a
-                href={recapData.submittedFinalReport.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline font-medium"
-              >
-                {recapData.submittedFinalReport.name}
-              </a>
+              <div className="mt-2 text-gray-700">
+                <p>File Laporan Terakhir Diunggah:</p>
+                <a
+                  href={`/${finalReport.filePath.replace(/\\/g, "/")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline font-medium"
+                >
+                  {finalReport.title}
+                </a>
+              </div>
             </div>
           )}
 
-          {recapData.finalReportStatus !== "Disetujui" && (
+          {!finalReport || finalReport.status !== "approved" ? (
             <button
-              type="submit" // Ini adalah tombol submit form
+              type="submit"
               disabled={
-                !reportTitle.trim() ||
-                (!finalReportFile && !recapData.submittedFinalReport)
+                !reportTitle.trim() || (!finalReportFile && !finalReport)
               }
               className={`mt-4 bg-bps-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
-                        ${
-                          !reportTitle.trim() ||
-                          (!finalReportFile && !recapData.submittedFinalReport)
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
+                ${
+                  !reportTitle.trim() || (!finalReportFile && !finalReport)
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
             >
-              {recapData.submittedFinalReport
-                ? "Unggah Ulang Laporan"
-                : "Unggah Laporan Akhir"}
+              {finalReport ? "Unggah Ulang Laporan" : "Unggah Laporan Akhir"}
             </button>
-          )}
-          {recapData.finalReportStatus === "Disetujui" && (
+          ) : (
             <p className="text-green-700 mt-4 font-semibold">
               Selamat! Laporan akhir Anda sudah diperiksa dan dinyatakan
               Disetujui.
             </p>
           )}
         </form>
-
-        {/* Tombol simulasi status (Hanya untuk dev/demo) */}
-        {/* <div className="mt-8 pt-4 border-t border-gray-200">
-          <h4 className="text-md font-semibold text-gray-700 mb-3">
-            Simulasi Status (DEV ONLY):
-          </h4>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => simulateStatusChange("Belum Diperiksa")}
-              className="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-            >
-              Set Belum Diperiksa
-            </button>
-            <button
-              onClick={() =>
-                simulateStatusChange(
-                  "Perlu Revisi",
-                  "Tolong perbaiki bagian metodologi dan hasil analisis."
-                )
-              }
-              className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-            >
-              Set Perlu Revisi
-            </button>
-            <button
-              onClick={() => simulateStatusChange("Disetujui")}
-              className="bg-green-500 text-white px-3 py-1 rounded text-sm"
-            >
-              Set Disetujui
-            </button>
-          </div>
-        </div> */}
       </div>
 
       <AlertDialog
         isOpen={alert.isOpen}
-        onClose={closeAlert}
+        onClose={() => setAlert((prev) => ({ ...prev, isOpen: false }))}
         title={alert.title}
         message={alert.message}
         type={alert.type}
