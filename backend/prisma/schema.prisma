@@ -31,7 +31,7 @@ enum StatusFinalProject {
   submitted
   reviewed
   accepted
-  revision
+  revisi
 }
 
 enum StatusSubmission {
@@ -174,10 +174,11 @@ model Logbook {
 }
 
 model Task {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
-  description String   @db.Text
+  description String    @db.Text
   deadline    DateTime
+  deletedAt   DateTime? // Soft delete
 
   // --- Relations ---
   // A task is created by one user (staff/coordinator)
@@ -207,11 +208,15 @@ model TaskAssignment {
 }
 
 model Submission {
-  id       Int              @id @default(autoincrement())
-  filePath String?          @map("file_path")
-  grade    Float?
-  feedback String?
-  status   StatusSubmission @default(not_submitted)
+  id        Int              @id @default(autoincrement())
+  filePath  String?          @map("file_path")
+  grade     Float?
+  feedback  String?
+  status    StatusSubmission @default(not_submitted)
+  gradedBy  Int? // ID user yang menilai
+  gradedAt  DateTime? // Tanggal penilaian
+  deletedAt DateTime? // Soft delete
+  isLate    Boolean          @default(false)
 
   // --- Relations ---
   task   Task @relation(fields: [taskId], references: [id])
@@ -278,4 +283,22 @@ model Certificate {
   generatedById Int?  @map("generated_by_id")
 
   @@map("certificates")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entity      String
+  entityId    Int
+  userId      Int
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

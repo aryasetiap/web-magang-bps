@@ -67,8 +67,14 @@ export class TasksController {
   gradeSubmission(
     @Param('submissionId', ParseIntPipe) submissionId: number,
     @Body() gradeSubmissionDto: GradeSubmissionDto,
+    @Request() req,
   ) {
-    return this.tasksService.gradeSubmission(submissionId, gradeSubmissionDto);
+    const graderId = req.user.userId;
+    return this.tasksService.gradeSubmission(
+      submissionId,
+      gradeSubmissionDto,
+      graderId,
+    );
   }
 
   @Get('my-tasks')
