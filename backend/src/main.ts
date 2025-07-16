@@ -1,6 +1,6 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -9,9 +9,9 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
+      transform: true, // <-- ini WAJIB agar @Transform di DTO berjalan
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true,
     }),
   );
 
