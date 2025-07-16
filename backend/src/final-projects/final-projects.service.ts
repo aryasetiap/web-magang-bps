@@ -103,7 +103,7 @@ export class FinalProjectsService {
   ) {
     const finalProject = await this.findOne(id, userId);
 
-    // Hanya bisa update jika status draft, revision, atau submitted
+    // Hanya bisa update jika status draft, revisi, atau submitted
     if (['accepted'].includes(finalProject.status)) {
       throw new ForbiddenException(
         'Final project yang sudah diterima tidak dapat diubah',
@@ -141,6 +141,19 @@ export class FinalProjectsService {
       throw new ForbiddenException(
         'Hanya final project yang sudah disubmit yang dapat direview',
       );
+    }
+
+    if (reviewDto.status === 'revisi') {
+      return this.prisma.finalProject.update({
+        where: { id },
+        data: {
+          status: 'revisi', // enum prisma untuk final project
+          grade: reviewDto.grade,
+          feedback: reviewDto.feedback,
+          reviewedById: reviewerId,
+          reviewedAt: new Date(),
+        },
+      });
     }
 
     return this.prisma.finalProject.update({

@@ -10,6 +10,8 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto'; // 1. Impor DTO
+import * as path from 'path';
+import * as fs from 'fs';
 
 @Injectable()
 export class TasksService {
@@ -37,7 +39,15 @@ export class TasksService {
         skipDuplicates: true,
       });
     }
-
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'create',
+        entity: 'task',
+        entityId: task.id,
+        userId: creatorId,
+        description: `Membuat tugas "${task.title}"`,
+      },
+    });
     return task;
   }
 
@@ -63,6 +73,22 @@ export class TasksService {
     if (!file) {
       throw new BadRequestException('File tugas wajib diunggah.');
     }
+    // Validasi tipe dan ukuran file
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (!allowedTypes.includes(file.mimetype)) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException(
+        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+      );
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException('Ukuran file melebihi 5MB.');
+    }
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: {
         taskId_userId: {
@@ -85,11 +111,15 @@ export class TasksService {
     if (existingSubmission) {
       throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
     }
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    const isLate = !!(task && new Date() > task.deadline);
     return this.prisma.submission.create({
       data: {
         filePath: file.path,
         taskId: taskId,
         userId: userId,
+        status: 'submitted',
+        isLate, // Tandai jika lewat deadline
       },
     });
   }
@@ -120,17 +150,68 @@ export class TasksService {
   async gradeSubmission(
     submissionId: number,
     gradeSubmissionDto: GradeSubmissionDto,
+    graderId: number,
   ) {
-    // Gunakan update untuk mengisi nilai dan feedback pada submission yang ada
-    return this.prisma.submission.update({
-      where: {
-        id: submissionId,
-      },
+    const submission = await this.prisma.submission.findUnique({
+      where: { id: submissionId },
+      include: { task: true },
+    });
+    if (!submission) throw new NotFoundException('Submission tidak ditemukan.');
+    // Cek apakah grader adalah creator tugas
+    if (submission.task.createdBy !== graderId) {
+      throw new ForbiddenException('Anda tidak berhak menilai submission ini.');
+    }
+    // Cek status submission
+    if (!['submitted', 'revisi'].includes(submission.status)) {
+      throw new BadRequestException(
+        'Submission hanya bisa dinilai jika status submitted/revisi.',
+      );
+    }
+    if (gradeSubmissionDto.status === 'revisi') {
+      const updated = await this.prisma.submission.update({
+        where: { id: submissionId },
+        data: {
+          feedback: gradeSubmissionDto.feedback,
+          status: 'revisi',
+          gradedBy: graderId,
+          gradedAt: new Date(),
+        },
+      });
+      await this.prisma.notification.create({
+        data: {
+          userId: updated.userId,
+          message: 'Submission Anda perlu revisi.',
+        },
+      });
+      return updated;
+    }
+    // Update status ke 'reviewed'
+    const updated = await this.prisma.submission.update({
+      where: { id: submissionId },
       data: {
         grade: gradeSubmissionDto.grade,
         feedback: gradeSubmissionDto.feedback,
+        status: 'reviewed',
+        gradedBy: graderId,
+        gradedAt: new Date(),
       },
     });
+    await this.prisma.notification.create({
+      data: {
+        userId: updated.userId,
+        message: 'Submission Anda telah dinilai.',
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'grade',
+        entity: 'submission',
+        entityId: submissionId,
+        userId: graderId,
+        description: `Submission dinilai dengan status ${gradeSubmissionDto.status || 'reviewed'}`,
+      },
+    });
+    return updated;
   }
 
   findTasksForUser(userId: number) {
@@ -172,7 +253,20 @@ export class TasksService {
     return `This action updates a #${id} task`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} task`;
+  async remove(id: number) {
+    const deleted = await this.prisma.task.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'delete',
+        entity: 'task',
+        entityId: id,
+        userId: deleted.createdBy,
+        description: `Soft delete tugas "${deleted.title}"`,
+      },
+    });
+    return deleted;
   }
 }

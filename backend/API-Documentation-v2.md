@@ -1273,7 +1273,7 @@
 
 #### PATCH `/final-projects/:id`
 
-**Deskripsi:** Update laporan akhir (hanya jika status draft atau revision)
+**Deskripsi:** Update laporan akhir (hanya jika status draft atau revisi)
 
 **Headers:**
 
@@ -1830,7 +1830,7 @@ Semua endpoint dengan paginasi menggunakan struktur response standar:
 - `not_submitted`: Belum submit
 - `submitted`: Sudah submit
 - `reviewed`: Sudah dinilai
-- `revision`: Perlu revisi
+- `revisi`: Perlu revisi
 
 #### **FinalProject Status:**
 
@@ -1838,7 +1838,7 @@ Semua endpoint dengan paginasi menggunakan struktur response standar:
 - `submitted`: Sudah submit
 - `reviewed`: Sedang direview
 - `accepted`: Diterima
-- `revision`: Perlu revisi
+- `revisi`: Perlu revisi
 
 #### **Certificate Status:**
 

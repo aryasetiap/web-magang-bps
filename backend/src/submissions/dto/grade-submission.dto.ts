@@ -5,6 +5,7 @@ import {
   IsString,
   Max,
   Min,
+  IsIn,
 } from 'class-validator';
 
 export class GradeSubmissionDto {
@@ -17,4 +18,10 @@ export class GradeSubmissionDto {
   @IsOptional()
   @IsString()
   feedback?: string;
+
+  @IsOptional()
+  @IsIn(['reviewed', 'revisi'], {
+    message: 'Status harus reviewed atau revisi.',
+  })
+  status?: 'reviewed' | 'revisi';
 }
