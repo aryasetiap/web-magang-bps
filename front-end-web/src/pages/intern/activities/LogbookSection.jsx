@@ -49,6 +49,7 @@ function LogbookSection() {
   const [loading, setLoading] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [logbookDate, setLogbookDate] = useState(todayDateString);
 
   const BASE_URL = 'http://localhost:3000';
   const token = localStorage.getItem('authToken');
@@ -78,8 +79,12 @@ function LogbookSection() {
     // eslint-disable-next-line
   }, [token]);
 
-  const alreadySubmittedToday = logbookEntries.some(
-    (entry) => entry.logDate && entry.logDate.split('T')[0] === todayDateString
+  // Cek apakah sudah ada logbook untuk tanggal yang dipilih
+  const alreadySubmittedForDate = logbookEntries.some(
+    (entry) =>
+      entry.logDate &&
+      entry.logDate.split('T')[0] === logbookDate &&
+      (!editingLogbookEntry || editingLogbookEntry.id !== entry.id)
   );
 
   // Scroll ke atas saat sukses
@@ -103,6 +108,14 @@ function LogbookSection() {
       setErrorMessage('Isi logbook minimal 10 karakter dan 10 kata.');
       return;
     }
+    if (logbookDate > todayDateString) {
+      setErrorMessage('Tidak dapat mengisi logbook untuk hari yang belum terjadi.');
+      return;
+    }
+    if (alreadySubmittedForDate) {
+      setErrorMessage('Logbook untuk tanggal ini sudah ada.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/logbooks`, {
@@ -112,7 +125,7 @@ function LogbookSection() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          logDate: todayDateString,
+          logDate: logbookDate,
           content: currentLogbookText.trim(),
         }),
       });
@@ -126,6 +139,7 @@ function LogbookSection() {
       if (data && data.id) {
         setLogbookEntries([data, ...logbookEntries]);
         setCurrentLogbookText('');
+        setLogbookDate(todayDateString);
         setSuccessMessage('Logbook berhasil ditambahkan!');
         setHighlightId(data.id);
       }
@@ -142,6 +156,14 @@ function LogbookSection() {
       setErrorMessage('Isi logbook minimal 10 karakter dan 10 kata.');
       return;
     }
+    if (logbookDate > todayDateString) {
+      setErrorMessage('Tidak dapat mengisi logbook untuk hari yang belum terjadi.');
+      return;
+    }
+    if (alreadySubmittedForDate) {
+      setErrorMessage('Logbook untuk tanggal ini sudah ada.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`${BASE_URL}/logbooks/${editingLogbookEntry.id}`, {
@@ -151,6 +173,7 @@ function LogbookSection() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          logDate: logbookDate,
           content: currentLogbookText.trim(),
         }),
       });
@@ -169,6 +192,7 @@ function LogbookSection() {
         );
         setEditingLogbookEntry(null);
         setCurrentLogbookText('');
+        setLogbookDate(todayDateString);
         setSuccessMessage('Logbook berhasil diedit!');
         setHighlightId(data.id);
       }
@@ -204,12 +228,14 @@ function LogbookSection() {
   const cancelEdit = () => {
     setEditingLogbookEntry(null);
     setCurrentLogbookText('');
+    setLogbookDate(todayDateString);
     setErrorMessage('');
   };
 
   const startEditLogbook = (entry) => {
     setEditingLogbookEntry(entry);
     setCurrentLogbookText(entry.content || '');
+    setLogbookDate(entry.logDate ? entry.logDate.split('T')[0] : todayDateString);
     setErrorMessage('');
   };
 
@@ -267,52 +293,76 @@ function LogbookSection() {
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded" role="alert">{errorMessage}</div>
       )}
 
-      {(editingLogbookEntry || !alreadySubmittedToday) && (
-        <div className="mb-6">
-          <h4 className="text-xl font-semibold text-gray-700 mb-2">
-            {editingLogbookEntry ? 'Edit Entri Logbook' : 'Tambah Entri Logbook'}
-          </h4>
-          <textarea
-            className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-1 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-            rows="3"
-            placeholder="Tuliskan aktivitas harian Anda (minimal 10 kata dan 10 karakter)..."
-            value={currentLogbookText}
-            onChange={(e) => setCurrentLogbookText(e.target.value)}
-            aria-label="Isi logbook harian"
-          ></textarea>
-          {!isValidLogbookText(currentLogbookText) && currentLogbookText.trim().length > 0 && (
-            <div className="text-xs text-red-600 mb-2" role="alert">
-              Logbook minimal 10 karakter dan 10 kata.
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            {editingLogbookEntry && (
-              <button
-                onClick={cancelEdit}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1.5 px-4 rounded-lg text-sm"
-                tabIndex={0}
-              >
-                Batal
-              </button>
-            )}
+      {/* Form tambah/edit logbook */}
+      <div className="mb-6">
+        <h4 className="text-xl font-semibold text-gray-700 mb-2">
+          {editingLogbookEntry ? 'Edit Entri Logbook' : 'Tambah Entri Logbook'}
+        </h4>
+        <label className="block mb-2 text-sm font-medium text-gray-700">
+          Tanggal Logbook
+          <input
+            type="date"
+            className="block mt-1 border rounded px-2 py-1"
+            value={logbookDate}
+            onChange={e => setLogbookDate(e.target.value)}
+            required
+            max={todayDateString}
+          />
+        </label>
+        <textarea
+          className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 mb-1 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+          rows="3"
+          placeholder="Tuliskan aktivitas harian Anda (minimal 10 kata dan 10 karakter)..."
+          value={currentLogbookText}
+          onChange={(e) => setCurrentLogbookText(e.target.value)}
+          aria-label="Isi logbook harian"
+        ></textarea>
+        {!isValidLogbookText(currentLogbookText) && currentLogbookText.trim().length > 0 && (
+          <div className="text-xs text-red-600 mb-2" role="alert">
+            Logbook minimal 10 karakter dan 10 kata.
+          </div>
+        )}
+        {logbookDate > todayDateString && (
+          <div className="text-xs text-red-600 mb-2" role="alert">
+            Tidak dapat mengisi logbook untuk hari yang belum terjadi.
+          </div>
+        )}
+        {alreadySubmittedForDate && !editingLogbookEntry && (
+          <div className="text-xs text-red-600 mb-2" role="alert">
+            Logbook untuk tanggal ini sudah ada.
+          </div>
+        )}
+        <div className="flex justify-end gap-2">
+          {editingLogbookEntry && (
             <button
-              onClick={editingLogbookEntry ? saveEditedLogbook : addLogbookEntry}
-              className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-1.5 px-4 rounded-lg text-sm flex items-center gap-2"
-              disabled={!isValidLogbookText(currentLogbookText) || loading}
-              aria-disabled={!isValidLogbookText(currentLogbookText) || loading}
+              onClick={cancelEdit}
+              className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-1.5 px-4 rounded-lg text-sm"
               tabIndex={0}
             >
-              {loading ? <Spinner /> : editingLogbookEntry ? 'Simpan' : 'Tambah'}
+              Batal
             </button>
-          </div>
+          )}
+          <button
+            onClick={editingLogbookEntry ? saveEditedLogbook : addLogbookEntry}
+            className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-1.5 px-4 rounded-lg text-sm flex items-center gap-2"
+            disabled={
+              !isValidLogbookText(currentLogbookText) ||
+              loading ||
+              alreadySubmittedForDate ||
+              logbookDate > todayDateString
+            }
+            aria-disabled={
+              !isValidLogbookText(currentLogbookText) ||
+              loading ||
+              alreadySubmittedForDate ||
+              logbookDate > todayDateString
+            }
+            tabIndex={0}
+          >
+            {loading ? <Spinner /> : editingLogbookEntry ? 'Simpan' : 'Tambah'}
+          </button>
         </div>
-      )}
-
-      {alreadySubmittedToday && !editingLogbookEntry && (
-        <div className="mb-4 text-green-700 bg-green-100 rounded px-3 py-2">
-          Anda sudah mengisi logbook untuk hari ini.
-        </div>
-      )}
+      </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
