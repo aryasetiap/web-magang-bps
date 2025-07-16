@@ -2,10 +2,12 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateLogbookDto } from './dto/create-logbook.dto';
 import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { StatusLogbook } from '@prisma/client';
 
 @Injectable()
 export class LogbooksService {
@@ -32,7 +34,20 @@ export class LogbooksService {
   }
 
   // Membuat entri logbook baru
-  create(userId: number, createLogbookDto: CreateLogbookDto) {
+  async create(userId: number, createLogbookDto: CreateLogbookDto) {
+    // Cek apakah sudah ada logbook di tanggal yang sama untuk user ini
+    const existing = await this.prisma.logbook.findFirst({
+      where: {
+        userId: userId,
+        logDate: new Date(createLogbookDto.logDate),
+      },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        'Anda sudah mengisi logbook untuk tanggal ini.',
+      );
+    }
+
     return this.prisma.logbook.create({
       data: {
         userId: userId,
@@ -63,18 +78,22 @@ export class LogbooksService {
 
   // Mengupdate logbook setelah verifikasi kepemilikan
   async update(userId: number, id: number, updateLogbookDto: UpdateLogbookDto) {
-    // Pastikan user adalah pemilik logbook sebelum mengupdate
     await this.verifyOwnership(userId, id);
+
+    const data: any = {};
+    if (updateLogbookDto.logDate) {
+      data.logDate = new Date(updateLogbookDto.logDate);
+    }
+    if (updateLogbookDto.content) {
+      data.content = updateLogbookDto.content;
+    }
+    if (updateLogbookDto.status) {
+      data.status = updateLogbookDto.status as StatusLogbook;
+    }
 
     return this.prisma.logbook.update({
       where: { id: id },
-      data: {
-        ...updateLogbookDto,
-        // Jika ada tanggal, konversi ke objek Date
-        ...(updateLogbookDto.logDate && {
-          logDate: new Date(updateLogbookDto.logDate),
-        }),
-      },
+      data,
     });
   }
 
@@ -100,8 +119,16 @@ export class LogbooksService {
       }),
       this.prisma.logbook.count(),
     ]);
+    // Filter password
+    const filteredData = data.map((item) => ({
+      ...item,
+      user: {
+        ...item.user,
+        password: undefined,
+      },
+    }));
     return {
-      data,
+      data: filteredData,
       total,
       page,
       lastPage: Math.ceil(total / limit),
