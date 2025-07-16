@@ -228,16 +228,16 @@ function InternReports() {
               <span
                 className={`px-4 py-1 rounded-full font-semibold text-sm
                   ${
-                    finalReport.status === "approved"
+                    finalReport.status === "aceppted"
                       ? "bg-green-200 text-green-800"
-                      : finalReport.status === "revision"
+                      : finalReport.status === "revisi"
                       ? "bg-red-200 text-red-800"
                       : "bg-yellow-200 text-yellow-800"
                   }`}
               >
-                {finalReport.status === "approved"
+                {finalReport.status === "accepted"
                   ? "Disetujui"
-                  : finalReport.status === "revision"
+                  : finalReport.status === "revisi"
                   ? "Perlu Revisi"
                   : "Belum Diperiksa"}
               </span>
@@ -249,7 +249,10 @@ function InternReports() {
               <div className="mt-2 text-gray-700">
                 <p>File Laporan Terakhir Diunggah:</p>
                 <a
-                  href={`/${finalReport.filePath.replace(/\\/g, "/")}`}
+                  href={`http://localhost:3000/${finalReport.filePath.replace(
+                    /\\/g,
+                    "/"
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline font-medium"
@@ -260,7 +263,7 @@ function InternReports() {
             </div>
           )}
 
-          {!finalReport || finalReport.status !== "approved" ? (
+          {!finalReport || finalReport.status !== "accepted" ? (
             <button
               type="submit"
               disabled={
