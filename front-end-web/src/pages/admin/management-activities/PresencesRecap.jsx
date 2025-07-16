@@ -34,12 +34,10 @@ function PresencesRecap() {
   const formatTime = (isoString) => {
     if (!isoString) return "-";
     const date = new Date(isoString);
-    // Format jam lokal
+
     const time = date.toLocaleString("id-ID", {
       dateStyle: "short",
       timeStyle: "short",
-      //   hour: "2-digit",
-      //   minute: "2-digit",
     });
 
     // Deteksi zona waktu

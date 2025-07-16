@@ -10,12 +10,12 @@ function LogbookList() {
   useEffect(() => {
     const fetchLogbooks = async () => {
       try {
-        const res = await fetch("http://localhost:3000/logbooks", {
+        const res = await fetch("http://localhost:3000/logbooks/all", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         if (res.ok) {
-          setLogbooks(data); // diasumsikan array
+          setLogbooks(data.data || []);
         }
       } catch (err) {
         console.error("Gagal mengambil logbook:", err);
@@ -32,6 +32,27 @@ function LogbookList() {
     if (!grouped[name]) grouped[name] = [];
     grouped[name].push(entry);
   });
+
+  const formatTime = (isoString) => {
+    if (!isoString) return "-";
+    const date = new Date(isoString);
+
+    const time = date.toLocaleString("id-ID", {
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+
+    // Deteksi zona waktu
+    const offset = date.getTimezoneOffset(); // dalam menit
+    const timeOffset = -offset / 60;
+
+    let zone = "WIB"; // default
+    if (timeOffset === 8) zone = "WITA";
+    else if (timeOffset === 9) zone = "WIT";
+    else if (timeOffset === 7) zone = "WIB"; // biasanya JavaScript berjalan di zona waktu UTC+7
+
+    return `${time} ${zone}`;
+  };
 
   return (
     <div className="mb-8 p-6 border rounded-lg bg-green-50">
@@ -55,7 +76,7 @@ function LogbookList() {
                   >
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-semibold text-gray-900">
-                        {log.logDate}
+                        {formatTime(log.logDate)}
                       </span>
                       <EyeIcon className="h-5 w-5 text-blue-600" />
                     </div>
@@ -90,7 +111,7 @@ function LogbookList() {
             <Dialog.Panel className="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-25">
               <div className="bg-white rounded-2xl p-6 shadow-xl w-full max-w-md">
                 <h3 className="text-xl font-bold mb-2">
-                  Logbook: {modalData?.name} ({modalData?.logDate})
+                  Logbook: {modalData?.name} ({formatTime(modalData?.logDate)})
                 </h3>
                 <p className="text-sm text-gray-700">{modalData?.content}</p>
                 <div className="mt-4 text-right">
