@@ -10,7 +10,7 @@ import { extname } from 'path';
   imports: [
     MulterModule.register({
       storage: diskStorage({
-        destination: './uploads', // Simpan file di folder yang sama
+        destination: './uploads/tasks', // Folder khusus lampiran task
         filename: (req, file, callback) => {
           const randomName = Array(32)
             .fill(null)
