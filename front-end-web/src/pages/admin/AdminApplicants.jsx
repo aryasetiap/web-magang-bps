@@ -31,9 +31,11 @@ function AdminApplicantsPage() {
             id: item.id,
             name: item.applicant?.namaLengkap || item.applicant?.name || "-",
             email: item.applicant?.email || "-",
-            nimNis: item.applicant?.nimNisn || "-",
+            nimNisn: item.applicant?.nimNisn || "-",
             asalInstitusi: item.applicant?.asalInstitusi || "-",
             jurusanProdi: item.applicant?.jurusanProdi || "-",
+            alamat: item.applicant?.alamat || "-",
+            noTelepon: item.applicant?.nomorTelepon || "-",
             status:
               item.status === "pending"
                 ? "Pending"
@@ -274,7 +276,7 @@ function AdminApplicantsPage() {
                       <strong>Email:</strong> {reviewingApplicant?.email}
                     </p>
                     <p>
-                      <strong>NIM/NIS:</strong> {reviewingApplicant?.nimNis}
+                      <strong>NIM/NISN:</strong> {reviewingApplicant?.nimNisn}
                     </p>
                     <p>
                       <strong>Institusi:</strong>{" "}
@@ -283,6 +285,13 @@ function AdminApplicantsPage() {
                     <p>
                       <strong>Jurusan:</strong>{" "}
                       {reviewingApplicant?.jurusanProdi}
+                    </p>
+                    <p>
+                      <strong>Alamat:</strong> {reviewingApplicant?.alamat}
+                    </p>
+                    <p>
+                      <strong>No. Telepon:</strong>{" "}
+                      {reviewingApplicant?.noTelepon}
                     </p>
                   </div>
 

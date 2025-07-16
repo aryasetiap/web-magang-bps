@@ -1,6 +1,10 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  PlusIcon,
+  TrashIcon,
+  PencilSquareIcon,
+} from "@heroicons/react/24/outline";
 import AlertDialog from "../../../components/AlertDialog";
 
 function AdminAccountsPage() {
@@ -323,7 +327,7 @@ function AdminAccountsPage() {
                     className="text-indigo-600 hover:text-indigo-900 mr-3"
                     title="Edit Akun"
                   >
-                    <PencilIcon className="h-5 w-5 inline-block" />
+                    <PencilSquareIcon className="h-5 w-5 inline-block" />
                   </button>
                   <button
                     onClick={() =>
