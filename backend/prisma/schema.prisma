@@ -178,6 +178,7 @@ model Task {
   title       String
   description String    @db.Text
   deadline    DateTime
+  filePath    String?   @map("file_path") // <--- Tambahkan ini
   deletedAt   DateTime? // Soft delete
 
   // --- Relations ---

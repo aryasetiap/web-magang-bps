@@ -29,9 +29,14 @@ export class TasksController {
 
   @Post()
   @Roles('Admin', 'Staff BPS')
-  create(@Request() req, @Body() createTaskDto: CreateTaskDto) {
+  @UseInterceptors(FileInterceptor('file')) // Tambahkan ini
+  create(
+    @Request() req,
+    @Body() createTaskDto: CreateTaskDto,
+    @UploadedFile() file: Express.Multer.File, // Tambahkan ini
+  ) {
     const creatorId = req.user.userId;
-    return this.tasksService.create(creatorId, createTaskDto);
+    return this.tasksService.create(creatorId, createTaskDto, file); // Tambahkan file
   }
 
   @Post(':id/assign')

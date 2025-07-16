@@ -17,14 +17,23 @@ import * as fs from 'fs';
 export class TasksService {
   constructor(private prisma: PrismaService) {}
 
-  async create(creatorId: number, createTaskDto: CreateTaskDto) {
+  async create(
+    creatorId: number,
+    createTaskDto: CreateTaskDto,
+    file?: Express.Multer.File, // Tambahkan file opsional
+  ) {
     const { title, description, deadline, internIds } = createTaskDto;
+    let filePath: string | undefined = undefined;
+    if (file) {
+      filePath = file.path;
+    }
     const task = await this.prisma.task.create({
       data: {
         title,
         description,
         deadline: new Date(deadline),
         createdBy: creatorId,
+        filePath, // Simpan path file jika ada
       },
     });
 
@@ -233,20 +242,38 @@ export class TasksService {
     });
   }
 
-  findAll() {
-    return this.prisma.task.findMany({
-      include: {
-        creator: {
-          select: {
-            name: true,
-          },
-        },
+  async findAll() {
+    // Mengambil semua task beserta filePath
+    const tasks = await this.prisma.task.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deadline: true,
+        createdBy: true,
+        filePath: true, // pastikan field ini di-include
+        // tambahkan relasi lain jika perlu
       },
     });
+    return { data: tasks };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} task`;
+  async findOne(id: number) {
+    // Mengambil detail task beserta filePath
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        deadline: true,
+        createdBy: true,
+        filePath: true, // pastikan field ini di-include
+        // tambahkan relasi lain jika perlu
+      },
+    });
+    if (!task) throw new NotFoundException('Task tidak ditemukan');
+    return task;
   }
 
   update(id: number, updateTaskDto: UpdateTaskDto) {
