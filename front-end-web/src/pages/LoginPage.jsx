@@ -80,11 +80,11 @@ function LoginPage({ setUserRole }) {
         if (setUserRole) setUserRole(role);
 
         // Redirect sesuai role
-        if (role === "Intern" || role === "Mahasiswa") {
+        if (role === "Intern") {
           navigate("/dashboard");
         } else if (role === "Admin") {
           navigate("/admin");
-        } else if (role === "Staff") {
+        } else if (role === "Staff BPS") {
           navigate("/staff");
         } else {
           navigate("/");

@@ -1,5 +1,11 @@
 // File: components/PresenceSection.jsx
 import React, { useState, useEffect } from "react";
+import {
+  getDistance,
+  postCheckIn,
+  postCheckOut,
+  fetchUserDailyAttendance,
+} from "../../../utils/attendance";
 
 function PresenceSection() {
   const today = new Date();
@@ -24,29 +30,47 @@ function PresenceSection() {
   const allowedLng = 105.04952785299278;
   const radiusInMeters = 50;
 
-  const isPastDate = selectedDateObject < todayDateOnly;
-  const isFutureDate = selectedDateObject > todayDateOnly;
   const isToday =
     selectedDateObject.toDateString() === todayDateOnly.toDateString();
 
   // Ambil status presensi dari backend saat mount/selectedDate berubah
   useEffect(() => {
-    const fetchAttendance = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const res = await fetch("http://localhost:3000/attendances", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        const attendance = (data.data || []).find((item) => {
-          const date = new Date(item.clockIn);
-          // Bandingkan tahun, bulan, tanggal (lokal)
-          return (
-            date.getFullYear() === selectedDateObject.getFullYear() &&
-            date.getMonth() === selectedDateObject.getMonth() &&
-            date.getDate() === selectedDateObject.getDate()
-          );
-        });
+    const token = localStorage.getItem("authToken");
+
+    fetchUserDailyAttendance(token, selectedDateObject).then((attendance) => {
+      if (attendance) {
+        setCheckInTime(
+          attendance.clockIn
+            ? new Date(attendance.clockIn).toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null
+        );
+        setCheckOutTime(
+          attendance.clockOut
+            ? new Date(attendance.clockOut).toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : null
+        );
+      } else {
+        setCheckInTime(null);
+        setCheckOutTime(null);
+      }
+    });
+
+    setCurrentLocation(null);
+    setLocationError("");
+    setIsInRange(false);
+  }, [selectedDate]);
+
+  // Tambahkan useEffect untuk update data presensi setelah checkIn/checkOut berubah
+  useEffect(() => {
+    if (checkInTime !== null) {
+      const token = localStorage.getItem("authToken");
+      fetchUserDailyAttendance(token, selectedDateObject).then((attendance) => {
         if (attendance) {
           setCheckInTime(
             attendance.clockIn
@@ -64,82 +88,10 @@ function PresenceSection() {
                 })
               : null
           );
-        } else {
-          setCheckInTime(null);
-          setCheckOutTime(null);
         }
-      } catch (err) {
-        setCheckInTime(null);
-        setCheckOutTime(null);
-      }
-    };
-    fetchAttendance();
-    setCurrentLocation(null);
-    setLocationError("");
-    setIsInRange(false);
-  }, [selectedDate]);
-
-  // Tambahkan useEffect untuk update data presensi setelah checkIn/checkOut berubah
-  useEffect(() => {
-    // Jika checkInTime berubah (misal setelah presensi masuk), refresh data presensi dari backend
-    // Ini memastikan UI tombol "Dapatkan Lokasi" pada presensi pulang langsung aktif tanpa refresh manual
-    if (checkInTime !== null) {
-      const fetchAttendance = async () => {
-        try {
-          const token = localStorage.getItem("authToken");
-          const res = await fetch("http://localhost:3000/attendances", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          const attendance = (data.data || []).find((item) => {
-            const date = new Date(item.clockIn);
-            return (
-              date.getFullYear() === selectedDateObject.getFullYear() &&
-              date.getMonth() === selectedDateObject.getMonth() &&
-              date.getDate() === selectedDateObject.getDate()
-            );
-          });
-          if (attendance) {
-            setCheckInTime(
-              attendance.clockIn
-                ? new Date(attendance.clockIn).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : null
-            );
-            setCheckOutTime(
-              attendance.clockOut
-                ? new Date(attendance.clockOut).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : null
-            );
-          }
-        } catch (err) {
-          // Tidak perlu reset state di sini
-        }
-      };
-      fetchAttendance();
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkInTime]);
-
-  const getDistance = (lat1, lng1, lat2, lng2) => {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371000;
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
 
   const getGeoLocation = () => {
     if (!navigator.geolocation) {
@@ -201,28 +153,16 @@ function PresenceSection() {
     }
     try {
       const token = localStorage.getItem("authToken");
-      const res = await fetch("http://localhost:3000/attendances/clock-in", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Gagal mengirim presensi.");
+      const attendance = await postCheckIn(token, currentLocation);
+
       setCheckInTime(
-        data.attendance && data.attendance.clockIn
-          ? new Date(data.attendance.clockIn).toLocaleTimeString("id-ID", {
+        attendance.clockIn
+          ? new Date(attendance.clockIn).toLocaleTimeString("id-ID", {
               hour: "2-digit",
               minute: "2-digit",
             })
           : null
       );
-
       // Reset lokasi agar tombol "Dapatkan Lokasi" pada presensi pulang langsung aktif
       setCurrentLocation(null);
       setIsInRange(false);
@@ -230,8 +170,8 @@ function PresenceSection() {
 
       alert(
         `Anda berhasil presensi masuk pada pukul ${
-          data.attendance && data.attendance.clockIn
-            ? new Date(data.attendance.clockIn).toLocaleTimeString("id-ID", {
+          attendance.clockIn
+            ? new Date(attendance.clockIn).toLocaleTimeString("id-ID", {
                 hour: "2-digit",
                 minute: "2-digit",
               })
@@ -255,24 +195,11 @@ function PresenceSection() {
     }
     try {
       const token = localStorage.getItem("authToken");
-      const res = await fetch("http://localhost:3000/attendances/clock-out", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          latitude: currentLocation.latitude,
-          longitude: currentLocation.longitude,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.message || "Gagal mengirim presensi pulang.");
+      const attendance = await postCheckOut(token, currentLocation);
       // Gunakan waktu dari backend
       setCheckOutTime(
-        data.attendance && data.attendance.clockOut
-          ? new Date(data.attendance.clockOut).toLocaleTimeString("id-ID", {
+        attendance.clockOut
+          ? new Date(attendance.clockOut).toLocaleTimeString("id-ID", {
               hour: "2-digit",
               minute: "2-digit",
             })
@@ -280,8 +207,8 @@ function PresenceSection() {
       );
       alert(
         `Anda berhasil presensi pulang pada pukul ${
-          data.attendance && data.attendance.clockOut
-            ? new Date(data.attendance.clockOut).toLocaleTimeString("id-ID", {
+          attendance.clockOut
+            ? new Date(attendance.clockOut).toLocaleTimeString("id-ID", {
                 hour: "2-digit",
                 minute: "2-digit",
               })
