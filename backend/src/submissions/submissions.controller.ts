@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   Request,
   ParseIntPipe,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SubmissionsService } from './submissions.service';
@@ -22,9 +23,10 @@ export class SubmissionsController {
   async resubmit(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
+    @Body('description') description: string,
     @Request() req,
   ) {
     const userId = req.user.userId;
-    return this.submissionsService.resubmit(id, userId, file);
+    return this.submissionsService.resubmit(id, userId, file, description);
   }
 }

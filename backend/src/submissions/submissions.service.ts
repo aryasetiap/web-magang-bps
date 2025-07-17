@@ -18,9 +18,10 @@ export class SubmissionsService {
     submissionId: number,
     userId: number,
     file: Express.Multer.File,
+    description?: string,
   ) {
-    if (!file) {
-      throw new BadRequestException('File tugas wajib diunggah.');
+    if (!file && (!description || description.trim() === '')) {
+      throw new BadRequestException('Minimal file atau deskripsi harus diisi.');
     }
 
     const submission = await this.prisma.submission.findUnique({
@@ -32,7 +33,6 @@ export class SubmissionsService {
     });
     const isLate = !!(task && new Date() > task.deadline);
 
-    if (!submission) throw new NotFoundException('Submission tidak ditemukan.');
     if (submission.userId !== userId)
       throw new ForbiddenException(
         'Anda tidak berhak mengubah submission ini.',
@@ -48,61 +48,71 @@ export class SubmissionsService {
       );
     }
 
-    // Hapus file lama jika ada
-    if (submission.filePath && fs.existsSync(submission.filePath)) {
+    // Hapus file lama jika ada dan ada file baru
+    if (file && submission.filePath && fs.existsSync(submission.filePath)) {
       fs.unlinkSync(submission.filePath);
     }
 
-    // Validasi tipe dan ukuran file
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-    if (!allowedTypes.includes(file.mimetype)) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException(
-        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-      );
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException('Ukuran file melebihi 5MB.');
+    // Validasi file jika ada
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (!allowedTypes.includes(file.mimetype)) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException(
+          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+        );
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException('Ukuran file melebihi 5MB.');
+      }
     }
 
-    // Update submission dengan file baru dan status submitted (atau revisi jika ingin)
+    // Update submission
     return this.prisma.submission.update({
       where: { id: submissionId },
       data: {
-        filePath: file.path,
+        filePath: file ? file.path : submission.filePath,
         status: 'submitted',
         grade: null,
         feedback: null,
-        isLate, // pastikan isLate sudah boolean, bukan null
+        isLate,
+        description: description ?? submission.description,
       },
     });
   }
 
-  async submit(taskId: number, userId: number, file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('File tugas wajib diunggah.');
+  async submit(
+    taskId: number,
+    userId: number,
+    file: Express.Multer.File,
+    description?: string,
+  ) {
+    if (!file && (!description || description.trim() === '')) {
+      throw new BadRequestException('Minimal file atau deskripsi harus diisi.');
     }
 
-    // Validasi tipe dan ukuran file
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-    if (!allowedTypes.includes(file.mimetype)) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException(
-        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-      );
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException('Ukuran file melebihi 5MB.');
+    // Validasi file jika ada
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (!allowedTypes.includes(file.mimetype)) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException(
+          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+        );
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException('Ukuran file melebihi 5MB.');
+      }
     }
 
     // Cek assignment
@@ -110,7 +120,7 @@ export class SubmissionsService {
       where: { taskId_userId: { taskId, userId } },
     });
     if (!assignment) {
-      fs.unlinkSync(file.path);
+      if (file) fs.unlinkSync(file.path);
       throw new ForbiddenException(
         'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
       );
@@ -121,7 +131,7 @@ export class SubmissionsService {
       where: { taskId, userId },
     });
     if (existingSubmission) {
-      fs.unlinkSync(file.path);
+      if (file) fs.unlinkSync(file.path);
       throw new BadRequestException(
         'Anda sudah pernah mengumpulkan tugas ini.',
       );
@@ -134,11 +144,12 @@ export class SubmissionsService {
     // Create submission
     return this.prisma.submission.create({
       data: {
-        filePath: file.path,
+        filePath: file ? file.path : null,
         taskId,
         userId,
         status: 'submitted',
         isLate,
+        description,
       },
     });
   }

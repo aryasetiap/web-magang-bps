@@ -79,9 +79,9 @@ export class TasksService {
   }
 
   async submitTask(userId: number, taskId: number, file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('File tugas wajib diunggah.');
-    }
+    // if (!file) {
+    //   throw new BadRequestException('File tugas wajib diunggah.');
+    // }
     // Validasi tipe dan ukuran file
     const allowedTypes = [
       'application/pdf',

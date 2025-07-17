@@ -209,15 +209,16 @@ model TaskAssignment {
 }
 
 model Submission {
-  id        Int              @id @default(autoincrement())
-  filePath  String?          @map("file_path")
-  grade     Float?
-  feedback  String?
-  status    StatusSubmission @default(not_submitted)
-  gradedBy  Int? // ID user yang menilai
-  gradedAt  DateTime? // Tanggal penilaian
-  deletedAt DateTime? // Soft delete
-  isLate    Boolean          @default(false)
+  id          Int              @id @default(autoincrement())
+  filePath    String?          @map("file_path")
+  grade       Float?
+  feedback    String?
+  status      StatusSubmission @default(not_submitted)
+  gradedBy    Int?
+  gradedAt    DateTime?
+  deletedAt   DateTime?
+  isLate      Boolean          @default(false)
+  description String? // <--- Tambahkan field ini
 
   // --- Relations ---
   task   Task @relation(fields: [taskId], references: [id])
