@@ -266,7 +266,7 @@ function AdminCertSettingsPage() {
                   Predikat
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Unduh Template
+                  Unduh Generate
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                   Upload Ditandatangani
