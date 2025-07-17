@@ -112,10 +112,7 @@ export class TasksService {
       );
     }
     const existingSubmission = await this.prisma.submission.findFirst({
-      where: {
-        taskId: taskId,
-        userId: userId,
-      },
+      where: { taskId, userId },
     });
     if (existingSubmission) {
       throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
@@ -223,43 +220,72 @@ export class TasksService {
     return updated;
   }
 
-  findTasksForUser(userId: number) {
-    return this.prisma.task.findMany({
-      where: {
-        assignments: {
-          some: {
-            userId: userId,
+  findTasksForUser(userId: number, page = 1, limit = 10) {
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    return this.prisma.task
+      .findMany({
+        where: {
+          assignments: {
+            some: { userId },
+          },
+          deletedAt: null,
+        },
+        include: {
+          creator: { select: { name: true } },
+          submissions: {
+            where: { userId },
+            select: {
+              id: true,
+              status: true,
+              grade: true,
+              feedback: true,
+              isLate: true,
+            },
           },
         },
-      },
-      include: {
-        creator: {
-          select: {
-            name: true,
-          },
-        },
-      },
-    });
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { deadline: 'asc' },
+      })
+      .then((tasks) =>
+        tasks.map((task) => ({
+          ...task,
+          // Ambil submission dengan id terbesar (terbaru)
+          submission: task.submissions.length
+            ? task.submissions.sort((a, b) => b.id - a.id)[0]
+            : null,
+          fileUrl: task.filePath
+            ? `${baseUrl}/${task.filePath.replace(/\\/g, '/')}`
+            : null,
+        })),
+      );
   }
 
   async findAll() {
-    // Mengambil semua task beserta filePath
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const tasks = await this.prisma.task.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         title: true,
         description: true,
         deadline: true,
         createdBy: true,
-        filePath: true, // pastikan field ini di-include
-        // tambahkan relasi lain jika perlu
+        filePath: true,
       },
     });
-    return { data: tasks };
+    return {
+      data: tasks.map((task) => ({
+        ...task,
+        fileUrl: task.filePath
+          ? `${baseUrl}/${task.filePath.replace(/\\/g, '/')}`
+          : null,
+      })),
+    };
   }
 
   async findOne(id: number) {
-    // Mengambil detail task beserta filePath
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const task = await this.prisma.task.findUnique({
       where: { id },
       select: {
@@ -268,16 +294,57 @@ export class TasksService {
         description: true,
         deadline: true,
         createdBy: true,
-        filePath: true, // pastikan field ini di-include
-        // tambahkan relasi lain jika perlu
+        filePath: true,
+        deletedAt: true,
       },
     });
-    if (!task) throw new NotFoundException('Task tidak ditemukan');
-    return task;
+    if (!task || task.deletedAt)
+      throw new NotFoundException('Task tidak ditemukan');
+    return {
+      ...task,
+      fileUrl: task.filePath
+        ? `${baseUrl}/${task.filePath.replace(/\\/g, '/')}`
+        : null,
+    };
   }
 
-  update(id: number, updateTaskDto: UpdateTaskDto) {
-    return `This action updates a #${id} task`;
+  async update(id: number, updateTaskDto: UpdateTaskDto) {
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        deletedAt: true,
+        deadline: true,
+      },
+    });
+    if (!task || task.deletedAt) {
+      throw new NotFoundException('Task tidak ditemukan atau sudah dihapus.');
+    }
+    // Opsional: Cegah update jika sudah lewat deadline
+    if (task.deadline && new Date() > task.deadline) {
+      throw new BadRequestException(
+        'Task sudah melewati deadline dan tidak bisa diubah.',
+      );
+    }
+    const updated = await this.prisma.task.update({
+      where: { id },
+      data: {
+        ...updateTaskDto,
+        deadline: updateTaskDto.deadline
+          ? new Date(updateTaskDto.deadline)
+          : undefined,
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        action: 'update',
+        entity: 'task',
+        entityId: id,
+        userId: updated.createdBy,
+        description: `Update tugas "${updated.title}"`,
+      },
+    });
+    return updated;
   }
 
   async remove(id: number) {
@@ -295,5 +362,12 @@ export class TasksService {
       },
     });
     return deleted;
+  }
+
+  async isUserAssignedToTask(taskId: number, userId: number) {
+    const assignment = await this.prisma.taskAssignment.findUnique({
+      where: { taskId_userId: { taskId, userId } },
+    });
+    return !!assignment;
   }
 }

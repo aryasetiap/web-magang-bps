@@ -19,6 +19,10 @@ export class SubmissionsService {
     userId: number,
     file: Express.Multer.File,
   ) {
+    if (!file) {
+      throw new BadRequestException('File tugas wajib diunggah.');
+    }
+
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
     });
@@ -75,6 +79,66 @@ export class SubmissionsService {
         grade: null,
         feedback: null,
         isLate, // pastikan isLate sudah boolean, bukan null
+      },
+    });
+  }
+
+  async submit(taskId: number, userId: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File tugas wajib diunggah.');
+    }
+
+    // Validasi tipe dan ukuran file
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (!allowedTypes.includes(file.mimetype)) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException(
+        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+      );
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException('Ukuran file melebihi 5MB.');
+    }
+
+    // Cek assignment
+    const assignment = await this.prisma.taskAssignment.findUnique({
+      where: { taskId_userId: { taskId, userId } },
+    });
+    if (!assignment) {
+      fs.unlinkSync(file.path);
+      throw new ForbiddenException(
+        'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
+      );
+    }
+
+    // Cek existing submission
+    const existingSubmission = await this.prisma.submission.findFirst({
+      where: { taskId, userId },
+    });
+    if (existingSubmission) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException(
+        'Anda sudah pernah mengumpulkan tugas ini.',
+      );
+    }
+
+    // Cek deadline
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    const isLate = !!(task && new Date() > task.deadline);
+
+    // Create submission
+    return this.prisma.submission.create({
+      data: {
+        filePath: file.path,
+        taskId,
+        userId,
+        status: 'submitted',
+        isLate,
       },
     });
   }

@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   UseInterceptors,
   UploadedFile,
+  ForbiddenException,
 } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -86,7 +87,9 @@ export class TasksController {
   @Roles('Intern')
   findMyTasks(@Request() req) {
     const userId = req.user.userId;
-    return this.tasksService.findTasksForUser(userId);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    return this.tasksService.findTasksForUser(userId, page, limit);
   }
 
   @Get()
@@ -96,8 +99,22 @@ export class TasksController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.tasksService.findOne(id);
+  @Roles('Admin', 'Staff BPS', 'Intern')
+  async findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    const user = req.user;
+    const task = await this.tasksService.findOne(id);
+
+    // Jika role intern, cek apakah dia di-assign ke task ini
+    if (user.role === 'Intern') {
+      const assigned = await this.tasksService.isUserAssignedToTask(
+        id,
+        user.userId,
+      );
+      if (!assigned) {
+        throw new ForbiddenException('Anda tidak berhak mengakses tugas ini.');
+      }
+    }
+    return task;
   }
 
   @Patch(':id')
