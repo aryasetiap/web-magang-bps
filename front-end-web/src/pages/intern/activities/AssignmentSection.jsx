@@ -127,7 +127,9 @@ function AssignmentSection() {
 
     try {
       const formData = new FormData();
-      if (submitFile) formData.append("submissionFile", submitFile);
+      // File
+      if (submitFile && fileIsValid) formData.append("submissionFile", submitFile);
+      // Deskripsi
       if (descIsValid) formData.append("description", submitDesc.trim());
       const res = await fetch(
         `http://localhost:3000/tasks/${selectedAssignment.id}/submissions`,
@@ -172,7 +174,9 @@ function AssignmentSection() {
 
     try {
       const formData = new FormData();
-      if (submitFile) formData.append("file", submitFile);
+      // File
+      if (submitFile && fileIsValid) formData.append("file", submitFile);
+      // Deskripsi
       if (descIsValid) formData.append("description", submitDesc.trim());
       const res = await fetch(
         `http://localhost:3000/submissions/${selectedAssignment.submission.id}/resubmit`,

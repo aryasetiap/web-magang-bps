@@ -78,26 +78,35 @@ export class TasksService {
     });
   }
 
-  async submitTask(userId: number, taskId: number, file: Express.Multer.File) {
-    // if (!file) {
-    //   throw new BadRequestException('File tugas wajib diunggah.');
-    // }
-    // Validasi tipe dan ukuran file
-    const allowedTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-    if (!allowedTypes.includes(file.mimetype)) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException(
-        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-      );
+  async submitTask(
+    userId: number,
+    taskId: number,
+    file?: Express.Multer.File,
+    description?: string,
+  ) {
+    if (!file && (!description || description.trim() === '')) {
+      throw new BadRequestException('Minimal file atau deskripsi harus diisi.');
     }
-    if (file.size > 5 * 1024 * 1024) {
-      fs.unlinkSync(file.path);
-      throw new BadRequestException('Ukuran file melebihi 5MB.');
+
+    // Validasi file jika ada
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (!allowedTypes.includes(file.mimetype)) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException(
+          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+        );
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        fs.unlinkSync(file.path);
+        throw new BadRequestException('Ukuran file melebihi 5MB.');
+      }
     }
+
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: {
         taskId_userId: {
@@ -107,6 +116,7 @@ export class TasksService {
       },
     });
     if (!assignment) {
+      if (file) fs.unlinkSync(file.path);
       throw new ForbiddenException(
         'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
       );
@@ -115,17 +125,19 @@ export class TasksService {
       where: { taskId, userId },
     });
     if (existingSubmission) {
+      if (file) fs.unlinkSync(file.path);
       throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
     }
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     const isLate = !!(task && new Date() > task.deadline);
     return this.prisma.submission.create({
       data: {
-        filePath: file.path,
+        filePath: file ? file.path : null,
         taskId: taskId,
         userId: userId,
         status: 'submitted',
-        isLate, // Tandai jika lewat deadline
+        isLate,
+        description,
       },
     });
   }

@@ -52,13 +52,14 @@ export class TasksController {
   @Post(':id/submissions')
   @Roles('Intern')
   @UseInterceptors(FileInterceptor('submissionFile'))
-  submitTask(
+  async submitTask(
     @Param('id', ParseIntPipe) taskId: number,
     @Request() req,
     @UploadedFile() file: Express.Multer.File,
+    @Body('description') description: string, // Tambahkan ini
   ) {
     const userId = req.user.userId;
-    return this.tasksService.submitTask(userId, taskId, file);
+    return this.tasksService.submitTask(userId, taskId, file, description);
   }
 
   @Get(':id/submissions')
