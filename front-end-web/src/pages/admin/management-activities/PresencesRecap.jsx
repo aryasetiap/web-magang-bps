@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { fetchPresensiData, formatTime } from "../../../utils/attendance";
 
 function PresencesRecap() {
   const [recapData, setRecapData] = useState([]);
@@ -6,51 +7,14 @@ function PresencesRecap() {
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
-    const fetchPresensi = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/attendances/all", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const result = await res.json();
-        if (res.ok) {
-          const recap = result.data.map((item) => ({
-            internName: item.user?.name || "Tanpa Nama",
-            checkIn: item.clockIn,
-            checkOut: item.clockOut,
-          }));
-
-          setRecapData(recap);
-        }
-      } catch (err) {
-        console.error("Gagal memuat presensi:", err);
-      } finally {
-        setLoading(false);
-      }
+    const fetchData = async () => {
+      const data = await fetchPresensiData(token);
+      setRecapData(data);
+      setLoading(false);
     };
 
-    fetchPresensi();
+    fetchData();
   }, [token]);
-
-  const formatTime = (isoString) => {
-    if (!isoString) return "-";
-    const date = new Date(isoString);
-
-    const time = date.toLocaleString("id-ID", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-
-    // Deteksi zona waktu
-    const offset = date.getTimezoneOffset(); // dalam menit
-    const timeOffset = -offset / 60;
-
-    let zone = "WIB"; // default
-    if (timeOffset === 8) zone = "WITA";
-    else if (timeOffset === 9) zone = "WIT";
-    else if (timeOffset === 7) zone = "WIB"; // biasanya JavaScript berjalan di zona waktu UTC+7
-
-    return `${time} ${zone}`;
-  };
 
   return (
     <div className="mb-8 p-6 border rounded-lg bg-blue-50">

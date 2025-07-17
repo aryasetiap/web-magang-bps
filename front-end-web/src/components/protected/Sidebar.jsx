@@ -2,24 +2,21 @@ import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   HomeIcon,
-  UserCircleIcon, // Untuk Biodata
-  DocumentCheckIcon, // Untuk Status Ajuan
-  CalendarDaysIcon, // Untuk Aktivitas
-  DocumentTextIcon, // Untuk Laporan Akhir
-  AcademicCapIcon, // Untuk Sertifikat (juga untuk Manajemen Kelulusan Admin)
+  UserCircleIcon,
+  DocumentCheckIcon,
+  CalendarDaysIcon,
+  DocumentTextIcon,
+  AcademicCapIcon,
   AdjustmentsHorizontalIcon,
-  UserGroupIcon, // Untuk Manajemen Pendaftar Admin
-  ClipboardDocumentCheckIcon, // Untuk Monitoring Aktivitas Admin/Staff
-  FolderOpenIcon, // Untuk Manajemen Penugasan Admin/Staff
-  DocumentMagnifyingGlassIcon, // Untuk Review Tugas Akhir Admin
-  ChartPieIcon, // Untuk Laporan & Statistik Admin
-  DocumentArrowUpIcon, // Untuk Master Dokumen Admin
-  DocumentDuplicateIcon, // Untuk Pengaturan Sertifikat Admin
-  Bars3Icon, // Untuk toggle sidebar
+  UserGroupIcon,
+  ClipboardDocumentCheckIcon,
+  FolderOpenIcon,
+  DocumentMagnifyingGlassIcon,
+  DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 import BrandLogo from "../BrandLogo";
 
-function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
+function Sidebar({ isCollapsed, userRole }) {
   const [internshipAccepted, setInternshipAccepted] = useState(false);
 
   useEffect(() => {
@@ -98,17 +95,17 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
       path: "/admin/final-reviews",
       icon: DocumentMagnifyingGlassIcon,
     },
-    {
-      name: "Manajemen Kelulusan",
-      path: "/admin/graduation",
-      icon: AcademicCapIcon,
-    },
+    // {
+    //   name: "Manajemen Kelulusan",
+    //   path: "/admin/graduation",
+    //   icon: AcademicCapIcon,
+    // },
     // { name: 'Laporan & Statistik', path: '/admin/reports', icon: ChartPieIcon },
-    {
-      name: "Master Dokumen",
-      path: "/admin/master-docs",
-      icon: DocumentArrowUpIcon,
-    },
+    // {
+    //   name: "Master Dokumen",
+    //   path: "/admin/master-docs",
+    //   icon: DocumentArrowUpIcon,
+    // },
     {
       name: "Pengaturan Sertifikat",
       path: "/admin/cert-settings",
@@ -123,12 +120,6 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
       path: "/staff/assignments",
       icon: FolderOpenIcon,
     },
-    // Tambahkan menu lain yang relevan untuk Staff BPS di sini
-    {
-      name: "Monitoring Peserta",
-      path: "/staff/monitoring",
-      icon: ClipboardDocumentCheckIcon,
-    },
   ];
 
   // Pilih menu yang akan ditampilkan berdasarkan role
@@ -140,7 +131,7 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     case "Admin":
       currentMenus = adminMenus;
       break;
-    case "Staff":
+    case "Staff BPS":
       currentMenus = staffMenus;
       break;
     default:
@@ -154,33 +145,26 @@ function Sidebar({ isCollapsed, toggleSidebar, userRole }) {
     >
       {/* Logo dan Nama Sistem di Sidebar */}
       <div
-        className={`flex items-center p-4 ${isCollapsed ? "justify-center" : "justify-between"
-          }`}
+        className={`flex items-center p-4 ${
+          isCollapsed ? "justify-center" : "justify-between"
+        }`}
       >
         <BrandLogo
           // onclick ke homepage
           onClick={() => (window.location.href = "/")}
-          className={`cursor-pointer ${isCollapsed ? "w-10 h-10" : "w-12 h-12"
-            }`}
+          className={`cursor-pointer ${
+            isCollapsed ? "w-10 h-10" : "w-12 h-12"
+          }`}
           showText={!isCollapsed} // Sembunyikan teks saat collapsed
           logoSizeClass="h-8" // Ukuran logo di sidebar
           textClassName={isCollapsed ? "text-xs text-center" : "text-sm"} // Ukuran teks nama sistem
         />
-        {/* Toggle button if it needs to be in the sidebar when expanded */}
-        {/* {!isCollapsed && (
-          <button
-            onClick={toggleSidebar}
-            className="p-2 text-gray-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-bps-blue md:hidden lg:inline-block" // Hide on medium, show on larger screens
-            aria-label="Toggle Sidebar"
-          >
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-        )} */}
       </div>
 
       <nav
-        className={`p-4 flex-grow ${isCollapsed ? "overflow-y-hidden" : "overflow-y-auto"
-          }`}
+        className={`p-4 flex-grow ${
+          isCollapsed ? "overflow-y-hidden" : "overflow-y-auto"
+        }`}
       >
         <ul>
           {currentMenus.map((menu, index) => (

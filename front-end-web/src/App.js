@@ -79,6 +79,9 @@ function App() {
             element={<AuthCallbackPage setUserRole={updateGlobalUserRole} />}
           />
 
+          {/* Rute Forgot Password */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
           {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
           <Route
             path="/dashboard"
@@ -147,15 +150,13 @@ function App() {
           <Route
             path="/staff"
             element={
-              <ProtectedRoute allowedRoles={["staff", "Staff"]}>
+              <ProtectedRoute allowedRoles={["staff", "Staff BPS"]}>
                 {/* DashboardLayout akan menerima userRole dan merender sidebar yang sesuai */}
                 <DashboardLayout userRole={userRole} />
               </ProtectedRoute>
             }
           >
             <Route index element={<StaffDashboard />} />{" "}
-            {/* Halaman default /staff */}
-            {/* Tambahkan rute khusus Staff BPS lainnya di sini */}
             <Route path="assignments" element={<StaffAssignments />} />
           </Route>
 
