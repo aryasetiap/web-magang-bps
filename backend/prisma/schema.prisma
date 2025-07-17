@@ -105,6 +105,11 @@ model User {
   // User generated certificates (as admin)
   generatedCertificates Certificate[] @relation("CertificateGenerator")
 
+  educationStatus String? // Status pendidikan
+  activityType    String? // Jenis kegiatan
+  activityStart   DateTime? // Tanggal mulai kegiatan
+  activityEnd     DateTime? // Tanggal selesai kegiatan
+
   @@map("users")
 }
 
@@ -120,7 +125,7 @@ model Role {
 model InternshipApplication {
   id                Int              @id @default(autoincrement())
   status            StatusInternship @default(pending)
-  cvPath            String           @map("cv_path")
+  cvPath            String?          @map("cv_path") // Ubah jadi opsional
   transcriptPath    String           @map("transcript_path")
   requestLetterPath String           @map("request_letter_path")
   verifiedAt        DateTime?        @map("verified_at")

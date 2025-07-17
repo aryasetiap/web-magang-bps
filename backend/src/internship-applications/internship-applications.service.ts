@@ -51,7 +51,7 @@ export class InternshipApplicationsService {
       );
     }
 
-    const cvPath = files.cv![0].path;
+    const cvPath = files.cv && files.cv[0] ? files.cv[0].path : null;
     const transcriptPath = files.transcript![0].path;
     const requestLetterPath = files.requestLetter![0].path;
 
@@ -137,7 +137,9 @@ export class InternshipApplicationsService {
     }
 
     const baseUrl = 'http://localhost:3000';
-    const cvUrl = `${baseUrl}/${application.cvPath.replace(/\\/g, '/')}`;
+    const cvUrl = application.cvPath
+      ? `${baseUrl}/${application.cvPath.replace(/\\/g, '/')}`
+      : null;
     const transcriptUrl = `${baseUrl}/${application.transcriptPath.replace(
       /\\/g,
       '/',
@@ -202,15 +204,16 @@ export class InternshipApplicationsService {
     transcript?: Express.Multer.File[];
     requestLetter?: Express.Multer.File[];
   }) {
-    const requiredFields = ['cv', 'transcript', 'requestLetter'];
+    const requiredFields = ['transcript', 'requestLetter']; // Hapus 'cv' dari required
     for (const field of requiredFields) {
       if (!files[field] || !files[field][0]) {
         throw new BadRequestException(`File untuk '${field}' wajib diunggah.`);
       }
     }
 
+    // Validasi file jika ada
     const allFiles = [
-      ...files.cv!,
+      ...(files.cv ?? []),
       ...files.transcript!,
       ...files.requestLetter!,
     ];
