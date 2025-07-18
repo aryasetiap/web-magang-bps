@@ -7,7 +7,7 @@ import {
   TrashIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
-import AlertDialog from "../../components/AlertDialog";
+import AlertDialog from "../../../components/AlertDialog";
 
 function AdminAssignmentsPage() {
   const [interns, setInterns] = useState([]);
@@ -441,14 +441,14 @@ function AdminAssignmentsPage() {
   }
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-bps-blue mb-6">
+    <div>
+      {/* <h2 className="text-3xl font-bold text-bps-blue mb-6">
         Manajemen Penugasan (Admin)
       </h2>
       <p className="text-gray-700 mb-6">
         Sebagai Admin, Anda dapat mengelola semua penugasan untuk peserta
         magang.
-      </p>
+      </p> */}
 
       {/* Tombol Buat Tugas Baru */}
       <div className="mb-6 text-right">

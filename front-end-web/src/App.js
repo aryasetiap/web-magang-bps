@@ -28,7 +28,6 @@ import AdminAccountsPage from "./pages/admin/management-settings/AdminAccounts";
 import AdminApplicantsPage from "./pages/admin/AdminApplicants";
 import AdminMonitoringPage from "./pages/admin/AdminMonitoring";
 import AdminManagementSettingsPage from "./pages/admin/AdminManagementSettings";
-import AdminAssignmentsPage from "./pages/admin/AdminAssignments";
 import AdminFinalReviewsPage from "./pages/admin/AdminFinalReview";
 import AdminGraduationPage from "./pages/admin/AdminGraduation";
 import AdminReportsPage from "./pages/admin/AdminReports";
@@ -138,7 +137,6 @@ function App() {
             <Route path="settings" element={<AdminManagementSettingsPage />} />
             <Route path="applicants" element={<AdminApplicantsPage />} />
             <Route path="monitoring" element={<AdminMonitoringPage />} />
-            <Route path="assignments" element={<AdminAssignmentsPage />} />
             <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
             <Route path="graduation" element={<AdminGraduationPage />} />
             <Route path="reports" element={<AdminReportsPage />} />

@@ -1,12 +1,16 @@
 // File: components/PresenceSection.jsx
 import React, { useState, useEffect } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 import {
   getDistance,
   postCheckIn,
   postCheckOut,
   fetchUserDailyAttendance,
 } from "../../../utils/attendance";
+import { requestLeave } from "../../../utils/attendance";
 import AlertDialog from "../../../components/AlertDialog";
+
 function PresenceSection() {
   const today = new Date();
   const todayDateOnly = new Date(
@@ -25,6 +29,11 @@ function PresenceSection() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [isInRange, setIsInRange] = useState(false);
+
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [leaveType, setLeaveType] = useState("izin");
+  const [leaveReason, setLeaveReason] = useState("");
+  const [leaveProof, setLeaveProof] = useState(null);
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -270,8 +279,47 @@ function PresenceSection() {
     }
   };
 
+  const handleRequestLeave = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("authToken");
+
+    if (!leaveType || !leaveReason || !leaveProof) {
+      setAlert({
+        isOpen: true,
+        title: "Gagal Mengajukan",
+        message: "Lengkapi semua data sebelum mengirim pengajuan.",
+        type: "error",
+      });
+      return;
+    }
+
+    try {
+      await requestLeave(token, {
+        type: leaveType,
+        description: leaveReason,
+        proof: leaveProof,
+      });
+
+      setAlert({
+        isOpen: true,
+        title: "Berhasil Mengajukan",
+        message: `Pengajuan ${leaveType} berhasil dikirim.`,
+        type: "success",
+        autoCloseDelay: 3000,
+      });
+      setIsLeaveModalOpen(false);
+    } catch (error) {
+      setAlert({
+        isOpen: true,
+        title: "Gagal Mengajukan",
+        message: error.message,
+        type: "error",
+      });
+    }
+  };
+
   return (
-    <div className="mb-8 p-6 border rounded-lg bg-white shadow-md">
+    <div className="mb-8 p-6 border rounded-lg bg-blue-50 shadow-md">
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">
         Presensi Kehadiran
       </h3>
@@ -356,6 +404,112 @@ function PresenceSection() {
           </button>
         )}
       </div>
+
+      <button
+        onClick={() => setIsLeaveModalOpen(true)}
+        className="mt-4 w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-200"
+      >
+        Ajukan Izin/Sakit
+      </button>
+
+      <Transition appear show={isLeaveModalOpen} as={Fragment}>
+        <Dialog
+          as="div"
+          className="relative z-50"
+          onClose={() => setIsLeaveModalOpen(false)}
+        >
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-bold text-gray-900 mb-4"
+                  >
+                    Pengajuan Izin / Sakit
+                  </Dialog.Title>
+                  <form onSubmit={handleRequestLeave}>
+                    <div className="mb-4">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Tipe Pengajuan
+                      </label>
+                      <select
+                        value={leaveType}
+                        onChange={(e) => setLeaveType(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2"
+                      >
+                        <option value="izin">Izin</option>
+                        <option value="sakit">Sakit</option>
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Alasan
+                      </label>
+                      <textarea
+                        value={leaveReason}
+                        onChange={(e) => setLeaveReason(e.target.value)}
+                        className="w-full border rounded-lg px-3 py-2"
+                        rows={3}
+                        placeholder="Tulis alasan tidak hadir..."
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block mb-1 text-sm font-medium text-gray-700">
+                        Upload Bukti (JPG/PNG/PDF, max 5MB)
+                      </label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        onChange={(e) => setLeaveProof(e.target.files[0])}
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-bps-blue file:text-white hover:file:bg-bps-light-blue"
+                        required
+                      />
+                    </div>
+                    <div className="flex justify-end mt-6 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsLeaveModalOpen(false)}
+                        className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 font-bold hover:bg-gray-400"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-lg bg-bps-blue text-white font-bold hover:bg-bps-light-blue"
+                      >
+                        Kirim Pengajuan
+                      </button>
+                    </div>
+                  </form>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
       <AlertDialog
         isOpen={alert.isOpen}
         onClose={() => setAlert((prev) => ({ ...prev, isOpen: false }))}

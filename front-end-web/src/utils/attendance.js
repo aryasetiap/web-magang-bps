@@ -77,6 +77,30 @@ export const postCheckOut = async (token, location) => {
   return data.attendance;
 };
 
+// Fungsi untuk data perizinan
+export async function requestLeave(token, { type, description, proof }) {
+  const formData = new FormData();
+  formData.append("type", type);
+  formData.append("description", description);
+  formData.append("proof", proof);
+
+  const res = await fetch("http://localhost:3000/attendances/request-leave", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Pengajuan izin/sakit gagal.");
+  }
+
+  return data;
+}
+
 // Fungsi untuk format waktu dari string ISO
 export const formatTime = (isoString) => {
   if (!isoString) return "-";

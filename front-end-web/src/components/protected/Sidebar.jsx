@@ -85,11 +85,11 @@ function Sidebar({ isCollapsed, userRole }) {
       path: "/admin/monitoring",
       icon: ClipboardDocumentCheckIcon,
     },
-    {
-      name: "Manajemen Penugasan",
-      path: "/admin/assignments",
-      icon: FolderOpenIcon,
-    },
+    // {
+    //   name: "Manajemen Penugasan",
+    //   path: "/admin/assignments",
+    //   icon: FolderOpenIcon,
+    // },
     {
       name: "Review Tugas Akhir",
       path: "/admin/final-reviews",
