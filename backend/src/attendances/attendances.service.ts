@@ -4,11 +4,16 @@ import {
   ForbiddenException,
   InternalServerErrorException,
   NotFoundException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClockInDto } from './dto/clock-in.dto';
 import { ClockOutDto } from './dto/clock-out.dto';
+import { RequestLeaveDto, LeaveType } from './dto/request-leave.dto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma, AttendanceStatus } from '@prisma/client';
 
 @Injectable()
 export class AttendancesService {
@@ -16,6 +21,8 @@ export class AttendancesService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
+
+  private readonly logger = new Logger(AttendancesService.name);
 
   // Perbaiki getter dengan null checking dan default values
   private get officeLatitude(): number {
@@ -211,5 +218,112 @@ export class AttendancesService {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
+  }
+
+  async requestLeave(
+    userId: number,
+    dto: RequestLeaveDto,
+    file: Express.Multer.File | null,
+  ) {
+    // Validasi waktu pengajuan (sebelum 11:00 WIB)
+    const now = new Date();
+    const wibHour = now.getUTCHours() + 7; // WIB = UTC+7
+    if (wibHour >= 11) {
+      throw new BadRequestException(
+        'Pengajuan hanya bisa dilakukan sebelum pukul 11.00 WIB',
+      );
+    }
+
+    // Validasi file
+    if (!file) {
+      throw new BadRequestException('Bukti pendukung wajib diunggah');
+    }
+
+    // Cek apakah sudah ada attendance untuk hari ini
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const existing = await this.prisma.attendance.findFirst({
+      where: {
+        userId,
+        createdAt: { gte: today, lt: tomorrow },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Anda sudah mengajukan presensi hari ini');
+    }
+
+    // Simpan attendance dengan status sakit/izin
+    return this.prisma.attendance.create({
+      data: {
+        userId,
+        status: dto.type,
+        reasonDescription: dto.description,
+        proofFilePath: file.path,
+        submittedAt: now,
+      },
+    });
+  }
+
+  async validateLeave(
+    attendanceId: number,
+    status: AttendanceStatus, // gunakan enum dari @prisma/client
+    adminId: number,
+  ) {
+    // Validasi status
+    if (!Object.values(AttendanceStatus).includes(status)) {
+      throw new BadRequestException('Status tidak valid');
+    }
+    return this.prisma.attendance.update({
+      where: { id: attendanceId },
+      data: {
+        status,
+        validatedBy: adminId,
+        validatedAt: new Date(),
+      },
+    });
+  }
+
+  // Jalankan setiap hari jam 11:01 WIB (WIB = UTC+7, berarti 04:01 UTC)
+  @Cron('1 4 * * *')
+  async setTanpaKeteranganForAbsentUsers() {
+    this.logger.log('Menjalankan update status tanpa_keterangan...');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Ambil semua user intern (role bisa disesuaikan)
+    const interns = await this.prisma.user.findMany({
+      where: { role: { name: 'intern' } },
+      select: { id: true },
+    });
+
+    for (const intern of interns) {
+      // Cek apakah sudah ada attendance hari ini
+      const attendance = await this.prisma.attendance.findFirst({
+        where: {
+          userId: intern.id,
+          createdAt: { gte: today, lt: tomorrow },
+        },
+      });
+
+      if (!attendance) {
+        // Buat attendance dengan status tanpa_keterangan
+        await this.prisma.attendance.create({
+          data: {
+            userId: intern.id,
+            status: 'tanpa_keterangan',
+            reasonDescription:
+              'Tidak melakukan presensi atau pengajuan izin/sakit sebelum 11:00 WIB',
+            createdAt: new Date(),
+          },
+        });
+        this.logger.log(`Set tanpa_keterangan untuk userId ${intern.id}`);
+      }
+    }
   }
 }

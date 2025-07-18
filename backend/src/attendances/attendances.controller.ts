@@ -25,6 +25,11 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
+import { RequestLeaveDto, LeaveType } from './dto/request-leave.dto';
+import { UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('attendances')
 @Controller('attendances')
@@ -124,5 +129,48 @@ export class AttendancesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.attendancesService.findOne(+id);
+  }
+
+  @Post('request-leave')
+  @UseInterceptors(
+    FileInterceptor('proof', {
+      storage: diskStorage({
+        destination: './uploads/proofs',
+        filename: (req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];
+        if (allowed.includes(extname(file.originalname).toLowerCase())) {
+          cb(null, true);
+        } else {
+          cb(new Error('File harus JPG, PNG, atau PDF'), false);
+        }
+      },
+    }),
+  )
+  async requestLeave(
+    @Request() req,
+    @Body() dto: RequestLeaveDto,
+    @UploadedFile() file: Express.Multer.File | null,
+  ) {
+    const userId = req.user.userId;
+    return this.attendancesService.requestLeave(userId, dto, file);
+  }
+
+  @Patch(':id/validate')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'staff')
+  async validateLeave(
+    @Param('id') id: string,
+    @Body('status') status: 'hadir' | 'sakit' | 'izin' | 'tanpa_keterangan',
+    @Request() req,
+  ) {
+    const adminId = req.user.userId;
+    return this.attendancesService.validateLeave(+id, status, adminId);
   }
 }
