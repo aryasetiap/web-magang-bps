@@ -13,6 +13,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { FinalProjectsModule } from './final-projects/final-projects.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { MulterModule } from '@nestjs/platform-express';
     MulterModule.register({
       dest: './uploads',
     }),
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

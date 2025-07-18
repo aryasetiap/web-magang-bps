@@ -47,6 +47,13 @@ enum StatusCertificate {
   issued // Sudah diterbitkan ke intern
 }
 
+enum AttendanceStatus {
+  hadir
+  sakit
+  izin
+  tanpa_keterangan
+}
+
 // 4. Data Models: Defines the tables in your database.
 
 model User {
@@ -148,15 +155,23 @@ model InternshipApplication {
 
 model Attendance {
   id                Int       @id @default(autoincrement())
-  clockIn           DateTime  @map("clock_in")
+  clockIn           DateTime? @map("clock_in")
   clockOut          DateTime? @map("clock_out")
-  ipAddress         String    @map("ip_address")
+  ipAddress         String?   @map("ip_address")
   latitude          Float?
   longitude         Float?
   clockOutLatitude  Float?    @map("clock_out_latitude")
   clockOutLongitude Float?    @map("clock_out_longitude")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // --- New fields for izin/sakit ---
+  status            AttendanceStatus @default(hadir)
+  reasonDescription String?          @db.Text
+  proofFilePath     String?
+  submittedAt       DateTime?
+  validatedBy       Int?
+  validatedAt       DateTime?
 
   // --- Relations ---
   user   User @relation(fields: [userId], references: [id])
