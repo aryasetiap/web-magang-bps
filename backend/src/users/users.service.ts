@@ -64,17 +64,17 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
-        profilePhoto: true, // Tambahkan field ini
+        profilePhoto: true,
         namaLengkap: true,
         nimNisn: true,
         asalInstitusi: true,
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
-        educationStatus: true, // <-- field baru
-        activityType: true, // <-- field baru
-        activityStart: true, // <-- field baru
-        activityEnd: true, // <-- field baru
+        educationStatus: true, // <-- pastikan field baru ini ada
+        activityType: true, // <-- pastikan field baru ini ada
+        activityStart: true, // <-- pastikan field baru ini ada
+        activityEnd: true, // <-- pastikan field baru ini ada
         createdAt: true,
         role: {
           select: {
@@ -195,8 +195,17 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          profilePhoto: true, // <-- pastikan field baru ini ada
           namaLengkap: true,
+          nimNisn: true,
           asalInstitusi: true,
+          jurusanProdi: true,
+          nomorTelepon: true,
+          alamat: true,
+          educationStatus: true, // <-- pastikan field baru ini ada
+          activityType: true, // <-- pastikan field baru ini ada
+          activityStart: true, // <-- pastikan field baru ini ada
+          activityEnd: true, // <-- pastikan field baru ini ada
           role: {
             select: {
               name: true,
@@ -237,14 +246,17 @@ export class UsersService {
         id: true,
         name: true,
         email: true,
+        profilePhoto: true, // <-- pastikan field baru ini ada
         namaLengkap: true,
         nimNisn: true,
         asalInstitusi: true,
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
-        createdAt: true,
-        updatedAt: true,
+        educationStatus: true, // <-- pastikan field baru ini ada
+        activityType: true, // <-- pastikan field baru ini ada
+        activityStart: true, // <-- pastikan field baru ini ada
+        activityEnd: true, // <-- pastikan field baru ini ada
         role: {
           select: {
             name: true,
@@ -267,7 +279,22 @@ export class UsersService {
           id: true,
           name: true,
           email: true,
+          profilePhoto: true, // <-- pastikan field baru ini ada
           namaLengkap: true,
+          nimNisn: true,
+          asalInstitusi: true,
+          jurusanProdi: true,
+          nomorTelepon: true,
+          alamat: true,
+          educationStatus: true, // <-- pastikan field baru ini ada
+          activityType: true, // <-- pastikan field baru ini ada
+          activityStart: true, // <-- pastikan field baru ini ada
+          activityEnd: true, // <-- pastikan field baru ini ada
+          role: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
     } catch (error) {

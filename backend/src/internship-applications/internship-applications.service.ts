@@ -80,14 +80,25 @@ export class InternshipApplicationsService {
         include: {
           applicant: {
             select: {
+              id: true,
               name: true,
               email: true,
+              profilePhoto: true, // <-- pastikan field baru ini ada
               namaLengkap: true,
+              nimNisn: true,
               asalInstitusi: true,
-              nimNisn: true, // Tambahkan ini
-              jurusanProdi: true, // Tambahkan ini
+              jurusanProdi: true,
               nomorTelepon: true,
               alamat: true,
+              educationStatus: true, // <-- pastikan field baru ini ada
+              activityType: true, // <-- pastikan field baru ini ada
+              activityStart: true, // <-- pastikan field baru ini ada
+              activityEnd: true, // <-- pastikan field baru ini ada
+              role: {
+                select: {
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -117,14 +128,25 @@ export class InternshipApplicationsService {
       include: {
         applicant: {
           select: {
+            id: true,
             name: true,
             email: true,
+            profilePhoto: true, // <-- pastikan field baru ini ada
             namaLengkap: true,
             nimNisn: true,
             asalInstitusi: true,
             jurusanProdi: true,
             nomorTelepon: true,
             alamat: true,
+            educationStatus: true, // <-- pastikan field baru ini ada
+            activityType: true, // <-- pastikan field baru ini ada
+            activityStart: true, // <-- pastikan field baru ini ada
+            activityEnd: true, // <-- pastikan field baru ini ada
+            role: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
