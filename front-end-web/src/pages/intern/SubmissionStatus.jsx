@@ -1,6 +1,7 @@
 // File: pages/StatusAjuanPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import AlertDialog from "../../components/AlertDialog";
 
 function SubmissionStatusPage() {
   const navigate = useNavigate();
@@ -11,7 +12,14 @@ function SubmissionStatusPage() {
     transkripNilai: false,
     suratPermohonan: false,
   });
-  const [feedback, setFeedback] = useState(""); // untuk alasan penolakan jika ada
+  const [feedback, setFeedback] = useState("");
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+  });
 
   const token = localStorage.getItem("authToken");
 
@@ -46,12 +54,15 @@ function SubmissionStatusPage() {
     // Ambil status pengajuan magang
     const fetchSubmissionStatus = async () => {
       try {
-        const res = await fetch("http://localhost:3000/internship-applications/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          "http://localhost:3000/internship-applications/me",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (res.ok) {
           const result = await res.json();
           if (result.data && result.data.length > 0) {
@@ -110,7 +121,14 @@ function SubmissionStatusPage() {
         body: formData,
       });
       if (res.ok) {
-        alert("Ajuan Anda berhasil dikirim! Menunggu verifikasi.");
+        // alert("Ajuan kamu berhasil dikirim! Menunggu verifikasi.");
+        setAlert({
+          isOpen: true,
+          title: "Ajuan Berhasil Dikirim",
+          message: "Ajuan kamu berhasil dikirim! Menunggu verifikasi.",
+          type: "success",
+          autoCloseDelay: 3000,
+        });
         setSubmissionStatus("pending");
         // Bersihkan localStorage setelah berhasil
         ["cv", "transkripNilai", "suratPermohonan"].forEach((key) => {
@@ -119,10 +137,24 @@ function SubmissionStatusPage() {
         });
       } else {
         const data = await res.json();
-        alert(data.message || "Gagal mengajukan permohonan.");
+        // alert(data.message || "Gagal mengajukan permohonan.");
+        setAlert({
+          isOpen: true,
+          title: "Gagal Mengajukan Permohonan",
+          message: data.message || "Gagal mengajukan permohonan.",
+          type: "error",
+          autoCloseDelay: 3000,
+        });
       }
     } catch (error) {
-      alert("Terjadi kesalahan saat mengirim permohonan.");
+      // alert("Terjadi kesalahan saat mengirim permohonan.");
+      setAlert({
+        isOpen: true,
+        title: "Kesalahan",
+        message: "Terjadi kesalahan saat mengirim permohonan.",
+        type: "error",
+        autoCloseDelay: 3000,
+      });
     }
   };
 
@@ -155,8 +187,8 @@ function SubmissionStatusPage() {
               Konfirmasi Data Ajuan Magang
             </h3>
             <p className="text-gray-700 mb-6">
-              Mohon periksa kembali data biodata dan kelengkapan berkasmu sebelum
-              mengajukan permohonan magang.
+              Mohon periksa kembali data biodata dan kelengkapan berkasmu
+              sebelum mengajukan permohonan magang.
             </p>
             <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
               <h4 className="font-bold text-blue-800 text-lg mb-3">
@@ -244,9 +276,14 @@ function SubmissionStatusPage() {
             >
               Ajukan Permohonan Magang
             </button>
-            {!(filesExist.cv && filesExist.transkripNilai && filesExist.suratPermohonan) && (
+            {!(
+              filesExist.cv &&
+              filesExist.transkripNilai &&
+              filesExist.suratPermohonan
+            ) && (
               <p className="text-red-500 text-sm mt-2">
-                Mohon lengkapi semua berkas di halaman Biodata sebelum mengajukan.
+                Mohon lengkapi semua berkas di halaman Biodata sebelum
+                mengajukan.
               </p>
             )}
           </div>
@@ -259,12 +296,12 @@ function SubmissionStatusPage() {
               Status Ajuan: Menunggu Verifikasi
             </h3>
             <p className="text-gray-700 mb-4">
-              Permohonan magang Anda telah berhasil diajukan. Kami akan segera
+              Permohonan magang kamu telah berhasil diajukan. Kami akan segera
               memverifikasi data dan berkasmu.
             </p>
             <p className="text-gray-600">
-              Mohon cek halaman ini secara berkala untuk mengetahui status terbaru
-              ajuan kamu.
+              Mohon cek halaman ini secara berkala untuk mengetahui status
+              terbaru ajuan kamu.
             </p>
             <div className="mt-6">
               <svg
@@ -299,12 +336,12 @@ function SubmissionStatusPage() {
               Status Ajuan: Telah Diterima! 🎉
             </h3>
             <p className="text-gray-700 mb-4">
-              Selamat! Permohonan magang Anda di BPS Kabupaten Pringsewu telah{" "}
+              Selamat! Permohonan magang kamu di BPS Kabupaten Pringsewu telah{" "}
               <b>DITERIMA</b>.
             </p>
             <p className="text-gray-600">
               Informasi lebih lanjut mengenai jadwal dan langkah berikutnya akan
-              disampaikan melalui sistem ini atau email Anda.
+              disampaikan melalui sistem ini atau email kamu.
             </p>
             <button
               onClick={() => navigate("/dashboard")}
@@ -322,8 +359,8 @@ function SubmissionStatusPage() {
               Status Ajuan: Ditolak 😞
             </h3>
             <p className="text-gray-700 mb-4">
-              Mohon maaf, permohonan magang Anda di BPS Kabupaten Pringsewu telah{" "}
-              <b>DITOLAK</b>.
+              Mohon maaf, permohonan magang kamu di BPS Kabupaten Pringsewu
+              telah <b>DITOLAK</b>.
             </p>
             <p className="text-gray-600">
               Alasan penolakan: {feedback ? feedback : "-"} Silakan periksa
@@ -353,6 +390,14 @@ function SubmissionStatusPage() {
         Status Ajuan Magang
       </h2>
       {renderContent()}
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={() => setAlert((prev) => ({ ...prev, isOpen: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+      />
     </div>
   );
 }

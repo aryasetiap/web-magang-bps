@@ -6,7 +6,7 @@ import {
   postCheckOut,
   fetchUserDailyAttendance,
 } from "../../../utils/attendance";
-
+import AlertDialog from "../../../components/AlertDialog";
 function PresenceSection() {
   const today = new Date();
   const todayDateOnly = new Date(
@@ -25,6 +25,14 @@ function PresenceSection() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [isInRange, setIsInRange] = useState(false);
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+  });
 
   const allowedLat = -5.371143050410507;
   const allowedLng = 105.04952785299278;
@@ -113,11 +121,14 @@ function PresenceSection() {
         setCurrentLocation({ latitude, longitude });
         setIsInRange(withinRange);
         setLocationError("");
-        alert(
-          `Lokasi ditemukan! Lat: ${latitude}, Long: ${longitude}. Jarak: ${distance.toFixed(
+
+        setAlert({
+          isOpen: true,
+          title: "Lokasi Ditemukan",
+          message: `Lokasi ditemukan! Lat: ${latitude}, Long: ${longitude}. Jarak:${distance.toFixed(
             2
-          )} meter.`
-        );
+          )} meter.`,
+        });
       },
       (error) => {
         let errorMessage = "Gagal mendapatkan lokasi. ";
@@ -136,7 +147,11 @@ function PresenceSection() {
             break;
         }
         setLocationError(errorMessage);
-        alert(errorMessage);
+        setAlert({
+          isOpen: true,
+          title: "Gagal Mendapatkan Lokasi",
+          message: errorMessage,
+        });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -144,11 +159,19 @@ function PresenceSection() {
 
   const handleCheckIn = async () => {
     if (!isToday) {
-      alert("Presensi hanya dapat dilakukan untuk tanggal hari ini.");
+      setAlert({
+        isOpen: true,
+        title: "Presensi Tidak Dapat Dilakukan",
+        message: "Presensi hanya dapat dilakukan untuk tanggal hari ini.",
+      });
       return;
     }
     if (!currentLocation || !isInRange) {
-      alert("Lokasi Anda di luar area yang diizinkan untuk presensi.");
+      setAlert({
+        isOpen: true,
+        title: "Lokasi Tidak Diizinkan",
+        message: "Lokasi kamu di luar area yang diizinkan untuk presensi.",
+      });
       return;
     }
     try {
@@ -168,29 +191,48 @@ function PresenceSection() {
       setIsInRange(false);
       setLocationError("");
 
-      alert(
-        `Anda berhasil presensi masuk pada pukul ${
+      setAlert({
+        isOpen: true,
+        title: "Presensi Berhasil",
+        message: `Kamu berhasil presensi masuk pada pukul ${
           attendance.clockIn
             ? new Date(attendance.clockIn).toLocaleTimeString("id-ID", {
                 hour: "2-digit",
                 minute: "2-digit",
               })
             : "-"
-        } .`
-      );
+        } .`,
+        type: "success",
+        autoCloseDelay: 3000,
+      });
+
       window.location.reload(); // Tambahkan ini agar halaman reload otomatis
     } catch (error) {
-      alert(error.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal Presensi",
+        message: error.message,
+        type: "error",
+        autoCloseDelay: 3000,
+      });
     }
   };
 
   const handleCheckOut = async () => {
     if (!isToday) {
-      alert("Presensi hanya dapat dilakukan untuk tanggal hari ini.");
+      setAlert({
+        isOpen: true,
+        title: "Presensi Tidak Dapat Dilakukan",
+        message: "Presensi hanya dapat dilakukan untuk tanggal hari ini.",
+      });
       return;
     }
     if (!currentLocation || !isInRange) {
-      alert("Lokasi Anda di luar area yang diizinkan untuk presensi.");
+      setAlert({
+        isOpen: true,
+        title: "Lokasi Tidak Diizinkan",
+        message: "Lokasi kamu di luar area yang diizinkan untuk presensi.",
+      });
       return;
     }
     try {
@@ -205,18 +247,26 @@ function PresenceSection() {
             })
           : null
       );
-      alert(
-        `Anda berhasil presensi pulang pada pukul ${
+      setAlert({
+        isOpen: true,
+        title: "Presensi Berhasil",
+        message: `Kamu berhasil presensi pulang pada pukul ${
           attendance.clockOut
             ? new Date(attendance.clockOut).toLocaleTimeString("id-ID", {
                 hour: "2-digit",
                 minute: "2-digit",
               })
             : "-"
-        } .`
-      );
+        } .`,
+      });
     } catch (error) {
-      alert(error.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal Presensi",
+        message: error.message,
+        type: "error",
+        autoCloseDelay: 3000,
+      });
     }
   };
 
@@ -306,6 +356,14 @@ function PresenceSection() {
           </button>
         )}
       </div>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={() => setAlert((prev) => ({ ...prev, isOpen: false }))}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+      />
     </div>
   );
 }
