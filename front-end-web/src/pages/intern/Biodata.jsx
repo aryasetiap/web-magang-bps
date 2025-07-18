@@ -13,6 +13,10 @@ function BiodataPage() {
     nomorTelepon: "",
     email: "",
     alamat: "",
+    educationStatus: "", // Default ke mahasiswa
+    activityType: "", // Default ke magang
+    activityStart: "",
+    activityEnd: "",
   });
 
   const [files, setFiles] = useState({
@@ -46,6 +50,10 @@ function BiodataPage() {
         nomorTelepon: profile.nomorTelepon || "",
         email: profile.email || "",
         alamat: profile.alamat || "",
+        educationStatus: profile.educationStatus || "",
+        activityType: profile.activityType || "",
+        activityStart: profile.activityStart || "",
+        activityEnd: profile.activityEnd || "",
       });
     }
   }, [profile]);
@@ -131,6 +139,10 @@ function BiodataPage() {
           jurusanProdi: formData.jurusanProdi,
           nomorTelepon: formData.nomorTelepon,
           alamat: formData.alamat,
+          educationStatus: formData.educationStatus,
+          activityType: formData.activityType,
+          activityStart: formData.activityStart,
+          activityEnd: formData.activityEnd,
         }),
       });
       const biodataData = await biodataRes.json();
@@ -183,6 +195,10 @@ function BiodataPage() {
               { id: "jurusanProdi", label: "Jurusan / Prodi" },
               { id: "nomorTelepon", label: "Nomor Telepon" },
               { id: "email", label: "Email" },
+              { id: "educationStatus", label: "Status Pendidikan" },
+              { id: "activityType", label: "Jenis Kegiatan" },
+              { id: "activityStart", label: "Tanggal Mulai Kegiatan" },
+              { id: "activityEnd", label: "Tanggal Selesai Kegiatan" },
             ].map(({ id, label }) => (
               <div key={id}>
                 <label
@@ -191,18 +207,50 @@ function BiodataPage() {
                 >
                   {label}: <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type={id === "email" ? "email" : "text"}
-                  id={id}
-                  name={id}
-                  value={formData[id]}
-                  onChange={handleChange}
-                  className={`shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 ${
-                    id === "email" ? "bg-gray-100 cursor-not-allowed" : ""
-                  } focus:outline-none focus:ring-2 focus:ring-bps-blue`}
-                  readOnly={id === "email"}
-                  required
-                />
+                {/* input untuk selain status pendidikan */}
+                {id !== "educationStatus" && (
+                  <input
+                    // type={id === "email" ? "email" : "text"}
+                    type={
+                      id === "email"
+                        ? "email"
+                        : id === "activityStart" || id === "activityEnd"
+                        ? "date"
+                        : "text"
+                    }
+                    id={id}
+                    name={id}
+                    value={formData[id]}
+                    onChange={handleChange}
+                    className={`shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 ${
+                      id === "email" ? "bg-gray-100 cursor-not-allowed" : ""
+                    } focus:outline-none focus:ring-2 focus:ring-bps-blue`}
+                    readOnly={id === "email"}
+                    required
+                    // placeholder untuk jenis kegiatan
+                    placeholder={
+                      id === "activityType"
+                        ? "Contoh: Magang, Kerja Praktik, PKL dll"
+                        : ""
+                    }
+                  />
+                )}
+
+                {/* select untuk status pendidikan */}
+                {id === "educationStatus" && (
+                  <select
+                    id="educationStatus"
+                    name="educationStatus"
+                    value={formData.educationStatus}
+                    onChange={handleChange}
+                    className="shadow appearance-none border rounded-lg w-full py-2 px-3 text
+                    gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
+                  >
+                    <option value="">Pilih status</option>
+                    <option value="mahasiswa">Mahasiswa</option>
+                    <option value="siswa">Siswa</option>
+                  </select>
+                )}
               </div>
             ))}
             <div className="md:col-span-2">
