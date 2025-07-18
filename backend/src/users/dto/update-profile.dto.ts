@@ -60,5 +60,39 @@ export class UpdateProfileDto {
   @IsOptional()
   alamat?: string;
 
+  @ApiProperty({
+    description: 'Status pendidikan',
+    required: false,
+  })
+  @IsString({ message: 'Status pendidikan harus berupa teks' })
+  @IsOptional()
+  educationStatus?: string;
+
+  @ApiProperty({
+    description: 'Jenis kegiatan',
+    required: false,
+  })
+  @IsString({ message: 'Jenis kegiatan harus berupa teks' })
+  @IsOptional()
+  activityType?: string;
+
+  @ApiProperty({
+    description: 'Tanggal mulai kegiatan',
+    required: false,
+    type: String,
+    format: 'date-time',
+  })
+  @IsOptional()
+  activityStart?: Date;
+
+  @ApiProperty({
+    description: 'Tanggal selesai kegiatan',
+    required: false,
+    type: String,
+    format: 'date-time',
+  })
+  @IsOptional()
+  activityEnd?: Date;
+
   // Field baru tidak perlu validasi karena akan dihandle oleh multer
 }
