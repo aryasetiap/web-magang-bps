@@ -99,6 +99,11 @@ function AdminAssignmentsPage() {
           const detail = await detailRes.json();
           const submissions = await submissionRes.json();
 
+          console.log(
+            `Tugas ID ${task.id} | assignedTo (dari detail):`,
+            detail?.assignedTo
+          );
+
           return {
             ...task,
             assignedTo: detail?.assignedTo || [],
@@ -108,6 +113,7 @@ function AdminAssignmentsPage() {
       );
 
       setAssignments(detailedTasks);
+      console.log("HASIL detailedTasks:", detailedTasks);
     } catch (err) {
       console.error("Error fetching data:", err);
       setError(err.message || "Terjadi kesalahan saat memuat data.");

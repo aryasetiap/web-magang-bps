@@ -5,6 +5,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import { formatDate } from "../../utils/formatDate"; // Assuming you have a utility for formatting dates
 
 function AdminApplicantsPage() {
   const [applicants, setApplicants] = useState([]);
@@ -36,6 +37,10 @@ function AdminApplicantsPage() {
             jurusanProdi: item.applicant?.jurusanProdi || "-",
             alamat: item.applicant?.alamat || "-",
             noTelepon: item.applicant?.nomorTelepon || "-",
+            educationStatus: item.applicant?.educationStatus || "-",
+            activityType: item.applicant?.activityType || "-",
+            activityStart: item.applicant?.activityStart || "-",
+            activityEnd: item.applicant?.activityEnd || "-",
             status:
               item.status === "pending"
                 ? "Pending"
@@ -165,8 +170,8 @@ function AdminApplicantsPage() {
       </p>
 
       {/* Daftar Pendaftar */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full table-auto bg-white border border-gray-200 rounded-lg">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -177,6 +182,12 @@ function AdminApplicantsPage() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Jurusan
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Jenis Kegiatan
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tanggal Mulai - Selesai
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -195,13 +206,20 @@ function AdminApplicantsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {applicant.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600">
                   {applicant.asalInstitusi}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td className="px-6 py-4 text-sm text-gray-600">
                   {applicant.jurusanProdi}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {applicant.activityType}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {formatDate(applicant.activityStart)} -{" "}
+                  {formatDate(applicant.activityEnd)}
+                </td>
+                <td className="px-6 py-4 text-sm">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold
                     ${
@@ -292,6 +310,19 @@ function AdminApplicantsPage() {
                     <p>
                       <strong>No. Telepon:</strong>{" "}
                       {reviewingApplicant?.noTelepon}
+                    </p>
+                    <p>
+                      <strong>Status Pendidikan:</strong>{" "}
+                      {reviewingApplicant?.educationStatus}
+                    </p>
+                    <p>
+                      <strong>Jenis Kegiatan :</strong>{" "}
+                      {reviewingApplicant?.activityType}
+                    </p>
+                    <p>
+                      <strong>Tanggal Mulai - Selesai:</strong>{" "}
+                      {formatDate(reviewingApplicant?.activityStart)} -{" "}
+                      {formatDate(reviewingApplicant?.activityEnd)}
                     </p>
                   </div>
 

@@ -294,7 +294,13 @@ function BiodataPage() {
                     : fileKey === "transkripNilai"
                     ? "Transkrip Nilai / Rapor"
                     : "Surat Permohonan Magang"}
-                  :<span className="text-red-500">*</span>
+                  {/* tanda * untuk transkrip nilai dan surat permohonan */}
+                  {fileKey !== "transkripNilai" &&
+                  fileKey !== "suratPermohonan" ? (
+                    ""
+                  ) : (
+                    <span className="text-red-500">*</span>
+                  )}
                 </label>
                 <input
                   type="file"
@@ -303,6 +309,9 @@ function BiodataPage() {
                   accept=".pdf"
                   onChange={handleFileChange}
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-bps-blue file:text-white hover:file:bg-bps-light-blue"
+                  // cv tidak wajib (opsional), yang lain wajib
+                  required={fileKey !== "cv"}
+                  disabled={fileKey === "cv" && files.cv}
                 />
                 {files[fileKey] && (
                   <p className="mt-2 text-sm text-gray-600">
