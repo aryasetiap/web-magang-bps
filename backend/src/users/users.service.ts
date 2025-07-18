@@ -71,6 +71,10 @@ export class UsersService {
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
+        educationStatus: true, // <-- field baru
+        activityType: true, // <-- field baru
+        activityStart: true, // <-- field baru
+        activityEnd: true, // <-- field baru
         createdAt: true,
         role: {
           select: {
@@ -102,7 +106,28 @@ export class UsersService {
       throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
     }
 
-    const updateData: any = { ...updateProfileDto };
+    // Update data
+    const updateData: any = {
+      ...updateProfileDto,
+    };
+
+    // Handle field baru secara eksplisit jika perlu
+    if (typeof updateProfileDto.educationStatus !== 'undefined') {
+      updateData.educationStatus = updateProfileDto.educationStatus;
+    }
+    if (typeof updateProfileDto.activityType !== 'undefined') {
+      updateData.activityType = updateProfileDto.activityType;
+    }
+    if (typeof updateProfileDto.activityStart !== 'undefined') {
+      updateData.activityStart = updateProfileDto.activityStart
+        ? new Date(updateProfileDto.activityStart)
+        : null;
+    }
+    if (typeof updateProfileDto.activityEnd !== 'undefined') {
+      updateData.activityEnd = updateProfileDto.activityEnd
+        ? new Date(updateProfileDto.activityEnd)
+        : null;
+    }
 
     // Jika ada file foto baru
     if (profilePhoto) {
@@ -136,6 +161,10 @@ export class UsersService {
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
+        educationStatus: true, // <-- field baru
+        activityType: true, // <-- field baru
+        activityStart: true, // <-- field baru
+        activityEnd: true, // <-- field baru
         role: {
           select: {
             name: true,
