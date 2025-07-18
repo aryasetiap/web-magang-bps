@@ -73,7 +73,7 @@ function AdminAssignmentsPage() {
         ? internsRaw
         : internsRaw.data || [];
       const filteredInterns = usersArray.filter(
-        (user) => user.role === "intern"
+        (user) => user.role?.name?.toLowerCase() === "intern"
       );
       setInterns(filteredInterns);
 
@@ -194,6 +194,7 @@ function AdminAssignmentsPage() {
       });
       return;
     }
+
     if (formAssignedTo.length === 0) {
       setAlert({
         isOpen: true,
@@ -208,13 +209,6 @@ function AdminAssignmentsPage() {
     formDataToSend.append("title", formTitle);
     formDataToSend.append("description", formDescription);
     formDataToSend.append("deadline", formDeadline);
-    // submissionType tidak dikirim ke backend sesuai instruksi terbaru
-
-    // internIds harus dikirim sebagai JSON string jika backend mengharapkan array of numbers
-    formDataToSend.append(
-      "internIds",
-      JSON.stringify(formAssignedTo.map((id) => Number(id)))
-    );
 
     if (formFile) {
       formDataToSend.append("file", formFile);
@@ -222,13 +216,15 @@ function AdminAssignmentsPage() {
 
     let method = "POST";
     let url = "http://localhost:3000/tasks";
-
-    if (editingAssignment) {
-      method = "PATCH";
-      url = `http://localhost:3000/tasks/${editingAssignment.id}`;
-    }
+    let taskId = null;
 
     try {
+      // Simpan (buat atau edit) tugas
+      if (editingAssignment) {
+        method = "PATCH";
+        url = `http://localhost:3000/tasks/${editingAssignment.id}`;
+      }
+
       const res = await fetch(url, {
         method: method,
         headers: {
@@ -239,21 +235,50 @@ function AdminAssignmentsPage() {
 
       const result = await res.json();
 
-      if (res.ok) {
-        setAlert({
-          isOpen: true,
-          title: "Berhasil!",
-          message: editingAssignment
-            ? "Tugas berhasil diperbarui!"
-            : "Tugas baru berhasil dibuat!",
-          type: "success",
-          autoCloseDelay: 1500,
-        });
-        closeModal();
-        fetchData();
-      } else {
+      if (!res.ok) {
         throw new Error(result.message || "Gagal memproses tugas.");
       }
+
+      taskId = editingAssignment?.id || result?.data?.id;
+
+      // --- Langkah Assign atau Reassign Intern ---
+      if (taskId) {
+        const assignRes = await fetch(
+          `http://localhost:3000/tasks/${taskId}/assign`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              internIds: formAssignedTo.map((id) => Number(id)),
+            }),
+          }
+        );
+
+        const assignResult = await assignRes.json();
+
+        if (!assignRes.ok) {
+          throw new Error(
+            assignResult.message ||
+              "Tugas berhasil disimpan, tetapi gagal assign intern."
+          );
+        }
+      }
+
+      setAlert({
+        isOpen: true,
+        title: "Berhasil!",
+        message: editingAssignment
+          ? "Tugas berhasil diperbarui dan ditugaskan ulang!"
+          : "Tugas baru berhasil dibuat dan ditugaskan!",
+        type: "success",
+        autoCloseDelay: 1500,
+      });
+
+      closeModal();
+      fetchData();
     } catch (err) {
       console.error("Error saving assignment:", err);
       setAlert({
@@ -495,7 +520,6 @@ function AdminAssignmentsPage() {
                           >
                             <span className="font-medium">
                               {intern ? intern.name : `ID:${submission.userId}`}
-                              :
                             </span>
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold
@@ -593,7 +617,7 @@ function AdminAssignmentsPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
                     className="text-2xl font-bold leading-6 text-gray-900 mb-4"
@@ -634,6 +658,37 @@ function AdminAssignmentsPage() {
                         required
                       ></textarea>
                     </div>
+                    {/* buat field untuk upload file disini */}
+                    <div className="mb-4">
+                      <label
+                        htmlFor="file"
+                        className="block text-gray-700 text-sm font-bold mb-2"
+                      >
+                        Upload File (Opsional):
+                      </label>
+                      <input
+                        type="file"
+                        id="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={handleFileChange}
+                        className="block w-full text-sm text-gray-500
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-bps-blue file:text-white
+                          hover:file:bg-bps-light-blue"
+                      />
+                      {formFile && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          File terpilih: {formFile.name} (
+                          {(formFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        Format file yang didukung: PDF, DOC, DOCX (maksimal
+                        5MB).
+                      </p>
+                    </div>
                     <div className="mb-4">
                       <label
                         htmlFor="assignedTo"
@@ -647,9 +702,8 @@ function AdminAssignmentsPage() {
                         value={formAssignedTo}
                         onChange={(e) =>
                           setFormAssignedTo(
-                            Array.from(
-                              e.target.selectedOptions,
-                              (option) => option.value
+                            Array.from(e.target.selectedOptions, (option) =>
+                              Number(option.value)
                             )
                           )
                         }
@@ -740,14 +794,14 @@ function AdminAssignmentsPage() {
                     Review Tugas: {reviewingAssignment?.title}
                   </Dialog.Title>
                   <p className="text-sm text-gray-700 mb-2">
-                    **Peserta:**{"  "}
+                    Peserta:{"  "}
                     {
                       interns.find((i) => i.id === reviewingSubmission?.userId)
                         ?.name
                     }{" "}
                   </p>
                   <p className="text-sm text-gray-700 mb-4">
-                    **Status:**{" "}
+                    Status:{" "}
                     <span
                       className={`px-2 py-0.5 rounded-full text-xs font-semibold
                       ${
@@ -764,6 +818,33 @@ function AdminAssignmentsPage() {
                         reviewingSubmission?.status?.slice(1)}{" "}
                     </span>
                   </p>
+
+                  {reviewingSubmission?.description && (
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-1">
+                        Deskripsi Pengumpulan:
+                      </label>
+                      <p className="text-sm text-gray-800 border rounded-lg p-2 bg-gray-50">
+                        {reviewingSubmission.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {reviewingSubmission?.filePath && (
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-1">
+                        File Pengumpulan:
+                      </label>
+                      <a
+                        href={`http://localhost:3000/${reviewingSubmission.filePath}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-bps-blue hover:underline"
+                      >
+                        Lihat / Unduh File
+                      </a>
+                    </div>
+                  )}
 
                   {/* Form Feedback dan Nilai */}
                   <form onSubmit={handleSubmitReview}>
