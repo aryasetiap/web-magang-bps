@@ -9,11 +9,21 @@ import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatusLogbook } from '@prisma/client';
 
+/**
+ * Service untuk mengelola entri logbook.
+ */
 @Injectable()
 export class LogbooksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  // Method helper untuk verifikasi kepemilikan
+  /**
+   * Memverifikasi apakah user adalah pemilik logbook tertentu.
+   * @param userId ID user yang sedang login
+   * @param logbookId ID logbook yang akan diverifikasi
+   * @throws NotFoundException jika logbook tidak ditemukan
+   * @throws ForbiddenException jika user bukan pemilik logbook
+   * @returns Data logbook yang diverifikasi
+   */
   private async verifyOwnership(userId: number, logbookId: number) {
     const logbook = await this.prisma.logbook.findUnique({
       where: { id: logbookId },
@@ -33,9 +43,14 @@ export class LogbooksService {
     return logbook;
   }
 
-  // Membuat entri logbook baru
+  /**
+   * Membuat entri logbook baru untuk user tertentu.
+   * @param userId ID user yang membuat logbook
+   * @param createLogbookDto Data logbook yang akan dibuat
+   * @throws BadRequestException jika sudah ada logbook di tanggal yang sama
+   * @returns Data logbook yang berhasil dibuat
+   */
   async create(userId: number, createLogbookDto: CreateLogbookDto) {
-    // Cek apakah sudah ada logbook di tanggal yang sama untuk user ini
     const existing = await this.prisma.logbook.findFirst({
       where: {
         userId: userId,
@@ -51,32 +66,42 @@ export class LogbooksService {
     return this.prisma.logbook.create({
       data: {
         userId: userId,
-        logDate: new Date(createLogbookDto.logDate), // Konversi string tanggal ke objek Date
+        logDate: new Date(createLogbookDto.logDate),
         content: createLogbookDto.content,
-        // Status akan otomatis 'draft' karena default di skema
       },
     });
   }
 
-  // Menemukan semua logbook milik user yang login
+  /**
+   * Mengambil semua logbook milik user tertentu.
+   * @param userId ID user yang ingin diambil logbook-nya
+   * @returns Daftar logbook milik user
+   */
   findAll(userId: number) {
     return this.prisma.logbook.findMany({
-      where: {
-        userId: userId,
-      },
-      orderBy: {
-        logDate: 'desc', // Urutkan dari yang terbaru
-      },
+      where: { userId: userId },
+      orderBy: { logDate: 'desc' },
     });
   }
 
-  // Menemukan satu logbook spesifik setelah verifikasi kepemilikan
+  /**
+   * Mengambil satu logbook berdasarkan ID setelah verifikasi kepemilikan.
+   * @param userId ID user yang sedang login
+   * @param id ID logbook yang ingin diambil
+   * @throws NotFoundException atau ForbiddenException jika tidak berhak
+   * @returns Data logbook yang ditemukan
+   */
   async findOne(userId: number, id: number) {
-    // Cukup panggil helper, ia akan melempar error jika tidak ditemukan atau bukan pemilik
     return this.verifyOwnership(userId, id);
   }
 
-  // Mengupdate logbook setelah verifikasi kepemilikan
+  /**
+   * Memperbarui data logbook setelah verifikasi kepemilikan.
+   * @param userId ID user yang sedang login
+   * @param id ID logbook yang ingin diperbarui
+   * @param updateLogbookDto Data baru untuk logbook
+   * @returns Data logbook yang telah diperbarui
+   */
   async update(userId: number, id: number, updateLogbookDto: UpdateLogbookDto) {
     await this.verifyOwnership(userId, id);
 
@@ -97,9 +122,13 @@ export class LogbooksService {
     });
   }
 
-  // Menghapus logbook setelah verifikasi kepemilikan
+  /**
+   * Menghapus logbook setelah verifikasi kepemilikan.
+   * @param userId ID user yang sedang login
+   * @param id ID logbook yang ingin dihapus
+   * @returns Data logbook yang telah dihapus
+   */
   async remove(userId: number, id: number) {
-    // Pastikan user adalah pemilik logbook sebelum menghapus
     await this.verifyOwnership(userId, id);
 
     return this.prisma.logbook.delete({
@@ -107,19 +136,24 @@ export class LogbooksService {
     });
   }
 
-  // Menemukan semua logbook untuk admin dengan paginasi
+  /**
+   * Mengambil semua logbook untuk admin dengan paginasi.
+   * @param page Halaman yang ingin diambil (default: 1)
+   * @param limit Jumlah data per halaman (default: 20)
+   * @returns Objek berisi data logbook, total data, halaman saat ini, dan halaman terakhir
+   */
   async findAllForAdmin(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.logbook.findMany({
         skip,
         take: limit,
-        orderBy: { id: 'desc' }, // Ganti dengan field tanggal jika ada, misal createdAt
+        orderBy: { id: 'desc' },
         include: { user: true },
       }),
       this.prisma.logbook.count(),
     ]);
-    // Filter password
+    // Menghilangkan field password pada data user
     const filteredData = data.map((item) => ({
       ...item,
       user: {
