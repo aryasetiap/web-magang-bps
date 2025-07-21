@@ -41,17 +41,17 @@ enum StatusSubmission {
   revisi // Tambahkan status revisi
 }
 
-enum StatusCertificate {
-  generated // Baru di-generate record
-  signed // Sudah di-upload file PDF signed
-  issued // Sudah diterbitkan ke intern
-}
-
 enum AttendanceStatus {
   hadir
   sakit
   izin
   tanpa_keterangan
+}
+
+enum CertificateStatus {
+  generated
+  signed
+  issued
 }
 
 // 4. Data Models: Defines the tables in your database.
@@ -106,16 +106,11 @@ model User {
   // User uploaded documents
   uploadedDocuments Document[]
 
-  // User certificate (one-to-one)
-  certificate Certificate?
-
-  // User generated certificates (as admin)
-  generatedCertificates Certificate[] @relation("CertificateGenerator")
-
   educationStatus String? // Status pendidikan
   activityType    String? // Jenis kegiatan
   activityStart   DateTime? // Tanggal mulai kegiatan
   activityEnd     DateTime? // Tanggal selesai kegiatan
+  Certificate     Certificate?
 
   @@map("users")
 }
@@ -284,29 +279,6 @@ model Document {
   @@map("documents")
 }
 
-model Certificate {
-  id                Int               @id @default(autoincrement())
-  certificateNumber String            @unique @map("certificate_number")
-  internName        String            @map("intern_name")
-  predicate         String?
-  status            StatusCertificate @default(generated)
-  templatePath      String?           @map("template_path")
-  signedFilePath    String?           @map("signed_file_path")
-  generatedAt       DateTime          @default(now()) @map("generated_at")
-  signedAt          DateTime?         @map("signed_at")
-  issuedAt          DateTime?         @map("issued_at")
-  createdAt         DateTime          @default(now()) @map("created_at")
-  updatedAt         DateTime          @updatedAt @map("updated_at")
-
-  // --- Relations ---
-  user          User  @relation(fields: [userId], references: [id])
-  userId        Int   @unique @map("user_id")
-  generatedBy   User? @relation("CertificateGenerator", fields: [generatedById], references: [id])
-  generatedById Int?  @map("generated_by_id")
-
-  @@map("certificates")
-}
-
 model AuditLog {
   id          Int      @id @default(autoincrement())
   action      String
@@ -323,4 +295,33 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Certificate {
+  id                Int               @id @default(autoincrement())
+  certificateNumber String            @unique
+  userId            Int               @unique
+  internName        String
+  educationalStatus String
+  institusi         String
+  predicate         String
+  namaKegiatan      String
+  activityPeriod    String
+  tglSertifikat     DateTime
+  namaKepalaBPS     String
+  nipKepalaBPS      String
+  templatePath      String
+  signedFilePath    String?
+  status            CertificateStatus @default(generated)
+  generatedAt       DateTime          @default(now())
+  signedAt          DateTime?
+  issuedAt          DateTime?
+  createdBy         Int
+  updatedBy         Int?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("certificates")
 }

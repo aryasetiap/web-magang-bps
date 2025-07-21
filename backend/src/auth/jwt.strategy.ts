@@ -20,8 +20,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // Method ini akan berjalan SETELAH token berhasil diverifikasi
   async validate(payload: any) {
-    // payload adalah hasil dekripsi dari token JWT
-    // Apa pun yang di-return dari sini akan ditempelkan oleh Passport ke object Request sebagai `req.user`
     return {
       userId: payload.sub || payload.userId,
       email: payload.email,

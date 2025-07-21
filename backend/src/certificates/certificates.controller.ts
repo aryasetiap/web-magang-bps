@@ -1,188 +1,101 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Request,
-  ParseIntPipe,
-  Query,
-  UseInterceptors,
-  UploadedFile,
-  Res,
-  StreamableFile,
+    Controller,
+    Post,
+    Patch,
+    Get,
+    Param,
+    Body,
+    UploadedFile,
+    UseInterceptors,
+    UseGuards,
+    Request,
+    Response,
+    ParseIntPipe,
+    NotFoundException,
+    BadRequestException,
+    Res, // Tambahkan ini
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
-import { createReadStream } from 'fs';
 import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { UpdateCertificateDto } from './dto/update-certificate.dto';
-import { UploadCertificateDto } from './dto/upload-certificate.dto';
+import { UpdateCertificateStatusDto } from './dto/update-certificate-status.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import {
-  certificateStorage,
-  certificateFileFilter,
-  certificateLimits,
-} from './multer-config';
+import { createReadStream } from 'fs';
+import * as fs from 'fs'; // Tambahkan ini
+import { join } from 'path';
+import { Response as ExpressResponse } from 'express'; // Tambahkan ini
 
-@Controller('certificates')
 @UseGuards(AuthGuard('jwt'))
+@Controller('certificates')
 export class CertificatesController {
-  constructor(private readonly certificatesService: CertificatesService) {}
+    constructor(private readonly service: CertificatesService) { }
 
-  // Check template PDF (Admin only) - untuk testing
-  @Get('check-template')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  async checkTemplate() {
-    return this.certificatesService.checkTemplate();
-  }
-
-  // Generate certificate (Admin/Staff) - Otomatis dari final project
-  @Post('generate')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  generate(@Request() req, @Body() createCertificateDto: CreateCertificateDto) {
-    const generatedById = req.user.userId;
-    return this.certificatesService.generate(
-      generatedById,
-      createCertificateDto,
-    );
-  }
-
-  // Download PDF for signing (Admin/Staff) - Admin download untuk tanda tangan offline
-  @Get(':id/download-for-signing')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  async downloadForSigning(
-    @Param('id', ParseIntPipe) id: number,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<StreamableFile> {
-    const { filePath, fileName } =
-      await this.certificatesService.downloadForSigning(id);
-
-    const file = createReadStream(filePath);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${fileName}"`,
-    });
-
-    return new StreamableFile(file);
-  }
-
-  // Upload signed certificate PDF (Admin/Staff)
-  @Patch(':id/upload')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: certificateStorage,
-      fileFilter: certificateFileFilter,
-      limits: certificateLimits,
-    }),
-  )
-  uploadSigned(
-    @Param('id', ParseIntPipe) id: number,
-    @UploadedFile() file: Express.Multer.File,
-    @Body() uploadCertificateDto: UploadCertificateDto,
-  ) {
-    return this.certificatesService.uploadSigned(id, file);
-  }
-
-  // Issue certificate to intern (Admin/Staff)
-  @Patch(':id/issue')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  issue(@Param('id', ParseIntPipe) id: number) {
-    return this.certificatesService.issue(id);
-  }
-
-  // Get certificate for current user (Intern)
-  @Get()
-  @Roles('Intern')
-  @UseGuards(RolesGuard)
-  findByUser(@Request() req) {
-    const userId = req.user.userId;
-    return this.certificatesService.findByUser(userId);
-  }
-
-  // Get all certificates for admin (Admin/Staff)
-  @Get('all')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  findAllForAdmin(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-  ) {
-    return this.certificatesService.findAllForAdmin(
-      Number(page),
-      Number(limit),
-    );
-  }
-
-  // Download certificate PDF (Intern)
-  @Get(':id/download')
-  @Roles('Intern')
-  @UseGuards(RolesGuard)
-  async downloadCertificate(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<StreamableFile> {
-    const userId = req.user.userId;
-    const { filePath, fileName } =
-      await this.certificatesService.downloadCertificate(id, userId);
-
-    const file = createReadStream(filePath);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${fileName}"`,
-    });
-
-    return new StreamableFile(file);
-  }
-
-  // Get certificate by ID
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
-    const userRole = req.user.role?.name || req.user.role;
-
-    // Admin can see all, intern can only see their own
-    if (
-      userRole.toLowerCase() === 'admin' ||
-      userRole.toLowerCase() === 'staff bps'
-    ) {
-      return this.certificatesService.findOne(id);
-    } else {
-      return this.certificatesService.findOne(id, userId);
+    // Admin: Generate certificate
+    @Post('generate')
+    async generate(@Body() dto: CreateCertificateDto, @Request() req) {
+        // Gunakan req.user.userId agar pasti number
+        return this.service.generateCertificate(dto, req.user.userId);
     }
-  }
 
-  // Update certificate (Admin/Staff)
-  @Patch(':id')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCertificateDto: UpdateCertificateDto,
-  ) {
-    return this.certificatesService.update(id, updateCertificateDto);
-  }
+    // Admin: Upload signed certificate
+    @Patch(':id/upload')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadSigned(
+        @Param('id', ParseIntPipe) id: number,
+        @UploadedFile() file: Express.Multer.File,
+        @Request() req,
+    ) {
+        if (!file) throw new Error('File PDF wajib diunggah');
+        return this.service.uploadSignedCertificate(id, file.path, req.user.id);
+    }
 
-  // Delete certificate (Admin/Staff)
-  @Delete(':id')
-  @Roles('Admin', 'Staff BPS')
-  @UseGuards(RolesGuard)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.certificatesService.remove(id);
-  }
+    // Admin: Issue certificate
+    @Patch(':id/issue')
+    async issue(@Param('id', ParseIntPipe) id: number, @Request() req) {
+        return this.service.issueCertificate(id, req.user.id);
+    }
+
+    // Intern: Get own certificate
+    @Get('me')
+    async getOwn(@Request() req) {
+        // Ganti req.user.id menjadi req.user.userId
+        return this.service.getCertificateByUser(req.user.userId);
+    }
+
+    // Intern/Admin: Download certificate (generated/signed)
+    @Get(':id/download')
+    async download(
+        @Param('id', ParseIntPipe) id: number,
+        @Request() req,
+        @Res() res: ExpressResponse // Gunakan tipe ini
+    ) {
+        const cert = await this.service.getCertificateById(id);
+        if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan');
+
+        // Hanya admin bisa download versi signed/generate, intern hanya issued
+        // (opsional: cek role di req.user.role)
+
+        // Pilih file yang akan dikirim
+        let filePath: string;
+        let fileName: string;
+        if (cert.status === 'issued' && cert.signedFilePath) {
+            filePath = cert.signedFilePath;
+            fileName = `Sertifikat_${cert.certificateNumber}.pdf`;
+        } else if (cert.status === 'generated') {
+            filePath = cert.templatePath;
+            fileName = `Certificate_${cert.certificateNumber}_for-signing.pdf`;
+        } else {
+            throw new BadRequestException('Sertifikat belum siap untuk diunduh.');
+        }
+
+        if (!fs.existsSync(filePath)) {
+            throw new NotFoundException('File sertifikat tidak ditemukan di server.');
+        }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        const stream = createReadStream(filePath);
+        stream.pipe(res);
+    }
 }
+// console.log('adminId:', req.user.id);

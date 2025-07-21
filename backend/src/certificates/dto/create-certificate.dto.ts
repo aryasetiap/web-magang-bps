@@ -1,10 +1,18 @@
-import { IsInt, IsNotEmpty } from 'class-validator';
+import { IsString, IsInt, IsDateString } from 'class-validator';
 
 export class CreateCertificateDto {
-  @IsInt()
-  @IsNotEmpty()
-  userId: number;
+    @IsString()
+    certificateNumber: string;
 
-  // Hapus semua field lain karena auto-generate
-  // internName, predicate, templatePath akan di-generate otomatis
+    @IsInt()
+    userId: number;
+
+    @IsString()
+    predicate: string;
+
+    @IsString()
+    namaKepalaBPS: string;
+
+    @IsString()
+    nipKepalaBPS: string;
 }

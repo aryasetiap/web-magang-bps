@@ -30,7 +30,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     TasksModule,
     SubmissionsModule,
     FinalProjectsModule,
-    CertificatesModule, // Tambahkan ini
+    CertificatesModule,
     MulterModule.register({
       dest: './uploads',
     }),
@@ -39,4 +39,4 @@ import { ScheduleModule } from '@nestjs/schedule';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
