@@ -7,14 +7,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
-import { UsersModule } from '../users/users.module'; // Tambahkan import ini
+import { UsersModule } from '../users/users.module';
 
+/**
+ * Modul Auth bertanggung jawab untuk mengelola autentikasi pengguna,
+ * termasuk login, registrasi, serta integrasi dengan JWT dan Google OAuth.
+ */
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     ConfigModule,
-    UsersModule, // Tambahkan UsersModule ke dalam imports
+    UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

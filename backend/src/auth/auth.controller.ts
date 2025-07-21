@@ -10,7 +10,6 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-  Headers,
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
@@ -43,12 +42,20 @@ export class AuthController {
     private usersService: UsersService,
   ) { }
 
+  /**
+   * Endpoint untuk registrasi user baru.
+   * @param registerDto Data registrasi user.
+   */
   @Post('register')
   @ApiOperation({ summary: 'Register user baru' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
+  /**
+   * Endpoint untuk login user.
+   * @param loginDto Data login user.
+   */
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     const { access_token, user } = await this.authService.login(loginDto);
@@ -58,11 +65,15 @@ export class AuthController {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: { name: user.role.name }, // pastikan role adalah object { name: ... }
+        role: { name: user.role.name },
       },
     };
   }
 
+  /**
+   * Mendapatkan profil user yang sedang login.
+   * @param req Request yang berisi userId.
+   */
   @UseGuards(AuthGuard('jwt'))
   @Get('profile')
   @ApiOperation({ summary: 'Get profile user yang sedang login' })
@@ -72,6 +83,12 @@ export class AuthController {
     return this.usersService.getProfile(userId);
   }
 
+  /**
+   * Mengupdate profil user, termasuk upload foto profil.
+   * @param req Request yang berisi userId.
+   * @param updateProfileDto Data profil yang akan diupdate.
+   * @param profilePhoto File foto profil (opsional).
+   */
   @UseGuards(AuthGuard('jwt'))
   @Patch('profile')
   @ApiOperation({ summary: 'Update profil user dengan upload foto profil' })
@@ -138,19 +155,22 @@ export class AuthController {
     @UploadedFile() profilePhoto?: Express.Multer.File,
   ) {
     const userId = req.user.userId;
-
     const updatedUser = await this.usersService.updateProfile(
       userId,
       updateProfileDto,
       profilePhoto,
     );
-
     return {
       message: 'Profil berhasil diperbarui',
       user: updatedUser,
     };
   }
 
+  /**
+   * Mengganti password user yang sedang login.
+   * @param req Request yang berisi userId.
+   * @param dto Data perubahan password.
+   */
   @UseGuards(AuthGuard('jwt'))
   @Post('change-password')
   async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
@@ -158,36 +178,45 @@ export class AuthController {
     return this.authService.changePassword(userId, dto.oldPassword, dto.newPassword);
   }
 
+  /**
+   * Mengirim email lupa password.
+   * @param dto Data email user.
+   */
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
+  /**
+   * Verifikasi reset password dengan OTP.
+   * @param dto Data verifikasi reset password.
+   */
   @Post('verify-reset-password')
   async verifyResetPassword(@Body() dto: VerifyResetPasswordDto) {
     return this.authService.verifyResetPassword(dto.email, dto.otp, dto.newPassword);
   }
 
-  // --- GOOGLE AUTH SECTION ---
-
+  /**
+   * Inisiasi autentikasi Google OAuth.
+   * @param req Request.
+   */
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req) {
-    // Initiates Google OAuth flow
-  }
+  async googleAuth(@Req() req) { }
 
+  /**
+   * Callback autentikasi Google OAuth.
+   * Redirect ke frontend dengan token dan data user.
+   * @param req Request.
+   * @param res Response.
+   */
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req, @Res() res: Response) {
     try {
-      const { user, access_token } = await this.authService.googleLogin(
-        req.user,
-      );
-
-      // HARUS redirect ke frontend, bukan return JSON
+      const { user, access_token } = await this.authService.googleLogin(req.user);
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const encodedUser = encodeURIComponent(JSON.stringify(user));
-
       res.redirect(
         `${frontendUrl}/auth/callback?token=${access_token}&user=${encodedUser}`,
       );
@@ -199,12 +228,20 @@ export class AuthController {
     }
   }
 
+  /**
+   * Verifikasi OTP untuk aktivasi user.
+   * @param body Data email dan OTP.
+   */
   @Post('verify-otp')
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     const user = await this.authService.verifyOtp(body.email, body.otp);
     return user;
   }
 
+  /**
+   * Mengirim ulang OTP ke email user.
+   * @param body Data email user.
+   */
   @Post('resend-otp')
   async resendOtp(@Body() body: { email: string }) {
     return this.authService.resendOtp(body.email);

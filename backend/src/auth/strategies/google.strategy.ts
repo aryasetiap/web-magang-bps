@@ -1,10 +1,12 @@
-// src/auth/google.strategy.ts (Versi Final yang Benar)
-
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 
+/**
+ * GoogleStrategy handles authentication using Google OAuth 2.0.
+ * It retrieves credentials from environment variables and validates user profiles.
+ */
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(private configService: ConfigService) {
@@ -28,6 +30,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
+  /**
+   * Validates the Google user profile and constructs a user object.
+   * @param accessToken - OAuth access token
+   * @param refreshToken - OAuth refresh token
+   * @param profile - Google user profile
+   * @param done - Callback to pass the user object
+   */
   async validate(
     accessToken: string,
     refreshToken: string,

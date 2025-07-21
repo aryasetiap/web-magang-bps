@@ -1,12 +1,19 @@
-// src/auth/roles.guard.ts
-
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
+/**
+ * Guard untuk memeriksa apakah user memiliki role yang dibutuhkan
+ * berdasarkan metadata 'roles' pada handler atau class.
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) { }
 
+  /**
+   * Mengecek apakah user memiliki salah satu role yang dibutuhkan.
+   * @param context ExecutionContext dari request yang masuk
+   * @returns boolean true jika user memiliki role yang sesuai, false jika tidak
+   */
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
@@ -16,21 +23,12 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    // Ambil role dari user.role atau user.role.name
     let userRole = user.role?.name || user.role;
     if (Array.isArray(userRole)) {
-      userRole = userRole[0]; // ambil role pertama jika array
+      userRole = userRole[0];
     }
     if (!userRole) return false;
-    console.log(
-      'requiredRoles:',
-      requiredRoles,
-      'userRole:',
-      userRole,
-      'path:',
-      context.switchToHttp().getRequest().url,
-    );
-    // Bandingkan lowercase
+
     const hasRole = requiredRoles.some(
       (role) => userRole?.toLowerCase() === role.toLowerCase(),
     );

@@ -3,6 +3,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 
+/**
+ * Pengujian unit untuk AuthController.
+ * Meliputi pengujian register, login, verifikasi OTP, dan resend OTP.
+ */
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: any;
@@ -26,10 +30,17 @@ describe('AuthController', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
+  /**
+   * Memastikan controller terdefinisi.
+   */
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
+  /**
+   * Pengujian endpoint register.
+   * Memastikan service register dipanggil dan hasilnya sesuai.
+   */
   it('register: should call service and return result', async () => {
     const dto = { name: 'A', email: 'a@mail.com', password: '123456' };
     const mockResult = { message: 'ok', user: { id: 1 } };
@@ -39,6 +50,10 @@ describe('AuthController', () => {
     expect(authService.register).toBeCalledWith(dto);
   });
 
+  /**
+   * Pengujian endpoint login.
+   * Memastikan service login dipanggil dan hasilnya terformat dengan benar.
+   */
   it('login: should call service and return formatted result', async () => {
     const dto = { email: 'a@mail.com', password: '123456' };
     const mockResult = {
@@ -59,6 +74,10 @@ describe('AuthController', () => {
     expect(authService.login).toBeCalledWith(dto);
   });
 
+  /**
+   * Pengujian endpoint verifikasi OTP.
+   * Memastikan service verifyOtp dipanggil dan hasilnya sesuai.
+   */
   it('verifyOtp: should call service and return result', async () => {
     const body = { email: 'a@mail.com', otp: '123456' };
     const mockResult = { message: 'Email berhasil diverifikasi' };
@@ -68,6 +87,10 @@ describe('AuthController', () => {
     expect(authService.verifyOtp).toBeCalledWith(body.email, body.otp);
   });
 
+  /**
+   * Pengujian endpoint resend OTP.
+   * Memastikan service resendOtp dipanggil dan hasilnya sesuai.
+   */
   it('resendOtp: should call service and return result', async () => {
     const body = { email: 'a@mail.com' };
     const mockResult = { message: 'OTP baru telah dikirim ke email Anda.' };
