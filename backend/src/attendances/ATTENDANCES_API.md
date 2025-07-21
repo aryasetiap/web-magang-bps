@@ -1,6 +1,6 @@
-# 📚 **Attendances API Documentation**
+# 📚 Attendance API Documentation
 
-## 1. **Authentication**
+## 1. Authentication
 
 Semua endpoint menggunakan JWT Auth.  
 Tambahkan header:
@@ -11,9 +11,9 @@ Authorization: Bearer <token>
 
 ---
 
-## 2. **Endpoint List**
+## 2. Endpoint List
 
-### **A. Clock In**
+### A. Clock In
 
 #### `POST /attendances/clock-in`
 
@@ -48,7 +48,7 @@ Presensi masuk dengan validasi lokasi.
 
 ---
 
-### **B. Clock Out**
+### B. Clock Out
 
 #### `PATCH /attendances/clock-out`
 
@@ -87,7 +87,7 @@ Presensi pulang dengan validasi lokasi.
 
 ---
 
-### **C. Pengajuan Sakit/Izin**
+### C. Pengajuan Sakit/Izin
 
 #### `POST /attendances/request-leave`
 
@@ -121,7 +121,7 @@ Pengajuan sakit/izin dengan upload bukti dan deskripsi.
 
 ---
 
-### **D. Validasi Pengajuan oleh Admin/Staff**
+### D. Validasi Pengajuan oleh Admin/Staff
 
 #### `PATCH /attendances/:id/validate`
 
@@ -153,7 +153,7 @@ Validasi pengajuan sakit/izin, ubah status presensi.
 
 ---
 
-### **E. Riwayat Presensi Sendiri**
+### E. Riwayat Presensi Sendiri
 
 #### `GET /attendances`
 
@@ -184,7 +184,7 @@ Ambil semua riwayat presensi user yang sedang login.
 
 ---
 
-### **F. Riwayat Presensi Semua User (Admin)**
+### F. Riwayat Presensi Semua User (Admin)
 
 #### `GET /attendances/all?page=1&limit=20`
 
@@ -203,7 +203,7 @@ Ambil semua presensi untuk admin, paginasi.
 
 ---
 
-### **G. Detail Presensi**
+### G. Detail Presensi
 
 #### `GET /attendances/:id`
 
@@ -221,7 +221,7 @@ Ambil detail satu presensi.
 
 ---
 
-## 3. **Status Presensi**
+## 3. Status Presensi
 
 - `hadir`: Presensi normal
 - `sakit`: Pengajuan sakit
@@ -230,7 +230,7 @@ Ambil detail satu presensi.
 
 ---
 
-## 4. **Catatan Validasi**
+## 4. Catatan Validasi
 
 - Pengajuan sakit/izin hanya bisa dilakukan sebelum jam 11.00 WIB.
 - File bukti wajib dan harus JPG, PNG, atau PDF, maksimal 5MB.
@@ -238,7 +238,7 @@ Ambil detail satu presensi.
 
 ---
 
-## 5. **Contoh Error Response**
+## 5. Contoh Error Response
 
 ```json
 {
@@ -249,7 +249,7 @@ Ambil detail satu presensi.
 
 ---
 
-## 6. **Tips Implementasi FE**
+## 6. Tips Implementasi FE
 
 - Gunakan form multipart untuk pengajuan sakit/izin.
 - Tampilkan status presensi sesuai enum.

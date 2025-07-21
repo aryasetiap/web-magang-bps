@@ -9,12 +9,14 @@ import {
   Query,
   Param,
   Ip,
-  Request, // Tambahkan Request dari @nestjs/common
+  Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { ClockInDto } from './dto/clock-in.dto';
 import { ClockOutDto } from './dto/clock-out.dto';
-import { AuthGuard } from '@nestjs/passport'; // Ganti dengan ini
+import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
@@ -25,26 +27,36 @@ import {
   ApiBearerAuth,
   ApiBody,
 } from '@nestjs/swagger';
-import { RequestLeaveDto, LeaveType } from './dto/request-leave.dto';
-import { UseInterceptors, UploadedFile } from '@nestjs/common';
+import { RequestLeaveDto } from './dto/request-leave.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
 @ApiTags('attendances')
 @Controller('attendances')
-@UseGuards(AuthGuard('jwt')) // Ganti dengan ini
+@UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class AttendancesController {
   constructor(private readonly attendancesService: AttendancesService) {}
 
-  // Endpoint spesifik untuk Clock In
+  /**
+   * Melakukan presensi masuk (clock-in).
+   * @param req Request object yang berisi user.
+   * @param clockInDto Data presensi masuk.
+   * @param ip Alamat IP pengguna.
+   */
   @Post('clock-in')
+  @ApiOperation({ summary: 'Melakukan presensi masuk (clock-in)' })
   clockIn(@Request() req, @Body() clockInDto: ClockInDto, @Ip() ip: string) {
     const userId = req.user.userId;
     return this.attendancesService.clockIn(userId, clockInDto, ip);
   }
 
+  /**
+   * Melakukan presensi pulang (clock-out) dengan validasi lokasi.
+   * @param clockOutDto Data presensi pulang.
+   * @param req Request object yang berisi user dan IP.
+   */
   @Patch('clock-out')
   @ApiOperation({ summary: 'Melakukan presensi pulang dengan validasi lokasi' })
   @ApiBody({ type: ClockOutDto })
@@ -88,7 +100,7 @@ export class AttendancesController {
     },
   })
   async clockOut(@Body() clockOutDto: ClockOutDto, @Req() req: any) {
-    const userId = req.user.userId; // Sudah benar!
+    const userId = req.user.userId;
     const ipAddress = req.ip || req.connection.remoteAddress;
 
     const attendance = await this.attendancesService.clockOut(
@@ -109,16 +121,26 @@ export class AttendancesController {
     };
   }
 
-  // Endpoint untuk melihat riwayat presensi sendiri
+  /**
+   * Mendapatkan riwayat presensi pengguna saat ini.
+   * @param req Request object yang berisi user.
+   */
   @Get()
+  @ApiOperation({ summary: 'Melihat riwayat presensi sendiri' })
   findAll(@Request() req) {
     const userId = req.user.userId;
     return this.attendancesService.findAll(userId);
   }
 
+  /**
+   * Mendapatkan seluruh data presensi (khusus admin).
+   * @param page Halaman data.
+   * @param limit Jumlah data per halaman.
+   */
   @Get('all')
   @UseGuards(RolesGuard)
   @Roles('admin')
+  @ApiOperation({ summary: 'Melihat seluruh data presensi (admin)' })
   async getAllAttendances(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
@@ -126,11 +148,22 @@ export class AttendancesController {
     return this.attendancesService.findAllForAdmin(Number(page), Number(limit));
   }
 
+  /**
+   * Mendapatkan detail presensi berdasarkan ID.
+   * @param id ID presensi.
+   */
   @Get(':id')
+  @ApiOperation({ summary: 'Melihat detail presensi berdasarkan ID' })
   findOne(@Param('id') id: string) {
     return this.attendancesService.findOne(+id);
   }
 
+  /**
+   * Mengajukan permohonan cuti/izin dengan upload bukti.
+   * @param req Request object yang berisi user.
+   * @param dto Data permohonan cuti/izin.
+   * @param file File bukti (opsional).
+   */
   @Post('request-leave')
   @UseInterceptors(
     FileInterceptor('proof', {
@@ -153,6 +186,7 @@ export class AttendancesController {
       },
     }),
   )
+  @ApiOperation({ summary: 'Mengajukan permohonan cuti/izin' })
   async requestLeave(
     @Request() req,
     @Body() dto: RequestLeaveDto,
@@ -162,9 +196,16 @@ export class AttendancesController {
     return this.attendancesService.requestLeave(userId, dto, file);
   }
 
+  /**
+   * Memvalidasi permohonan cuti/izin (admin/staff).
+   * @param id ID permohonan.
+   * @param status Status validasi.
+   * @param req Request object yang berisi user.
+   */
   @Patch(':id/validate')
   @UseGuards(RolesGuard)
   @Roles('admin', 'staff')
+  @ApiOperation({ summary: 'Validasi permohonan cuti/izin (admin/staff)' })
   async validateLeave(
     @Param('id') id: string,
     @Body('status') status: 'hadir' | 'sakit' | 'izin' | 'tanpa_keterangan',
