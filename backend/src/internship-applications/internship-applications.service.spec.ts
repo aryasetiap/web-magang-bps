@@ -3,6 +3,11 @@ import { InternshipApplicationsService } from './internship-applications.service
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 
+/**
+ * Membuat objek file tiruan untuk kebutuhan pengujian.
+ * @param path - Nama file yang akan digunakan sebagai mock.
+ * @returns Objek file tiruan sesuai struktur Express.Multer.File.
+ */
 function mockFile(path: string): Express.Multer.File {
   return {
     fieldname: 'file',
@@ -22,6 +27,9 @@ describe('InternshipApplicationsService', () => {
   let service: InternshipApplicationsService;
   let prisma: any;
 
+  /**
+   * Inisialisasi modul pengujian dan mock PrismaService sebelum setiap pengujian.
+   */
   beforeEach(async () => {
     prisma = {
       internshipApplication: {
@@ -42,6 +50,9 @@ describe('InternshipApplicationsService', () => {
     );
   });
 
+  /**
+   * Menguji bahwa pengajuan magang dapat dilakukan tanpa melampirkan CV.
+   */
   it('should allow submission without CV', async () => {
     prisma.internshipApplication.findUnique.mockResolvedValue(null);
     prisma.internshipApplication.create.mockResolvedValue({ id: 1 });
@@ -56,6 +67,9 @@ describe('InternshipApplicationsService', () => {
     await expect(service.create(1, dto, files)).resolves.toEqual({ id: 1 });
   });
 
+  /**
+   * Menguji bahwa error dilempar jika file transcript tidak dilampirkan.
+   */
   it('should throw error if transcript is missing', async () => {
     const files = {
       requestLetter: [mockFile('requestLetter.pdf')],
@@ -67,6 +81,9 @@ describe('InternshipApplicationsService', () => {
     );
   });
 
+  /**
+   * Menguji bahwa error dilempar jika file requestLetter tidak dilampirkan.
+   */
   it('should throw error if requestLetter is missing', async () => {
     const files = {
       transcript: [mockFile('transcript.pdf')],
@@ -78,6 +95,9 @@ describe('InternshipApplicationsService', () => {
     );
   });
 
+  /**
+   * Menguji bahwa pengajuan magang dapat dilakukan dengan melampirkan CV.
+   */
   it('should allow submission with CV', async () => {
     prisma.internshipApplication.findUnique.mockResolvedValue(null);
     prisma.internshipApplication.create.mockResolvedValue({ id: 2 });

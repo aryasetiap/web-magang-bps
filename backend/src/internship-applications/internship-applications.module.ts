@@ -2,26 +2,36 @@ import { Module } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { InternshipApplicationsController } from './internship-applications.controller';
 import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer'; // 1. Impor diskStorage
-import { extname } from 'path'; // 2. Impor extname dari path
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
+/**
+ * Modul untuk mengelola aplikasi magang, termasuk konfigurasi upload file.
+ */
 @Module({
   imports: [
-    // 3. Ganti konfigurasi Multer yang lama dengan yang ini
     MulterModule.register({
       storage: diskStorage({
-        // Tentukan folder tujuan
+        /**
+         * Menentukan folder tujuan penyimpanan file upload.
+         * @param req - Request yang masuk
+         * @param file - File yang diupload
+         * @param callback - Callback untuk menentukan folder tujuan
+         */
         destination: './uploads',
-        // Tentukan bagaimana nama file akan dibuat
+        /**
+         * Membuat nama file unik untuk setiap file yang diupload.
+         * Nama file dihasilkan secara acak dan mempertahankan ekstensi asli.
+         * @param req - Request yang masuk
+         * @param file - File yang diupload
+         * @param callback - Callback untuk menentukan nama file
+         */
         filename: (req, file, callback) => {
-          // Buat nama acak untuk mencegah nama file yang sama
           const randomName = Array(32)
             .fill(null)
             .map(() => Math.round(Math.random() * 16).toString(16))
             .join('');
-          // Ambil ekstensi file asli (misalnya, '.pdf')
           const fileExtension = extname(file.originalname);
-          // Gabungkan nama acak dengan ekstensi asli
           callback(null, `${randomName}${fileExtension}`);
         },
       }),
