@@ -9,38 +9,46 @@ import {
     UseInterceptors,
     UseGuards,
     Request,
-    Response,
     ParseIntPipe,
     NotFoundException,
     BadRequestException,
-    ForbiddenException, // Tambahkan ini
-    Res, // Tambahkan ini
+    ForbiddenException,
+    Res,
 } from '@nestjs/common';
 import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { UpdateCertificateStatusDto } from './dto/update-certificate-status.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { AuthGuard } from '@nestjs/passport';
 import { createReadStream } from 'fs';
 import * as fs from 'fs';
-import { join } from 'path';
-import { Response as ExpressResponse } from 'express'; // Tambahkan ini
+import { Response as ExpressResponse } from 'express';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('certificates')
+/**
+ * Controller untuk manajemen sertifikat, termasuk generate, upload, issue, download, dan pengecekan template.
+ */
 export class CertificatesController {
     constructor(private readonly service: CertificatesService) { }
 
-    // Admin: Generate certificate
+    /**
+     * Endpoint untuk admin melakukan generate sertifikat baru.
+     * @param dto Data pembuatan sertifikat
+     * @param req Request yang berisi data user
+     */
     @Post('generate')
     async generate(@Body() dto: CreateCertificateDto, @Request() req) {
-        // Gunakan req.user.userId agar pasti number
         return this.service.generateCertificate(dto, req.user.userId);
     }
 
-    // Admin: Upload signed certificate
+    /**
+     * Endpoint untuk admin mengunggah file sertifikat yang sudah ditandatangani.
+     * @param id ID sertifikat
+     * @param file File PDF sertifikat yang diunggah
+     * @param req Request yang berisi data user
+     */
     @Patch(':id/upload')
     @UseInterceptors(FileInterceptor('file'))
     async uploadSigned(
@@ -48,24 +56,34 @@ export class CertificatesController {
         @UploadedFile() file: Express.Multer.File,
         @Request() req,
     ) {
-        if (!file) throw new Error('File PDF wajib diunggah');
-        return this.service.uploadSignedCertificate(id, file.path, req.user.id);
+        if (!file) throw new BadRequestException('File PDF wajib diunggah');
+        return this.service.uploadSignedCertificate(id, file.path, req.user.userId);
     }
 
-    // Admin: Issue certificate
+    /**
+     * Endpoint untuk admin menerbitkan (issue) sertifikat.
+     * @param id ID sertifikat
+     * @param req Request yang berisi data user
+     */
     @Patch(':id/issue')
     async issue(@Param('id', ParseIntPipe) id: number, @Request() req) {
         return this.service.issueCertificate(id, req.user.id);
     }
 
-    // Intern: Get own certificate
+    /**
+     * Endpoint untuk intern mengambil sertifikat miliknya sendiri.
+     * @param req Request yang berisi data user
+     */
     @Get('me')
     async getOwn(@Request() req) {
-        // Ganti req.user.id menjadi req.user.userId
         return this.service.getCertificateByUser(req.user.userId);
     }
 
-    // Admin: Upload/replace certificate template
+    /**
+     * Endpoint untuk admin mengunggah atau mengganti template sertifikat.
+     * @param file File template PDF yang diunggah
+     * @param req Request yang berisi data user
+     */
     @Patch('template/upload')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
@@ -74,7 +92,7 @@ export class CertificatesController {
                 cb(null, 'certificate-template.pdf');
             },
         }),
-        limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        limits: { fileSize: 5 * 1024 * 1024 },
         fileFilter: (req, file, cb) => {
             if (extname(file.originalname).toLowerCase() === '.pdf') cb(null, true);
             else cb(new Error('File harus PDF'), false);
@@ -85,24 +103,25 @@ export class CertificatesController {
         @Request() req,
     ) {
         if (!file) throw new BadRequestException('File PDF wajib diunggah');
-        // Anda bisa menambah log audit di sini jika perlu
         return { success: true, message: 'Template sertifikat berhasil diunggah.' };
     }
 
-    // Intern/Admin: Download certificate (generated/signed)
+    /**
+     * Endpoint untuk mengunduh file sertifikat (baik yang sudah ditandatangani maupun yang belum).
+     * Hanya admin yang dapat mengunduh versi signed/generated, intern hanya issued.
+     * @param id ID sertifikat
+     * @param req Request yang berisi data user
+     * @param res Response Express untuk streaming file
+     */
     @Get(':id/download')
     async download(
         @Param('id', ParseIntPipe) id: number,
         @Request() req,
-        @Res() res: ExpressResponse // Gunakan tipe ini
+        @Res() res: ExpressResponse
     ) {
         const cert = await this.service.getCertificateById(id);
         if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan');
 
-        // Hanya admin bisa download versi signed/generate, intern hanya issued
-        // (opsional: cek role di req.user.role)
-
-        // Pilih file yang akan dikirim
         let filePath: string;
         let fileName: string;
         if (cert.status === 'issued' && cert.signedFilePath) {
@@ -125,6 +144,9 @@ export class CertificatesController {
         stream.pipe(res);
     }
 
+    /**
+     * Endpoint untuk mengecek ketersediaan template sertifikat.
+     */
     @Get('template/check')
     async checkTemplate() {
         const templatePath = './uploads/certificate-templates/certificate-template.pdf';
@@ -135,12 +157,13 @@ export class CertificatesController {
         };
     }
 
-    // Admin: Get all certificates with status
+    /**
+     * Endpoint untuk admin mengambil seluruh data sertifikat beserta statusnya.
+     * @param req Request yang berisi data user
+     */
     @Get()
     async getAllCertificates(@Request() req) {
-        // (Opsional) Batasi hanya admin yang bisa akses
         if (req.user.role !== 'Admin') throw new ForbiddenException('Hanya admin');
         return this.service.getAllCertificates();
     }
 }
-// console.log('adminId:', req.user.id);

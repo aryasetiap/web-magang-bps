@@ -1,5 +1,10 @@
-import { IsString, IsInt, IsDateString } from 'class-validator';
+import { IsString, IsInt } from 'class-validator';
 
+/**
+ * DTO untuk membuat sertifikat baru.
+ * Berisi informasi nomor sertifikat, ID pengguna, predikat,
+ * nama kepala BPS, dan NIP kepala BPS.
+ */
 export class CreateCertificateDto {
     @IsString()
     certificateNumber: string;
