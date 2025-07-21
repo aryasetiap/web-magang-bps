@@ -22,6 +22,9 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from '../users/dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyResetPasswordDto } from './dto/verify-reset-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
@@ -146,6 +149,23 @@ export class AuthController {
       message: 'Profil berhasil diperbarui',
       user: updatedUser,
     };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-password')
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    const userId = req.user.userId;
+    return this.authService.changePassword(userId, dto.oldPassword, dto.newPassword);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('verify-reset-password')
+  async verifyResetPassword(@Body() dto: VerifyResetPasswordDto) {
+    return this.authService.verifyResetPassword(dto.email, dto.otp, dto.newPassword);
   }
 
   // --- GOOGLE AUTH SECTION ---

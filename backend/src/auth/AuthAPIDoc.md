@@ -10,6 +10,9 @@
 - [POST /auth/login](#post-authlogin)
 - [POST /auth/verify-otp](#post-authverify-otp)
 - [POST /auth/resend-otp](#post-authresend-otp)
+- [POST /auth/change-password](#post-authchange-password)
+- [POST /auth/forgot-password](#post-authforgot-password)
+- [POST /auth/verify-reset-password](#post-authverify-reset-password)
 - [GET /auth/profile](#get-authprofile)
 - [PATCH /auth/profile](#patch-authprofile)
 - [GET /auth/google](#get-authgoogle)
@@ -188,6 +191,135 @@ Mengirim ulang OTP ke email user (hanya jika belum diverifikasi). Rate limit: 1x
 {
   "statusCode": 401,
   "message": "Anda hanya dapat meminta OTP sekali per jam."
+}
+```
+
+---
+
+## POST `/auth/change-password`
+
+**Deskripsi:**  
+Ganti password user yang sedang login.
+
+**Headers:**  
+`Authorization: Bearer {jwt_token}`
+
+**Request Body:**
+
+```json
+{
+  "oldPassword": "passwordlama",
+  "newPassword": "passwordbaru"
+}
+```
+
+**Response Success (200):**
+
+```json
+{
+  "message": "Password berhasil diubah"
+}
+```
+
+**Response Error (401):**
+
+```json
+{
+  "statusCode": 401,
+  "message": "Password lama salah"
+}
+```
+
+atau
+
+```json
+{
+  "statusCode": 401,
+  "message": "Password baru tidak boleh sama dengan password lama"
+}
+```
+
+---
+
+## POST `/auth/forgot-password`
+
+**Deskripsi:**  
+Request OTP untuk reset password (lupa password). OTP akan dikirim ke email user.
+
+**Request Body:**
+
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response Success (200):**
+
+```json
+{
+  "message": "OTP reset password telah dikirim ke email Anda."
+}
+```
+
+**Response Error (401):**
+
+```json
+{
+  "statusCode": 401,
+  "message": "Email tidak ditemukan"
+}
+```
+
+atau
+
+```json
+{
+  "statusCode": 401,
+  "message": "OTP reset password masih aktif, cek email Anda."
+}
+```
+
+---
+
+## POST `/auth/verify-reset-password`
+
+**Deskripsi:**  
+Verifikasi OTP reset password dan set password baru.
+
+**Request Body:**
+
+```json
+{
+  "email": "john@example.com",
+  "otp": "123456",
+  "newPassword": "passwordbaru"
+}
+```
+
+**Response Success (200):**
+
+```json
+{
+  "message": "Password berhasil direset. Silakan login dengan password baru."
+}
+```
+
+**Response Error (401):**
+
+```json
+{
+  "statusCode": 401,
+  "message": "OTP salah"
+}
+```
+
+atau
+
+```json
+{
+  "statusCode": 401,
+  "message": "OTP kadaluarsa"
 }
 ```
 
