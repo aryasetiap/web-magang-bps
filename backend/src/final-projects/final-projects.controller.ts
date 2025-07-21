@@ -21,13 +21,24 @@ import { ReviewFinalProjectDto } from './dto/review-final-project.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
+/**
+ * Controller untuk mengelola endpoint terkait Final Project.
+ * Mengatur akses dan operasi CRUD untuk Final Project sesuai peran pengguna.
+ */
 @Controller('final-projects')
 @UseGuards(AuthGuard('jwt'))
 export class FinalProjectsController {
-  constructor(private readonly finalProjectsService: FinalProjectsService) {}
+  constructor(private readonly finalProjectsService: FinalProjectsService) { }
 
-  // Create final project (Intern)
+  /**
+   * Membuat Final Project baru oleh pengguna dengan peran Intern.
+   * @param req Request yang berisi data user.
+   * @param createFinalProjectDto Data Final Project yang akan dibuat.
+   * @param file File yang diunggah (opsional).
+   * @returns Data Final Project yang telah dibuat.
+   */
   @Post()
   @Roles('Intern')
   @UseGuards(RolesGuard)
@@ -38,14 +49,14 @@ export class FinalProjectsController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const userId = req.user.userId;
-    return this.finalProjectsService.create(
-      userId,
-      createFinalProjectDto,
-      file,
-    );
+    return this.finalProjectsService.create(userId, createFinalProjectDto, file);
   }
 
-  // Get all final projects for current user (Intern)
+  /**
+   * Mengambil seluruh Final Project milik user yang sedang login (Intern).
+   * @param req Request yang berisi data user.
+   * @returns Daftar Final Project milik user.
+   */
   @Get()
   @Roles('Intern')
   @UseGuards(RolesGuard)
@@ -54,34 +65,43 @@ export class FinalProjectsController {
     return this.finalProjectsService.findAllForUser(userId);
   }
 
-  // Get all final projects for admin (Admin/Staff)
+  /**
+   * Mengambil seluruh Final Project untuk admin atau staff dengan fitur paginasi.
+   * @param query Query paginasi (page dan limit).
+   * @returns Daftar Final Project sesuai paginasi.
+   */
   @Get('all')
   @UseGuards(RolesGuard)
-  @Roles('Admin', 'Staff BPS') // Perbaiki nama role
-  findAllForAdmin(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-  ) {
-    return this.finalProjectsService.findAllForAdmin(
-      Number(page),
-      Number(limit),
-    );
+  @Roles('Admin', 'Staff BPS')
+  findAllForAdmin(@Query() query: PaginationQueryDto) {
+    return this.finalProjectsService.findAllForAdmin(query.page, query.limit);
   }
 
-  // Get final project by ID
+  /**
+   * Mengambil detail Final Project berdasarkan ID.
+   * Admin dapat melihat semua, Intern hanya miliknya sendiri.
+   * @param id ID Final Project.
+   * @param req Request yang berisi data user.
+   * @returns Detail Final Project.
+   */
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
     const userId = req.user.userId;
     const userRole = req.user.role;
-
-    // Admin can see all, intern can only see their own
     return this.finalProjectsService.findOne(
       id,
       userRole === 'admin' ? undefined : userId,
     );
   }
 
-  // Update final project (Intern)
+  /**
+   * Memperbarui Final Project milik user (Intern).
+   * @param id ID Final Project yang akan diperbarui.
+   * @param req Request yang berisi data user.
+   * @param updateFinalProjectDto Data Final Project yang diperbarui.
+   * @param file File baru yang diunggah (opsional).
+   * @returns Data Final Project yang telah diperbarui.
+   */
   @Patch(':id')
   @Roles('Intern')
   @UseGuards(RolesGuard)
@@ -101,10 +121,16 @@ export class FinalProjectsController {
     );
   }
 
-  // Review final project (Admin/Staff)
+  /**
+   * Memberikan review terhadap Final Project (khusus Admin/Staff).
+   * @param id ID Final Project yang akan direview.
+   * @param req Request yang berisi data reviewer.
+   * @param reviewDto Data review yang diberikan.
+   * @returns Hasil review Final Project.
+   */
   @Patch(':id/review')
   @UseGuards(RolesGuard)
-  @Roles('Admin', 'Staff BPS') // Perbaiki nama role
+  @Roles('Admin', 'Staff BPS')
   review(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
@@ -114,7 +140,12 @@ export class FinalProjectsController {
     return this.finalProjectsService.review(id, reviewerId, reviewDto);
   }
 
-  // Delete final project (Intern)
+  /**
+   * Menghapus Final Project milik user (Intern).
+   * @param id ID Final Project yang akan dihapus.
+   * @param req Request yang berisi data user.
+   * @returns Status penghapusan Final Project.
+   */
   @Delete(':id')
   @Roles('Intern')
   @UseGuards(RolesGuard)
