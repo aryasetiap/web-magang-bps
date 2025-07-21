@@ -28,4 +28,4 @@ import { UsersModule } from '../users/users.module'; // Tambahkan import ini
   providers: [AuthService, JwtStrategy, GoogleStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

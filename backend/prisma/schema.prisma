@@ -112,6 +112,11 @@ model User {
   activityEnd     DateTime? // Tanggal selesai kegiatan
   Certificate     Certificate?
 
+  isEmailVerified Boolean   @default(false)
+  emailOtp        String? // kode OTP
+  emailOtpExpires DateTime? // waktu kadaluarsa OTP
+  lastOtpSentAt   DateTime? // waktu terakhir OTP dikirim
+
   @@map("users")
 }
 

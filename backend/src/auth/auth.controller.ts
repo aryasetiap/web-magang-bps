@@ -38,7 +38,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private usersService: UsersService,
-  ) {}
+  ) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Register user baru' })
@@ -177,5 +177,16 @@ export class AuthController {
         `${frontendUrl}/auth/callback?error=${encodeURIComponent(error.message)}`,
       );
     }
+  }
+
+  @Post('verify-otp')
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
+    const user = await this.authService.verifyOtp(body.email, body.otp);
+    return user;
+  }
+
+  @Post('resend-otp')
+  async resendOtp(@Body() body: { email: string }) {
+    return this.authService.resendOtp(body.email);
   }
 }
