@@ -11,9 +11,13 @@ export const fetchPresensiData = async (token) => {
     if (!res.ok) throw new Error(result.message || "Gagal fetch presensi");
 
     return result.data.map((item) => ({
+      id: item.id,
       internName: item.user?.name || "Tanpa Nama",
       checkIn: item.clockIn,
       checkOut: item.clockOut,
+      status: item.status,
+      reasonDescription: item.reasonDescription || "Tidak ada keterangan",
+      proofFilePath: item.proofFilePath || null,
     }));
   } catch (err) {
     console.error("Gagal memuat presensi:", err);

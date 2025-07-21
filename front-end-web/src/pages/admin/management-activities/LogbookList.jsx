@@ -55,7 +55,7 @@ function LogbookList() {
   };
 
   return (
-    <div className="mb-8 p-6 border rounded-lg bg-green-50">
+    <div className="mb-8 p-6 border rounded-lg bg-yellow-50">
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">
         Logbook Harian Peserta
       </h3>

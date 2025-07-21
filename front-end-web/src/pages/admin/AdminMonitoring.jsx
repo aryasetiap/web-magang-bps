@@ -5,7 +5,7 @@ import LogbookList from "./management-activities/LogbookList";
 import AdminAssignmentsPage from "./management-activities/AdminAssignments";
 import {
   BookOpenIcon,
-  ClockIcon,
+  ClipboardDocumentListIcon,
   DocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 
@@ -48,8 +48,8 @@ function AdminMonitoringPage() {
             }
           >
             <div className="flex items-center gap-2">
-              <ClockIcon className="h-7 w-7 text-bps-blue" />
-              Aktivitas
+              <ClipboardDocumentListIcon className="h-7 w-7 text-bps-blue" />
+              Penugasan
             </div>
           </Tab>
           <Tab

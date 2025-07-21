@@ -3,7 +3,6 @@ import { Dialog, Transition } from "@headlessui/react";
 import {
   PlusIcon,
   EyeIcon,
-  PencilIcon,
   TrashIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
@@ -64,18 +63,28 @@ function AdminAssignmentsPage() {
     }
 
     try {
-      // 1. Ambil semua intern
-      const internsRes = await fetch("http://localhost:3000/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const internsRaw = await internsRes.json();
-      const usersArray = Array.isArray(internsRaw)
-        ? internsRaw
-        : internsRaw.data || [];
-      const filteredInterns = usersArray.filter(
-        (user) => user.role?.name?.toLowerCase() === "intern"
+      // 1. Ambil semua aplikasi magang yang diterima
+      const appsRes = await fetch(
+        "http://localhost:3000/internship-applications",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      setInterns(filteredInterns);
+      const appsRaw = await appsRes.json();
+      const appsArray = Array.isArray(appsRaw.data) ? appsRaw.data : [];
+      // Filter hanya yang statusnya diterima
+      const acceptedInterns = appsArray
+        .filter(
+          (app) =>
+            app.status === "diterima" &&
+            app.applicant?.role?.name?.toLowerCase() === "intern"
+        )
+        .map((app) => ({
+          ...app.applicant,
+          applicationId: app.id, // jika perlu id aplikasi
+          verifiedApplications: app.status,
+        }));
+      setInterns(acceptedInterns);
 
       // 2. Ambil semua tugas
       const tasksRes = await fetch("http://localhost:3000/tasks", {
@@ -99,11 +108,6 @@ function AdminAssignmentsPage() {
           const detail = await detailRes.json();
           const submissions = await submissionRes.json();
 
-          console.log(
-            `Tugas ID ${task.id} | assignedTo (dari detail):`,
-            detail?.assignedTo
-          );
-
           return {
             ...task,
             assignedTo: detail?.assignedTo || [],
@@ -113,9 +117,7 @@ function AdminAssignmentsPage() {
       );
 
       setAssignments(detailedTasks);
-      console.log("HASIL detailedTasks:", detailedTasks);
     } catch (err) {
-      console.error("Error fetching data:", err);
       setError(err.message || "Terjadi kesalahan saat memuat data.");
       setAlert({
         isOpen: true,
@@ -441,14 +443,14 @@ function AdminAssignmentsPage() {
   }
 
   return (
-    <div>
-      {/* <h2 className="text-3xl font-bold text-bps-blue mb-6">
-        Manajemen Penugasan (Admin)
-      </h2>
-      <p className="text-gray-700 mb-6">
+    <div className="bg-green-50 p-8 rounded-lg">
+      <h3 className="text-2xl font-semibold text-gray-800 mb-2">
+        Manajemen Penugasan
+      </h3>
+      {/* <p className="text-gray-700 mb-6">
         Sebagai Admin, Anda dapat mengelola semua penugasan untuk peserta
         magang.
-      </p> */}
+      </p>  */}
 
       {/* Tombol Buat Tugas Baru */}
       <div className="mb-6 text-right">
@@ -471,9 +473,9 @@ function AdminAssignmentsPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                 Batas Waktu
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">
+              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">
                 Ditugaskan Kepada
-              </th>
+              </th> */}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">
                 Status Submission
               </th>
@@ -492,8 +494,7 @@ function AdminAssignmentsPage() {
                   <td className="px-6 py-4 text-sm text-gray-600 break-words">
                     {assignment.deadline.split("T")[0]}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {/* Pastikan assignment.assignedTo adalah array sebelum map */}
+                  {/* <td className="px-6 py-4 text-sm text-gray-600 break-words">
                     {Array.isArray(assignment.assignedTo) &&
                     assignment.assignedTo.length > 0 ? (
                       assignment.assignedTo.map((internId) => {
@@ -507,7 +508,7 @@ function AdminAssignmentsPage() {
                     ) : (
                       <span>-</span>
                     )}
-                  </td>
+                  </td> */}
                   <td className="px-6 py-4 text-sm text-gray-600 break-words">
                     {/* Pastikan assignment.submissions adalah array sebelum map */}
                     {Array.isArray(assignment.submissions) &&
@@ -718,7 +719,7 @@ function AdminAssignmentsPage() {
                       >
                         {interns.map((intern) => (
                           <option key={intern.id} value={intern.id}>
-                            {intern.name}
+                            {intern.namaLengkap || intern.name}
                           </option>
                         ))}
                       </select>

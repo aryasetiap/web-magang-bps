@@ -6,13 +6,9 @@ import AssignmentSection from "./activities/AssignmentSection";
 import LogbookSection from "./activities/LogbookSection";
 import {
   DocumentCheckIcon,
-  ClockIcon,
   BookOpenIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
 
 function ActivitiesPage() {
   return (
@@ -49,8 +45,8 @@ function ActivitiesPage() {
             }
           >
             <div className="flex items-center gap-2">
-              <ClockIcon className="h-7 w-7 text-bps-blue" />
-              Aktivitas
+              <ClipboardDocumentListIcon className="h-7 w-7 text-bps-blue" />
+              Penugasan
             </div>
           </Tab>
           <Tab
