@@ -11,6 +11,9 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer'; // npm install nodemailer
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyResetPasswordDto } from './dto/verify-reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -196,23 +199,94 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  // Fungsi kirim email OTP
-  async sendOtpEmail(email: string, otp: string) {
-    // Konfigurasi transporter (gunakan SMTP provider Anda)
+  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User tidak ditemukan');
+
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) throw new UnauthorizedException('Password lama salah');
+
+    if (oldPassword === newPassword) throw new UnauthorizedException('Password baru tidak boleh sama dengan password lama');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'Password berhasil diubah' };
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new UnauthorizedException('Email tidak ditemukan');
+
+    // Rate limit: 1x per 10 menit
+    if (user.resetPasswordOtpExpires && user.resetPasswordOtpExpires > new Date()) {
+      throw new UnauthorizedException('OTP reset password masih aktif, cek email Anda.');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { resetPasswordOtp: otp, resetPasswordOtpExpires: otpExpires },
+    });
+
+    // Kirim OTP ke email
+    await this.sendOtpEmail(email, otp, true);
+
+    return { message: 'OTP reset password telah dikirim ke email Anda.' };
+  }
+
+  async verifyResetPassword(email: string, otp: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new UnauthorizedException('User tidak ditemukan');
+    if (!user.resetPasswordOtp || !user.resetPasswordOtpExpires) throw new UnauthorizedException('OTP tidak ditemukan');
+    if (user.resetPasswordOtp !== otp) throw new UnauthorizedException('OTP salah');
+    if (user.resetPasswordOtpExpires < new Date()) throw new UnauthorizedException('OTP kadaluarsa');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword,
+        resetPasswordOtp: null,
+        resetPasswordOtpExpires: null,
+      },
+    });
+
+    return { message: 'Password berhasil direset. Silakan login dengan password baru.' };
+  }
+
+  // Ubah sendOtpEmail agar bisa dipakai untuk reset password juga
+  async sendOtpEmail(email: string, otp: string, isReset = false) {
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // atau SMTP lain
+      service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     });
 
+    const subject = isReset
+      ? 'Kode OTP Reset Password'
+      : 'Kode OTP Verifikasi Email';
+    const text = isReset
+      ? `Kode OTP reset password Anda: ${otp}`
+      : `Kode OTP Anda: ${otp}`;
+    const html = isReset
+      ? `<p>Kode OTP reset password Anda: <b>${otp}</b></p>`
+      : `<p>Kode OTP Anda: <b>${otp}</b></p>`;
+
     await transporter.sendMail({
       from: '"BPS Magang" <noreply@bps.go.id>',
       to: email,
-      subject: 'Kode OTP Verifikasi Email',
-      text: `Kode OTP Anda: ${otp}`,
-      html: `<p>Kode OTP Anda: <b>${otp}</b></p>`,
+      subject,
+      text,
+      html,
     });
   }
 
