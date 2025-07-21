@@ -19,9 +19,11 @@ import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateStatusDto } from './dto/update-certificate-status.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { AuthGuard } from '@nestjs/passport';
 import { createReadStream } from 'fs';
-import * as fs from 'fs'; // Tambahkan ini
+import * as fs from 'fs';
 import { join } from 'path';
 import { Response as ExpressResponse } from 'express'; // Tambahkan ini
 
@@ -62,6 +64,30 @@ export class CertificatesController {
         return this.service.getCertificateByUser(req.user.userId);
     }
 
+    // Admin: Upload/replace certificate template
+    @Patch('template/upload')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads/certificate-templates',
+            filename: (req, file, cb) => {
+                cb(null, 'certificate-template.pdf');
+            },
+        }),
+        limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+        fileFilter: (req, file, cb) => {
+            if (extname(file.originalname).toLowerCase() === '.pdf') cb(null, true);
+            else cb(new Error('File harus PDF'), false);
+        },
+    }))
+    async uploadTemplate(
+        @UploadedFile() file: Express.Multer.File,
+        @Request() req,
+    ) {
+        if (!file) throw new BadRequestException('File PDF wajib diunggah');
+        // Anda bisa menambah log audit di sini jika perlu
+        return { success: true, message: 'Template sertifikat berhasil diunggah.' };
+    }
+
     // Intern/Admin: Download certificate (generated/signed)
     @Get(':id/download')
     async download(
@@ -96,6 +122,16 @@ export class CertificatesController {
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
         const stream = createReadStream(filePath);
         stream.pipe(res);
+    }
+
+    @Get('template/check')
+    async checkTemplate() {
+        const templatePath = './uploads/certificate-templates/certificate-template.pdf';
+        const exists = fs.existsSync(templatePath);
+        return {
+            templateExists: exists,
+            templatePath: exists ? templatePath : null,
+        };
     }
 }
 // console.log('adminId:', req.user.id);

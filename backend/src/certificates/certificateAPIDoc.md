@@ -4,6 +4,62 @@
 
 ---
 
+## 0. Upload/Replace Certificate Template
+
+**Endpoint:**  
+`PATCH /certificates/template/upload`
+
+**Role:** Admin
+
+**Headers:**  
+`Authorization: Bearer {jwt_token}`  
+`Content-Type: multipart/form-data`
+
+**Body (form-data):**
+
+- `file`: (PDF template sertifikat, max 5MB)
+
+**Response Success (200):**
+
+```json
+{
+  "success": true,
+  "message": "Template sertifikat berhasil diunggah."
+}
+```
+
+**Response Error (400):**
+
+```json
+{
+  "statusCode": 400,
+  "message": "File PDF wajib diunggah"
+}
+```
+
+---
+
+## 0.1 Cek Ketersediaan Template Sertifikat
+
+**Endpoint:**  
+`GET /certificates/template/check`
+
+**Role:** Admin
+
+**Headers:**  
+`Authorization: Bearer {jwt_token}`
+
+**Response Success (200):**
+
+```json
+{
+  "templateExists": true,
+  "templatePath": "./uploads/certificate-templates/certificate-template.pdf"
+}
+```
+
+---
+
 ## 1. Generate Certificate
 
 **Endpoint:**  
