@@ -13,6 +13,7 @@ import {
     ParseIntPipe,
     NotFoundException,
     BadRequestException,
+    ForbiddenException, // Tambahkan ini
     Res, // Tambahkan ini
 } from '@nestjs/common';
 import { CertificatesService } from './certificates.service';
@@ -132,6 +133,14 @@ export class CertificatesController {
             templateExists: exists,
             templatePath: exists ? templatePath : null,
         };
+    }
+
+    // Admin: Get all certificates with status
+    @Get()
+    async getAllCertificates(@Request() req) {
+        // (Opsional) Batasi hanya admin yang bisa akses
+        if (req.user.role !== 'Admin') throw new ForbiddenException('Hanya admin');
+        return this.service.getAllCertificates();
     }
 }
 // console.log('adminId:', req.user.id);

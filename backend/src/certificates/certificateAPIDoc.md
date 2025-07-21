@@ -60,6 +60,41 @@
 
 ---
 
+## 0.2 List Semua Sertifikat
+
+**Endpoint:**  
+`GET /certificates`
+
+**Role:** Admin
+
+**Headers:**  
+`Authorization: Bearer {jwt_token}`
+
+**Response Success (200):**
+
+```json
+[
+  {
+    "id": 1,
+    "certificateNumber": "CERT-2025-0001-BPSPringsewu",
+    "userId": 1,
+    "internName": "Arya Setia Pratama",
+    "status": "issued",
+    "createdAt": "2025-07-21T03:02:18.214Z",
+    "user": {
+      "id": 1,
+      "name": "Arya",
+      "email": "arya@email.com",
+      "namaLengkap": "Arya Setia Pratama",
+      "asalInstitusi": "Universitas Lampung"
+    }
+    // ...field lain sesuai kebutuhan
+  }
+]
+```
+
+---
+
 ## 1. Generate Certificate
 
 **Endpoint:**  

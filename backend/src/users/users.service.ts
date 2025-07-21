@@ -15,7 +15,7 @@ import * as path from 'path';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   // [MODIFIKASI] Implementasikan method create
   async create(createUserDto: CreateUserDto) {

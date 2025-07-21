@@ -137,4 +137,21 @@ export class CertificatesService {
     async getCertificateById(id: number) {
         return await this.prisma.certificate.findUnique({ where: { id } });
     }
+
+    async getAllCertificates() {
+        return this.prisma.certificate.findMany({
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        namaLengkap: true,
+                        asalInstitusi: true,
+                    }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
 }
