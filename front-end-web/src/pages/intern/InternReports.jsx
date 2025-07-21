@@ -74,6 +74,7 @@ function InternReports() {
       });
       return;
     }
+
     if (!reportTitle.trim()) {
       setAlert({
         isOpen: true,
@@ -84,7 +85,8 @@ function InternReports() {
       });
       return;
     }
-    if (!finalReportFile && !finalReport) {
+
+    if (!finalReportFile && !finalReport?.filePath) {
       setAlert({
         isOpen: true,
         title: "Validasi Berkas",
@@ -105,8 +107,14 @@ function InternReports() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/final-projects", {
-        method: finalReport ? "PATCH" : "POST",
+      const url = finalReport
+        ? `http://localhost:3000/final-projects/${finalReport.id}`
+        : "http://localhost:3000/final-projects";
+
+      const method = finalReport ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -228,7 +236,7 @@ function InternReports() {
               <span
                 className={`px-4 py-1 rounded-full font-semibold text-sm
                   ${
-                    finalReport.status === "aceppted"
+                    finalReport.status === "accepted"
                       ? "bg-green-200 text-green-800"
                       : finalReport.status === "revisi"
                       ? "bg-red-200 text-red-800"

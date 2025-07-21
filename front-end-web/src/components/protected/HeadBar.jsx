@@ -65,7 +65,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
 
     try {
       const formData = new FormData();
-      formData.append("namaLengkap", currentUserName);
+      formData.append("name", currentUserName);
       if (profilePhoto && profilePhoto.startsWith("data:")) {
         // Convert base64 to file
         const arr = profilePhoto.split(",");
@@ -207,8 +207,9 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
       <span key={to} className="flex items-center">
         <a
           href={to}
-          className={`text-gray-600 hover:text-bps-blue ${last ? "font-semibold" : ""
-            }`}
+          className={`text-gray-600 hover:text-bps-blue ${
+            last ? "font-semibold" : ""
+          }`}
         >
           {displayName}
         </a>
@@ -237,8 +238,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {userRole === "admin"
                 ? "Admin Dashboard"
                 : userRole === "staff"
-                  ? "Staff Dashboard"
-                  : ""}
+                ? "Staff Dashboard"
+                : ""}
             </span>
           ) : (
             <>
@@ -249,8 +250,8 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
                 {userRole === "admin"
                   ? "Admin Dashboard"
                   : userRole === "staff"
-                    ? "Staff Dashboard"
-                    : ""}
+                  ? "Staff Dashboard"
+                  : ""}
               </a>
               <span className="text-gray-400 mr-2"></span>
               {breadcrumbs.filter((_, idx) => {
@@ -295,8 +296,9 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {({ active }) => (
                 <button
                   onClick={openProfileModal} // Panggil fungsi untuk membuka modal profil
-                  className={`${active ? "bg-bps-blue text-white" : "text-gray-900"
-                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  className={`${
+                    active ? "bg-bps-blue text-white" : "text-gray-900"
+                  } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Profil Saya
                 </button>
@@ -306,8 +308,9 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
               {({ active }) => (
                 <button
                   onClick={handleLogout}
-                  className={`${active ? "bg-red-500 text-white" : "text-gray-900"
-                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  className={`${
+                    active ? "bg-red-500 text-white" : "text-gray-900"
+                  } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                 >
                   Logout
                 </button>
