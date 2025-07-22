@@ -40,7 +40,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     setProfilePhoto(
       profile?.profilePhoto
         ? `http://localhost:3000/${profile.profilePhoto.replace(/\\/g, "/")}`
-        : "https://via.placeholder.com/150/F8D7DA/000000?text=JD"
+        : "https://www.placeholderimage.online/images/generic/user-profile-images.jpg"
     );
   }, [profile]);
 
@@ -110,7 +110,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     }
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!oldPassword || !newPassword || !confirmNewPassword) {
       alert("Semua bidang password harus diisi.");
@@ -129,14 +129,40 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
       return;
     }
 
-    closeProfileModal();
-    setAlert({
-      isOpen: true,
-      title: "Password Diubah",
-      message: "Kata sandi Anda berhasil diubah.",
-      type: "success",
-      autoCloseDelay: 1500,
-    });
+    if (!token) return;
+
+    try {
+      const res = await fetch("http://localhost:3000/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Gagal mengubah password.");
+
+      closeProfileModal();
+      setAlert({
+        isOpen: true,
+        title: "Password Diubah",
+        message: "Kata sandi Anda berhasil diubah.",
+        type: "success",
+        autoCloseDelay: 1500,
+      });
+    } catch (err) {
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Terjadi kesalahan saat mengubah password.",
+        type: "error",
+        autoCloseDelay: 3000,
+      });
+    }
   };
 
   const handlePhotoChange = (e) => {

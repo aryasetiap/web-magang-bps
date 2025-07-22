@@ -38,9 +38,6 @@ function ForgotPasswordPage() {
     }
 
     try {
-      // --- Simulasi Panggilan API ke Backend ---
-      // Di aplikasi nyata, Anda akan mengirim email ke backend
-      // Backend akan mengirim email reset password ke alamat yang diberikan
       const apiResponse = await fetch(
         "http://localhost:3000/auth/forgot-password",
         {
@@ -63,7 +60,10 @@ function ForgotPasswordPage() {
           type: "success",
           autoCloseDelay: 3000,
         });
-        // Opsional: kosongkan input email setelah sukses
+        setTimeout(() => {
+          closeAlert();
+          navigate("/verify-otp", { state: { email: email } }); // Teruskan email via state
+        }, 3000);
         setEmail("");
       } else {
         // Backend mengirimkan status error (misal 404 jika email tidak ditemukan, 500 server error)

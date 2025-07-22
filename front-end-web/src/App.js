@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import RegistrationPage from "./pages/Registration";
 import ForgotPasswordPage from "./pages/ForgotPassword";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import VerifyOtpPage from "./pages/VerifyOtp";
 
 // Import Unified Dashboard Layout (Layout gabungan untuk semua role dashboard)
 import DashboardLayout from "./components/protected/DashboardLayout";
@@ -80,6 +81,8 @@ function App() {
 
           {/* Rute Forgot Password */}
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          {/* Rute Verifikasi OTP untuk Reset Password */}
+          <Route path="/verify-otp" element={<VerifyOtpPage />} />
 
           {/* Rute Dashboard Peserta Magang (Intern) - Dilindungi */}
           <Route

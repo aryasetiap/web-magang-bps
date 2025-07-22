@@ -16,7 +16,6 @@ function AdminManagementSettingsPage() {
       </div>
       <div className="grid grid-cols-1 gap-6">
         <AdminAccountsPage />
-        <AdminSettingsPage />
       </div>
     </div>
   );
