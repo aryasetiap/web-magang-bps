@@ -5,15 +5,25 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as path from 'path';
 import * as fs from 'fs';
 
+/**
+ * Service untuk mengelola proses submission tugas oleh user.
+ */
 @Injectable()
 export class SubmissionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  // ...method lain...
-
+  /**
+   * Melakukan unggah ulang (resubmit) submission tugas oleh user.
+   * Validasi file, status submission, dan hak akses user dilakukan sebelum update.
+   * @param submissionId ID submission yang akan diunggah ulang
+   * @param userId ID user yang melakukan resubmit
+   * @param file File baru yang diunggah (opsional)
+   * @param description Deskripsi baru submission (opsional)
+   * @throws BadRequestException, NotFoundException, ForbiddenException
+   * @returns Submission yang telah diperbarui
+   */
   async resubmit(
     submissionId: number,
     userId: number,
@@ -27,33 +37,31 @@ export class SubmissionsService {
     const submission = await this.prisma.submission.findUnique({
       where: { id: submissionId },
     });
-    if (!submission) throw new NotFoundException('Submission tidak ditemukan.');
+    if (!submission) {
+      throw new NotFoundException('Submission tidak ditemukan.');
+    }
+
     const task = await this.prisma.task.findUnique({
       where: { id: submission.taskId },
     });
     const isLate = !!(task && new Date() > task.deadline);
 
-    if (submission.userId !== userId)
-      throw new ForbiddenException(
-        'Anda tidak berhak mengubah submission ini.',
-      );
+    if (submission.userId !== userId) {
+      throw new ForbiddenException('Anda tidak berhak mengubah submission ini.');
+    }
     if (!['revisi', 'submitted'].includes(submission.status)) {
-      throw new ForbiddenException(
-        'Submission tidak dapat diunggah ulang pada status ini.',
-      );
+      throw new ForbiddenException('Submission tidak dapat diunggah ulang pada status ini.');
     }
     if (submission.status === 'reviewed') {
-      throw new ForbiddenException(
-        'Submission sudah dinilai dan tidak bisa diubah.',
-      );
+      throw new ForbiddenException('Submission sudah dinilai dan tidak bisa diubah.');
     }
 
-    // Hapus file lama jika ada dan ada file baru
+    // Hapus file lama jika ada file baru yang diunggah
     if (file && submission.filePath && fs.existsSync(submission.filePath)) {
       fs.unlinkSync(submission.filePath);
     }
 
-    // Validasi file jika ada
+    // Validasi file baru jika ada
     if (file) {
       const allowedTypes = [
         'application/pdf',
@@ -62,9 +70,7 @@ export class SubmissionsService {
       ];
       if (!allowedTypes.includes(file.mimetype)) {
         fs.unlinkSync(file.path);
-        throw new BadRequestException(
-          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-        );
+        throw new BadRequestException('Tipe file tidak didukung. Hanya PDF/DOC/DOCX.');
       }
       if (file.size > 5 * 1024 * 1024) {
         fs.unlinkSync(file.path);
@@ -72,7 +78,6 @@ export class SubmissionsService {
       }
     }
 
-    // Update submission
     return this.prisma.submission.update({
       where: { id: submissionId },
       data: {
@@ -86,6 +91,16 @@ export class SubmissionsService {
     });
   }
 
+  /**
+   * Melakukan submit tugas baru oleh user.
+   * Validasi file, assignment, dan deadline dilakukan sebelum create.
+   * @param taskId ID tugas yang akan dikumpulkan
+   * @param userId ID user yang melakukan submit
+   * @param file File yang diunggah (opsional)
+   * @param description Deskripsi submission (opsional)
+   * @throws BadRequestException, ForbiddenException
+   * @returns Submission yang telah dibuat
+   */
   async submit(
     taskId: number,
     userId: number,
@@ -105,9 +120,7 @@ export class SubmissionsService {
       ];
       if (!allowedTypes.includes(file.mimetype)) {
         fs.unlinkSync(file.path);
-        throw new BadRequestException(
-          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-        );
+        throw new BadRequestException('Tipe file tidak didukung. Hanya PDF/DOC/DOCX.');
       }
       if (file.size > 5 * 1024 * 1024) {
         fs.unlinkSync(file.path);
@@ -115,33 +128,28 @@ export class SubmissionsService {
       }
     }
 
-    // Cek assignment
+    // Cek apakah user ditugaskan pada tugas ini
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: { taskId_userId: { taskId, userId } },
     });
     if (!assignment) {
       if (file) fs.unlinkSync(file.path);
-      throw new ForbiddenException(
-        'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
-      );
+      throw new ForbiddenException('Anda tidak ditugaskan untuk mengerjakan tugas ini.');
     }
 
-    // Cek existing submission
+    // Cek apakah sudah pernah submit tugas ini
     const existingSubmission = await this.prisma.submission.findFirst({
       where: { taskId, userId },
     });
     if (existingSubmission) {
       if (file) fs.unlinkSync(file.path);
-      throw new BadRequestException(
-        'Anda sudah pernah mengumpulkan tugas ini.',
-      );
+      throw new BadRequestException('Anda sudah pernah mengumpulkan tugas ini.');
     }
 
-    // Cek deadline
+    // Cek apakah submit dilakukan setelah deadline
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     const isLate = !!(task && new Date() > task.deadline);
 
-    // Create submission
     return this.prisma.submission.create({
       data: {
         filePath: file ? file.path : null,

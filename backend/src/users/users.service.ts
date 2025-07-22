@@ -13,15 +13,23 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Service untuk manajemen data user.
+ */
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) { }
 
-  // [MODIFIKASI] Implementasikan method create
+  /**
+   * Membuat user baru.
+   * @param createUserDto Data user yang akan dibuat.
+   * @returns Data user yang berhasil dibuat (tanpa password).
+   * @throws ConflictException jika email sudah terdaftar.
+   * @throws NotFoundException jika role tidak ditemukan.
+   */
   async create(createUserDto: CreateUserDto) {
     const { name, email, password, roleName } = createUserDto;
 
-    // 1. Cek apakah email sudah ada
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -31,10 +39,8 @@ export class UsersService {
       );
     }
 
-    // 2. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 3. Cari role berdasarkan nama
     const role = await this.prisma.role.findUnique({
       where: { name: roleName },
     });
@@ -42,7 +48,6 @@ export class UsersService {
       throw new NotFoundException(`Peran '${roleName}' tidak ditemukan.`);
     }
 
-    // 4. Buat user baru
     const newUser = await this.prisma.user.create({
       data: {
         name,
@@ -52,14 +57,20 @@ export class UsersService {
       },
     });
 
-    // 5. Kembalikan data user tanpa password
+    // Menghilangkan password dari hasil response
     const { password: _, ...result } = newUser;
     return result;
   }
 
+  /**
+   * Mengambil profil user berdasarkan ID.
+   * @param id ID user.
+   * @returns Data profil user.
+   * @throws NotFoundException jika user tidak ditemukan.
+   */
   async getProfile(id: number) {
     const user = await this.prisma.user.findUnique({
-      where: { id: id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -71,10 +82,10 @@ export class UsersService {
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
-        educationStatus: true, // <-- pastikan field baru ini ada
-        activityType: true, // <-- pastikan field baru ini ada
-        activityStart: true, // <-- pastikan field baru ini ada
-        activityEnd: true, // <-- pastikan field baru ini ada
+        educationStatus: true,
+        activityType: true,
+        activityStart: true,
+        activityEnd: true,
         createdAt: true,
         role: {
           select: {
@@ -91,7 +102,14 @@ export class UsersService {
     return user;
   }
 
-  // Method baru untuk update profile dengan foto
+  /**
+   * Memperbarui profil user, termasuk foto profil jika ada.
+   * @param id ID user.
+   * @param updateProfileDto Data profil yang akan diperbarui.
+   * @param profilePhoto File foto profil baru (opsional).
+   * @returns Data user yang telah diperbarui.
+   * @throws NotFoundException jika user tidak ditemukan.
+   */
   async updateProfile(
     id: number,
     updateProfileDto: UpdateProfileDto,
@@ -106,12 +124,11 @@ export class UsersService {
       throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
     }
 
-    // Update data
     const updateData: any = {
       ...updateProfileDto,
     };
 
-    // Handle field baru secara eksplisit jika perlu
+    // Penanganan field baru secara eksplisit
     if (typeof updateProfileDto.educationStatus !== 'undefined') {
       updateData.educationStatus = updateProfileDto.educationStatus;
     }
@@ -129,21 +146,18 @@ export class UsersService {
         : null;
     }
 
-    // Jika ada file foto baru
+    // Jika ada file foto baru, hapus foto lama dan simpan path baru
     if (profilePhoto) {
-      // Hapus foto lama jika ada dan file exists
       if (user.profilePhoto) {
         const oldPhotoPath = path.resolve(user.profilePhoto);
         if (fs.existsSync(oldPhotoPath)) {
           try {
             fs.unlinkSync(oldPhotoPath);
           } catch (error) {
-            console.error('Error deleting old profile photo:', error);
+            console.error('Gagal menghapus foto profil lama:', error);
           }
         }
       }
-
-      // Simpan path foto baru (relative path)
       updateData.profilePhoto = profilePhoto.path.replace(/\\/g, '/');
     }
 
@@ -161,10 +175,10 @@ export class UsersService {
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
-        educationStatus: true, // <-- field baru
-        activityType: true, // <-- field baru
-        activityStart: true, // <-- field baru
-        activityEnd: true, // <-- field baru
+        educationStatus: true,
+        activityType: true,
+        activityStart: true,
+        activityEnd: true,
         role: {
           select: {
             name: true,
@@ -176,49 +190,45 @@ export class UsersService {
     return updatedUser;
   }
 
-  // 2. Modifikasi method findAll secara menyeluruh
+  /**
+   * Mengambil daftar user dengan fitur paginasi.
+   * @param paginationQuery Query paginasi (page, limit).
+   * @returns Daftar user beserta metadata paginasi.
+   */
   async findAll(paginationQuery: PaginationQueryDto) {
-    // Default value jika page/limit tidak dikirim
-    const page =
-      Number(paginationQuery.page) > 0 ? Number(paginationQuery.page) : 1;
-    const limit =
-      Number(paginationQuery.limit) > 0 ? Number(paginationQuery.limit) : 10;
-
+    const page = Number(paginationQuery.page) > 0 ? Number(paginationQuery.page) : 1;
+    const limit = Number(paginationQuery.limit) > 0 ? Number(paginationQuery.limit) : 10;
     const skip = (page - 1) * limit;
 
     const [users, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
-        where: {
-          deletedAt: null,
-        },
+        where: { deletedAt: null },
         select: {
           id: true,
           name: true,
           email: true,
-          profilePhoto: true, // <-- pastikan field baru ini ada
+          profilePhoto: true,
           namaLengkap: true,
           nimNisn: true,
           asalInstitusi: true,
           jurusanProdi: true,
           nomorTelepon: true,
           alamat: true,
-          educationStatus: true, // <-- pastikan field baru ini ada
-          activityType: true, // <-- pastikan field baru ini ada
-          activityStart: true, // <-- pastikan field baru ini ada
-          activityEnd: true, // <-- pastikan field baru ini ada
+          educationStatus: true,
+          activityType: true,
+          activityStart: true,
+          activityEnd: true,
           role: {
             select: {
               name: true,
             },
           },
         },
-        skip: skip,
+        skip,
         take: limit,
       }),
       this.prisma.user.count({
-        where: {
-          deletedAt: null,
-        },
+        where: { deletedAt: null },
       }),
     ]);
 
@@ -231,32 +241,38 @@ export class UsersService {
         itemCount: users.length,
         itemsPerPage: limit,
         currentPage: page,
-        totalPages: totalPages,
+        totalPages,
       },
     };
   }
 
+  /**
+   * Mengambil detail user berdasarkan ID.
+   * @param id ID user.
+   * @returns Data user.
+   * @throws NotFoundException jika user tidak ditemukan.
+   */
   async findOne(id: number) {
     const user = await this.prisma.user.findFirst({
       where: {
-        id: id,
+        id,
         deletedAt: null,
       },
       select: {
         id: true,
         name: true,
         email: true,
-        profilePhoto: true, // <-- pastikan field baru ini ada
+        profilePhoto: true,
         namaLengkap: true,
         nimNisn: true,
         asalInstitusi: true,
         jurusanProdi: true,
         nomorTelepon: true,
         alamat: true,
-        educationStatus: true, // <-- pastikan field baru ini ada
-        activityType: true, // <-- pastikan field baru ini ada
-        activityStart: true, // <-- pastikan field baru ini ada
-        activityEnd: true, // <-- pastikan field baru ini ada
+        educationStatus: true,
+        activityType: true,
+        activityStart: true,
+        activityEnd: true,
         role: {
           select: {
             name: true,
@@ -270,26 +286,33 @@ export class UsersService {
     return user;
   }
 
+  /**
+   * Memperbarui data user.
+   * @param id ID user.
+   * @param updateUserDto Data user yang akan diperbarui.
+   * @returns Data user yang telah diperbarui.
+   * @throws NotFoundException jika user tidak ditemukan.
+   */
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       return await this.prisma.user.update({
-        where: { id: id },
+        where: { id },
         data: updateUserDto,
         select: {
           id: true,
           name: true,
           email: true,
-          profilePhoto: true, // <-- pastikan field baru ini ada
+          profilePhoto: true,
           namaLengkap: true,
           nimNisn: true,
           asalInstitusi: true,
           jurusanProdi: true,
           nomorTelepon: true,
           alamat: true,
-          educationStatus: true, // <-- pastikan field baru ini ada
-          activityType: true, // <-- pastikan field baru ini ada
-          activityStart: true, // <-- pastikan field baru ini ada
-          activityEnd: true, // <-- pastikan field baru ini ada
+          educationStatus: true,
+          activityType: true,
+          activityStart: true,
+          activityEnd: true,
           role: {
             select: {
               name: true,
@@ -307,9 +330,14 @@ export class UsersService {
     }
   }
 
-  remove(id: number) {
+  /**
+   * Menghapus (soft delete) user berdasarkan ID.
+   * @param id ID user.
+   * @returns Data user yang telah dihapus (soft delete).
+   */
+  async remove(id: number) {
     return this.prisma.user.update({
-      where: { id: id },
+      where: { id },
       data: {
         deletedAt: new Date(),
       },

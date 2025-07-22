@@ -10,7 +10,7 @@ import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer'; // npm install nodemailer
+import * as nodemailer from 'nodemailer';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { VerifyResetPasswordDto } from './dto/verify-reset-password.dto';
@@ -22,9 +22,12 @@ export class AuthService {
     private jwtService: JwtService,
   ) { }
 
+  /**
+   * Registrasi user baru dan kirim OTP ke email untuk verifikasi.
+   * @param registerDto Data registrasi user
+   */
   async register(registerDto: RegisterDto) {
     const { name, email, password } = registerDto;
-
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -38,9 +41,8 @@ export class AuthService {
       );
     }
 
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 menit
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     try {
       const newUser = await this.prisma.user.create({
@@ -65,12 +67,9 @@ export class AuthService {
         },
       });
 
-      // Kirim OTP ke email user
       try {
         await this.sendOtpEmail(email, otp);
       } catch (mailErr) {
-        // Hapus user jika gagal kirim email
-        console.error('Gagal mengirim email OTP:', mailErr);
         await this.prisma.user.delete({ where: { email } });
         throw new InternalServerErrorException('Gagal mengirim email OTP. Silakan coba lagi.');
       }
@@ -87,6 +86,10 @@ export class AuthService {
     }
   }
 
+  /**
+   * Login user dengan email dan password.
+   * @param loginDto Data login user
+   */
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
@@ -126,6 +129,10 @@ export class AuthService {
     };
   }
 
+  /**
+   * Login atau registrasi user menggunakan akun Google.
+   * @param googleUser Data user dari Google
+   */
   async googleLogin(googleUser: any) {
     if (!googleUser) {
       throw new UnauthorizedException('No user from google');
@@ -154,6 +161,10 @@ export class AuthService {
     };
   }
 
+  /**
+   * Validasi user Google, jika belum ada maka buat user baru.
+   * @param googleUser Data user dari Google
+   */
   async validateGoogleUser(googleUser: any) {
     const { email, firstName, lastName } = googleUser;
 
@@ -190,6 +201,10 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Generate JWT token untuk user.
+   * @param user Data user
+   */
   generateJwt(user: { userId: number; email: string; role: string }) {
     const payload = {
       sub: user.userId,
@@ -199,6 +214,12 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
+  /**
+   * Ganti password user.
+   * @param userId ID user
+   * @param oldPassword Password lama
+   * @param newPassword Password baru
+   */
   async changePassword(userId: number, oldPassword: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
@@ -217,11 +238,14 @@ export class AuthService {
     return { message: 'Password berhasil diubah' };
   }
 
+  /**
+   * Proses lupa password, kirim OTP ke email user.
+   * @param email Email user
+   */
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('Email tidak ditemukan');
 
-    // Rate limit: 1x per 10 menit
     if (user.resetPasswordOtpExpires && user.resetPasswordOtpExpires > new Date()) {
       throw new UnauthorizedException('OTP reset password masih aktif, cek email Anda.');
     }
@@ -234,12 +258,17 @@ export class AuthService {
       data: { resetPasswordOtp: otp, resetPasswordOtpExpires: otpExpires },
     });
 
-    // Kirim OTP ke email
     await this.sendOtpEmail(email, otp, true);
 
     return { message: 'OTP reset password telah dikirim ke email Anda.' };
   }
 
+  /**
+   * Verifikasi OTP reset password dan set password baru.
+   * @param email Email user
+   * @param otp Kode OTP
+   * @param newPassword Password baru
+   */
   async verifyResetPassword(email: string, otp: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
@@ -261,7 +290,12 @@ export class AuthService {
     return { message: 'Password berhasil direset. Silakan login dengan password baru.' };
   }
 
-  // Ubah sendOtpEmail agar bisa dipakai untuk reset password juga
+  /**
+   * Kirim email OTP ke user, bisa untuk verifikasi email atau reset password.
+   * @param email Email tujuan
+   * @param otp Kode OTP
+   * @param isReset True jika untuk reset password
+   */
   async sendOtpEmail(email: string, otp: string, isReset = false) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -290,6 +324,11 @@ export class AuthService {
     });
   }
 
+  /**
+   * Verifikasi OTP email user.
+   * @param email Email user
+   * @param otp Kode OTP
+   */
   async verifyOtp(email: string, otp: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
@@ -310,26 +349,27 @@ export class AuthService {
     return { message: 'Email berhasil diverifikasi' };
   }
 
+  /**
+   * Kirim ulang OTP verifikasi email dengan rate limit.
+   * @param email Email user
+   */
   async resendOtp(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
     if (user.isEmailVerified) return { message: 'Email sudah diverifikasi' };
 
-    // Rate limit: cek jika OTP masih aktif
     if (user.emailOtp && user.emailOtpExpires && user.emailOtpExpires > new Date()) {
       throw new UnauthorizedException('OTP masih aktif, silakan cek email Anda.');
     }
 
-    // Tambahan: Rate limit per jam (misal: max 3x per jam)
     const now = new Date();
     if (user.lastOtpSentAt) {
-      const diff = (now.getTime() - new Date(user.lastOtpSentAt).getTime()) / (1000 * 60 * 60); // jam
+      const diff = (now.getTime() - new Date(user.lastOtpSentAt).getTime()) / (1000 * 60 * 60);
       if (diff < 1) {
         throw new UnauthorizedException('Anda hanya dapat meminta OTP sekali per jam.');
       }
     }
 
-    // Generate OTP baru
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 

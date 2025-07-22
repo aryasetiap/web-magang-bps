@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service'; // Perbaiki path
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateStatusDto } from './dto/update-certificate-status.dto';
 import { CertificateStatus } from '@prisma/client';
@@ -8,15 +8,24 @@ import * as fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
 
 @Injectable()
+/**
+ * Service untuk mengelola proses pembuatan, penandatanganan, dan penerbitan sertifikat magang.
+ */
 export class CertificatesService {
     constructor(private prisma: PrismaService) { }
 
+    /**
+     * Membuat dan menghasilkan file sertifikat PDF berdasarkan data user dan final project.
+     * @param dto Data pembuatan sertifikat
+     * @param adminId ID admin yang membuat sertifikat
+     * @throws BadRequestException jika user sudah memiliki sertifikat atau final project belum diterima
+     * @throws NotFoundException jika user tidak ditemukan
+     * @returns Data sertifikat yang telah dibuat
+     */
     async generateCertificate(dto: CreateCertificateDto, adminId: number) {
-        // Validasi: hanya satu sertifikat per user
         const existing = await this.prisma.certificate.findUnique({ where: { userId: dto.userId } });
         if (existing) throw new BadRequestException('Intern sudah memiliki sertifikat.');
 
-        // Ambil data user & final project
         const user = await this.prisma.user.findUnique({ where: { id: dto.userId } });
         if (!user) throw new NotFoundException('User tidak ditemukan.');
 
@@ -25,12 +34,11 @@ export class CertificatesService {
         });
         if (!finalProject) throw new BadRequestException('Final project belum accepted.');
 
-        // Format activityPeriod
+        // Format periode aktivitas magang
         const start = user.activityStart;
         const end = user.activityEnd;
         let activityPeriod = '';
         if (start && end) {
-            const options = { day: 'numeric', month: 'long', year: 'numeric' };
             const startDate = new Date(start);
             const endDate = new Date(end);
             if (
@@ -43,17 +51,15 @@ export class CertificatesService {
             }
         }
 
-        // Path template dan output
         const templatePath = 'uploads/certificate-templates/certificate-template.pdf';
         const outputPath = join('uploads/certificates/generated', `certificate-${dto.certificateNumber}.pdf`);
 
-        // Baca template PDF
         if (!fs.existsSync(templatePath)) {
             throw new BadRequestException('Template sertifikat tidak ditemukan.');
         }
         const templateBytes = fs.readFileSync(templatePath);
 
-        // Load dan isi PDF
+        // Proses pengisian field pada template PDF
         const pdfDoc = await PDFDocument.load(templateBytes);
         const form = pdfDoc.getForm();
 
@@ -70,12 +76,12 @@ export class CertificatesService {
         form.getTextField('namaKepalaBPS').setText(dto.namaKepalaBPS);
         form.getTextField('nipKepalaBPS').setText(dto.nipKepalaBPS);
 
-        form.flatten(); // Agar field tidak bisa diubah lagi
+        form.flatten();
 
         const pdfBytes = await pdfDoc.save();
         fs.writeFileSync(outputPath, pdfBytes);
 
-        // Simpan certificate
+        // Simpan data sertifikat ke database
         return await this.prisma.certificate.create({
             data: {
                 certificateNumber: dto.certificateNumber,
@@ -97,6 +103,15 @@ export class CertificatesService {
         });
     }
 
+    /**
+     * Mengunggah file sertifikat yang telah ditandatangani dan memperbarui status sertifikat.
+     * @param id ID sertifikat
+     * @param filePath Path file sertifikat yang sudah ditandatangani
+     * @param adminId ID admin yang mengunggah file
+     * @throws NotFoundException jika sertifikat tidak ditemukan
+     * @throws BadRequestException jika status sertifikat belum generated
+     * @returns Data sertifikat yang telah diperbarui
+     */
     async uploadSignedCertificate(id: number, filePath: string, adminId: number) {
         const cert = await this.prisma.certificate.findUnique({ where: { id } });
         if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan.');
@@ -114,6 +129,14 @@ export class CertificatesService {
         });
     }
 
+    /**
+     * Menerbitkan sertifikat yang sudah ditandatangani.
+     * @param id ID sertifikat
+     * @param adminId ID admin yang menerbitkan
+     * @throws NotFoundException jika sertifikat tidak ditemukan
+     * @throws BadRequestException jika status sertifikat belum signed
+     * @returns Data sertifikat yang telah diterbitkan
+     */
     async issueCertificate(id: number, adminId: number) {
         const cert = await this.prisma.certificate.findUnique({ where: { id } });
         if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan.');
@@ -130,14 +153,28 @@ export class CertificatesService {
         });
     }
 
+    /**
+     * Mengambil data sertifikat berdasarkan user ID.
+     * @param userId ID user
+     * @returns Data sertifikat milik user
+     */
     async getCertificateByUser(userId: number) {
         return await this.prisma.certificate.findUnique({ where: { userId } });
     }
 
+    /**
+     * Mengambil data sertifikat berdasarkan ID sertifikat.
+     * @param id ID sertifikat
+     * @returns Data sertifikat
+     */
     async getCertificateById(id: number) {
         return await this.prisma.certificate.findUnique({ where: { id } });
     }
 
+    /**
+     * Mengambil seluruh data sertifikat beserta informasi user terkait.
+     * @returns Daftar sertifikat beserta data user
+     */
     async getAllCertificates() {
         return this.prisma.certificate.findMany({
             include: {

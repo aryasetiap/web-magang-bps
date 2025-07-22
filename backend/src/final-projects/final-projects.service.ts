@@ -9,10 +9,20 @@ import { UpdateFinalProjectDto } from './dto/update-final-project.dto';
 import { ReviewFinalProjectDto } from './dto/review-final-project.dto';
 import * as fs from 'fs';
 
+/**
+ * Service untuk mengelola data Final Project.
+ */
 @Injectable()
 export class FinalProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
+  /**
+   * Membuat final project baru untuk user tertentu.
+   * @param userId ID user yang membuat final project
+   * @param createFinalProjectDto Data final project yang akan dibuat
+   * @param file File yang diupload (jika ada)
+   * @returns Data final project yang telah dibuat
+   */
   async create(
     userId: number,
     createFinalProjectDto: CreateFinalProjectDto,
@@ -35,6 +45,11 @@ export class FinalProjectsService {
     return this.prisma.finalProject.create({ data });
   }
 
+  /**
+   * Mengambil seluruh final project milik user tertentu.
+   * @param userId ID user
+   * @returns Daftar final project milik user
+   */
   async findAllForUser(userId: number) {
     return this.prisma.finalProject.findMany({
       where: { userId },
@@ -42,6 +57,12 @@ export class FinalProjectsService {
     });
   }
 
+  /**
+   * Mengambil seluruh final project untuk admin dengan paginasi.
+   * @param page Halaman yang diambil
+   * @param limit Jumlah data per halaman
+   * @returns Data final project beserta informasi paginasi
+   */
   async findAllForAdmin(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
@@ -68,6 +89,15 @@ export class FinalProjectsService {
     };
   }
 
+  /**
+   * Mengambil detail final project berdasarkan ID.
+   * Jika userId diberikan, hanya mengizinkan akses ke final project milik user tersebut.
+   * @param id ID final project
+   * @param userId (Opsional) ID user yang meminta data
+   * @returns Data final project
+   * @throws NotFoundException jika final project tidak ditemukan
+   * @throws ForbiddenException jika user tidak berhak mengakses data
+   */
   async findOne(id: number, userId?: number) {
     const finalProject = await this.prisma.finalProject.findUnique({
       where: { id },
@@ -85,7 +115,6 @@ export class FinalProjectsService {
       throw new NotFoundException('Final project tidak ditemukan');
     }
 
-    // Jika userId diberikan, pastikan user hanya bisa akses miliknya
     if (userId && finalProject.userId !== userId) {
       throw new ForbiddenException(
         'Anda tidak memiliki akses ke final project ini',
@@ -95,6 +124,16 @@ export class FinalProjectsService {
     return finalProject;
   }
 
+  /**
+   * Memperbarui data final project milik user tertentu.
+   * Hanya dapat dilakukan jika status bukan 'accepted'.
+   * @param id ID final project
+   * @param userId ID user pemilik final project
+   * @param updateFinalProjectDto Data yang akan diperbarui
+   * @param file File baru yang diupload (jika ada)
+   * @returns Data final project yang telah diperbarui
+   * @throws ForbiddenException jika status sudah 'accepted'
+   */
   async update(
     id: number,
     userId: number,
@@ -103,7 +142,6 @@ export class FinalProjectsService {
   ) {
     const finalProject = await this.findOne(id, userId);
 
-    // Hanya bisa update jika status draft, revisi, atau submitted
     if (['accepted'].includes(finalProject.status)) {
       throw new ForbiddenException(
         'Final project yang sudah diterima tidak dapat diubah',
@@ -114,7 +152,7 @@ export class FinalProjectsService {
       ...updateFinalProjectDto,
     };
 
-    // Jika ada file baru, hapus file lama dan update path
+    // Jika ada file baru, hapus file lama dan update path file
     if (file) {
       if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {
         fs.unlinkSync(finalProject.filePath);
@@ -130,6 +168,15 @@ export class FinalProjectsService {
     });
   }
 
+  /**
+   * Melakukan review terhadap final project.
+   * Hanya dapat direview jika status saat ini adalah 'submitted'.
+   * @param id ID final project
+   * @param reviewerId ID reviewer (admin/dosen)
+   * @param reviewDto Data review (status, grade, feedback)
+   * @returns Data final project yang telah direview
+   * @throws ForbiddenException jika status bukan 'submitted'
+   */
   async review(
     id: number,
     reviewerId: number,
@@ -141,19 +188,6 @@ export class FinalProjectsService {
       throw new ForbiddenException(
         'Hanya final project yang sudah disubmit yang dapat direview',
       );
-    }
-
-    if (reviewDto.status === 'revisi') {
-      return this.prisma.finalProject.update({
-        where: { id },
-        data: {
-          status: 'revisi', // enum prisma untuk final project
-          grade: reviewDto.grade,
-          feedback: reviewDto.feedback,
-          reviewedById: reviewerId,
-          reviewedAt: new Date(),
-        },
-      });
     }
 
     return this.prisma.finalProject.update({
@@ -168,10 +202,16 @@ export class FinalProjectsService {
     });
   }
 
+  /**
+   * Menghapus final project milik user tertentu beserta file yang terkait (jika ada).
+   * @param id ID final project
+   * @param userId ID user pemilik final project
+   * @returns Data final project yang telah dihapus
+   * @throws NotFoundException atau ForbiddenException jika tidak ditemukan atau tidak berhak
+   */
   async remove(id: number, userId: number) {
     const finalProject = await this.findOne(id, userId);
 
-    // Hapus file jika ada
     if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {
       fs.unlinkSync(finalProject.filePath);
     }

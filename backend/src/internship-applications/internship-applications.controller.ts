@@ -21,12 +21,26 @@ import { Roles } from '../auth/roles.decorator';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
+/**
+ * Controller untuk mengelola pengajuan magang.
+ * Berisi endpoint terkait pembuatan, pengambilan, dan pembaruan status aplikasi magang.
+ */
 @Controller('internship-applications')
 export class InternshipApplicationsController {
   constructor(
     private readonly internshipApplicationsService: InternshipApplicationsService,
-  ) {}
+  ) { }
 
+  /**
+   * Endpoint untuk membuat pengajuan magang baru.
+   * Hanya dapat diakses oleh user yang sudah login.
+   * Mendukung upload file CV, transkrip, dan surat permohonan.
+   * 
+   * @param files File yang diupload (cv, transcript, requestLetter)
+   * @param req Request object yang berisi data user
+   * @param createInternshipApplicationDto Data pengajuan magang
+   * @returns Data pengajuan magang yang berhasil dibuat
+   */
   @Post()
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(
@@ -54,7 +68,14 @@ export class InternshipApplicationsController {
     );
   }
 
-  // Hanya Admin yang bisa akses semua data
+  /**
+   * Endpoint untuk mengambil seluruh data pengajuan magang.
+   * Hanya dapat diakses oleh Admin.
+   * Mendukung fitur paginasi.
+   * 
+   * @param paginationQuery Parameter paginasi
+   * @returns Daftar seluruh pengajuan magang
+   */
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -62,7 +83,13 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findAll(paginationQuery);
   }
 
-  // Hanya Intern yang bisa akses pengajuan miliknya sendiri
+  /**
+   * Endpoint untuk mengambil data pengajuan magang milik user yang sedang login.
+   * Hanya dapat diakses oleh user dengan peran Intern.
+   * 
+   * @param req Request object yang berisi data user
+   * @returns Data pengajuan magang milik user
+   */
   @Get('me')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Intern')
@@ -73,7 +100,13 @@ export class InternshipApplicationsController {
     };
   }
 
-  // Hanya Admin yang bisa akses detail aplikasi tertentu
+  /**
+   * Endpoint untuk mengambil detail pengajuan magang berdasarkan ID.
+   * Hanya dapat diakses oleh Admin.
+   * 
+   * @param id ID pengajuan magang
+   * @returns Detail pengajuan magang
+   */
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')
@@ -81,7 +114,15 @@ export class InternshipApplicationsController {
     return this.internshipApplicationsService.findOne(+id);
   }
 
-  // Hanya Admin yang bisa update status aplikasi
+  /**
+   * Endpoint untuk memperbarui status pengajuan magang.
+   * Hanya dapat diakses oleh Admin.
+   * 
+   * @param id ID pengajuan magang
+   * @param updateApplicationStatusDto Data status baru
+   * @param req Request object yang berisi data admin
+   * @returns Data pengajuan magang yang telah diperbarui statusnya
+   */
   @Patch(':id/status')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin')

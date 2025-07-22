@@ -3,6 +3,10 @@ import { AttendancesController } from './attendances.controller';
 import { AttendancesService } from './attendances.service';
 import { LeaveType } from './dto/request-leave.dto';
 
+/**
+ * Unit tests for AttendancesController.
+ * Mocks AttendancesService and verifies controller methods.
+ */
 describe('AttendancesController', () => {
   let controller: AttendancesController;
   let service: AttendancesService;
@@ -32,10 +36,16 @@ describe('AttendancesController', () => {
     service = module.get<AttendancesService>(AttendancesService);
   });
 
+  /**
+   * Test controller definition.
+   */
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
+  /**
+   * Test clockIn method.
+   */
   it('should call clockIn', async () => {
     (service.clockIn as jest.Mock).mockResolvedValueOnce({ id: 1 });
     const req = { user: { userId: 1 } };
@@ -47,6 +57,9 @@ describe('AttendancesController', () => {
     expect(result).toHaveProperty('id', 1);
   });
 
+  /**
+   * Test requestLeave method.
+   */
   it('should call requestLeave', async () => {
     (service.requestLeave as jest.Mock).mockResolvedValueOnce({ id: 2 });
     const req = { user: { userId: 1 } };
@@ -58,6 +71,9 @@ describe('AttendancesController', () => {
     expect(result).toHaveProperty('id', 2);
   });
 
+  /**
+   * Test validateLeave method.
+   */
   it('should call validateLeave', async () => {
     (service.validateLeave as jest.Mock).mockResolvedValueOnce({
       id: 2,

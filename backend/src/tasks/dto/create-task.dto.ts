@@ -1,27 +1,46 @@
-// src/tasks/dto/create-task.dto.ts
-
 import {
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  ArrayNotEmpty,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
+/**
+ * DTO untuk membuat tugas baru.
+ * 
+ * Properti:
+ * - title: Judul tugas, wajib diisi.
+ * - description: Deskripsi tugas, wajib diisi.
+ * - deadline: Deadline tugas, wajib diisi.
+ * - internIds: Daftar ID intern yang terkait dengan tugas, opsional.
+ */
 export class CreateTaskDto {
+  /**
+   * Judul tugas.
+   */
   @IsString()
   @IsNotEmpty({ message: 'Judul tugas tidak boleh kosong.' })
   title: string;
 
+  /**
+   * Deskripsi tugas.
+   */
   @IsString()
   @IsNotEmpty({ message: 'Deskripsi tidak boleh kosong.' })
   description: string;
 
+  /**
+   * Deadline tugas.
+   */
   @IsString()
   @IsNotEmpty({ message: 'Deadline tidak boleh kosong.' })
   deadline: string;
 
+  /**
+   * Daftar ID intern yang terkait dengan tugas.
+   * Bisa menerima array angka atau string yang dipisahkan koma.
+   */
   @IsOptional()
   @Transform(({ value }) => {
     if (Array.isArray(value)) {

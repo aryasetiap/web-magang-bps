@@ -6,6 +6,9 @@ import { AttendanceStatus } from '@prisma/client';
 import { RequestLeaveDto, LeaveType } from './dto/request-leave.dto';
 import MockDate from 'mockdate';
 
+/**
+ * Unit test suite for AttendancesService.
+ */
 describe('AttendancesService', () => {
   let service: AttendancesService;
 
@@ -39,8 +42,6 @@ describe('AttendancesService', () => {
     }).compile();
 
     service = module.get<AttendancesService>(AttendancesService);
-
-    // Attach mocks for easier access in tests
     (service as any).prisma.attendance = prismaAttendanceMock;
     (service as any).prisma.user = prismaUserMock;
   });
@@ -53,7 +54,13 @@ describe('AttendancesService', () => {
     expect(service).toBeDefined();
   });
 
+  /**
+   * Test cases for requestLeave method.
+   */
   describe('requestLeave', () => {
+    /**
+     * Should throw error if leave requested after 11:00 WIB.
+     */
     it('should throw error if after 11:00 WIB', async () => {
       MockDate.set('2025-07-18T04:30:00Z'); // 11:30 WIB
       await expect(
@@ -67,6 +74,9 @@ describe('AttendancesService', () => {
       );
     });
 
+    /**
+     * Should throw error if supporting file is not uploaded.
+     */
     it('should throw error if file not uploaded', async () => {
       MockDate.set('2025-07-18T02:00:00Z'); // 09:00 WIB
       await expect(
@@ -78,6 +88,9 @@ describe('AttendancesService', () => {
       ).rejects.toThrow('Bukti pendukung wajib diunggah');
     });
 
+    /**
+     * Should throw error if leave already submitted today.
+     */
     it('should throw error if already submitted today', async () => {
       MockDate.set('2025-07-18T02:00:00Z'); // 09:00 WIB
       (service as any).prisma.attendance.findFirst.mockResolvedValueOnce({
@@ -92,6 +105,9 @@ describe('AttendancesService', () => {
       ).rejects.toThrow('Anda sudah mengajukan presensi hari ini');
     });
 
+    /**
+     * Should create attendance record for izin/sakit.
+     */
     it('should create attendance for izin/sakit', async () => {
       MockDate.set('2025-07-18T02:00:00Z'); // 09:00 WIB
       (service as any).prisma.attendance.findFirst.mockResolvedValueOnce(null);
@@ -109,13 +125,22 @@ describe('AttendancesService', () => {
     });
   });
 
+  /**
+   * Test cases for validateLeave method.
+   */
   describe('validateLeave', () => {
+    /**
+     * Should throw error if status is invalid.
+     */
     it('should throw error if status invalid', async () => {
       await expect(
         service.validateLeave(1, 'invalid' as any, 99),
       ).rejects.toThrow('Status tidak valid');
     });
 
+    /**
+     * Should update attendance status.
+     */
     it('should update attendance status', async () => {
       (service as any).prisma.attendance.update.mockResolvedValueOnce({
         id: 1,

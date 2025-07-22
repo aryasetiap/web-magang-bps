@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MulterModule } from '@nestjs/platform-express';
+import { ScheduleModule } from '@nestjs/schedule';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { ConfigModule } from '@nestjs/config'; // 1. Impor ConfigModule
 import { InternshipApplicationsModule } from './internship-applications/internship-applications.module';
 import { AttendancesModule } from './attendances/attendances.module';
 import { LogbooksModule } from './logbooks/logbooks.module';
@@ -12,12 +15,14 @@ import { TasksModule } from './tasks/tasks.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { FinalProjectsModule } from './final-projects/final-projects.module';
 import { CertificatesModule } from './certificates/certificates.module';
-import { MulterModule } from '@nestjs/platform-express';
-import { ScheduleModule } from '@nestjs/schedule';
 
+/**
+ * AppModule adalah modul utama aplikasi yang mengatur seluruh dependensi dan konfigurasi global.
+ * Modul ini mengimpor seluruh modul fitur, konfigurasi, serta modul-modul pendukung lain yang dibutuhkan aplikasi.
+ */
 @Module({
   imports: [
-    // 2. Daftarkan ConfigModule di paling atas, dan buat jadi global
+    // Menginisialisasi modul konfigurasi agar dapat digunakan secara global di seluruh aplikasi
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -31,9 +36,11 @@ import { ScheduleModule } from '@nestjs/schedule';
     SubmissionsModule,
     FinalProjectsModule,
     CertificatesModule,
+    // Mengatur Multer untuk penyimpanan file upload pada direktori './uploads'
     MulterModule.register({
       dest: './uploads',
     }),
+    // Mengaktifkan modul penjadwalan tugas (cron jobs)
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

@@ -1,6 +1,10 @@
 import { IsEmail, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * Data Transfer Object untuk login user.
+ * Berisi email dan password yang divalidasi.
+ */
 export class LoginDto {
   @ApiProperty({
     description: 'Email user',

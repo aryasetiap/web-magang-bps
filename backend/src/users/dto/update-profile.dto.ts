@@ -1,9 +1,15 @@
-// src/users/dto/update-profile.dto.ts
-
 import { IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO untuk memperbarui profil user.
+ * 
+ * Digunakan untuk validasi dan dokumentasi data yang dapat diperbarui oleh user.
+ */
 export class UpdateProfileDto {
+  /**
+   * Nama user.
+   */
   @ApiProperty({
     description: 'Nama user',
     required: false,
@@ -12,6 +18,9 @@ export class UpdateProfileDto {
   @IsOptional()
   name?: string;
 
+  /**
+   * Nama lengkap user.
+   */
   @ApiProperty({
     description: 'Nama lengkap user',
     required: false,
@@ -20,6 +29,9 @@ export class UpdateProfileDto {
   @IsOptional()
   namaLengkap?: string;
 
+  /**
+   * NIM/NISN user.
+   */
   @ApiProperty({
     description: 'NIM/NISN user',
     required: false,
@@ -28,6 +40,9 @@ export class UpdateProfileDto {
   @IsOptional()
   nimNisn?: string;
 
+  /**
+   * Asal institusi user.
+   */
   @ApiProperty({
     description: 'Asal institusi user',
     required: false,
@@ -36,6 +51,9 @@ export class UpdateProfileDto {
   @IsOptional()
   asalInstitusi?: string;
 
+  /**
+   * Jurusan atau program studi user.
+   */
   @ApiProperty({
     description: 'Jurusan/Program Studi user',
     required: false,
@@ -44,6 +62,9 @@ export class UpdateProfileDto {
   @IsOptional()
   jurusanProdi?: string;
 
+  /**
+   * Nomor telepon user.
+   */
   @ApiProperty({
     description: 'Nomor telepon user',
     required: false,
@@ -52,6 +73,9 @@ export class UpdateProfileDto {
   @IsOptional()
   nomorTelepon?: string;
 
+  /**
+   * Alamat user.
+   */
   @ApiProperty({
     description: 'Alamat user',
     required: false,
@@ -60,6 +84,9 @@ export class UpdateProfileDto {
   @IsOptional()
   alamat?: string;
 
+  /**
+   * Status pendidikan user.
+   */
   @ApiProperty({
     description: 'Status pendidikan',
     required: false,
@@ -68,6 +95,9 @@ export class UpdateProfileDto {
   @IsOptional()
   educationStatus?: string;
 
+  /**
+   * Jenis kegiatan yang diikuti user.
+   */
   @ApiProperty({
     description: 'Jenis kegiatan',
     required: false,
@@ -76,6 +106,9 @@ export class UpdateProfileDto {
   @IsOptional()
   activityType?: string;
 
+  /**
+   * Tanggal mulai kegiatan.
+   */
   @ApiProperty({
     description: 'Tanggal mulai kegiatan',
     required: false,
@@ -85,6 +118,9 @@ export class UpdateProfileDto {
   @IsOptional()
   activityStart?: Date;
 
+  /**
+   * Tanggal selesai kegiatan.
+   */
   @ApiProperty({
     description: 'Tanggal selesai kegiatan',
     required: false,
@@ -93,6 +129,4 @@ export class UpdateProfileDto {
   })
   @IsOptional()
   activityEnd?: Date;
-
-  // Field baru tidak perlu validasi karena akan dihandle oleh multer
 }

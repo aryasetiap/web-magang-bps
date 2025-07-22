@@ -2,26 +2,44 @@ import { Module } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { InternshipApplicationsController } from './internship-applications.controller';
 import { MulterModule } from '@nestjs/platform-express';
-import { diskStorage } from 'multer'; // 1. Impor diskStorage
-import { extname } from 'path'; // 2. Impor extname dari path
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import * as fs from 'fs';
 
+/**
+ * Modul utama untuk mengelola aplikasi magang, termasuk konfigurasi upload file.
+ */
 @Module({
   imports: [
-    // 3. Ganti konfigurasi Multer yang lama dengan yang ini
     MulterModule.register({
       storage: diskStorage({
-        // Tentukan folder tujuan
-        destination: './uploads',
-        // Tentukan bagaimana nama file akan dibuat
+        /**
+         * Menentukan folder tujuan penyimpanan file upload berdasarkan fieldname.
+         * Folder akan dibuat secara otomatis jika belum ada.
+         * @param req - Objek request dari Express
+         * @param file - Objek file yang diupload
+         * @param callback - Fungsi callback untuk menentukan folder tujuan
+         */
+        destination: (req, file, callback) => {
+          const folder = join('uploads', file.fieldname);
+          if (!fs.existsSync(folder)) {
+            fs.mkdirSync(folder, { recursive: true });
+          }
+          callback(null, folder);
+        },
+        /**
+         * Membuat nama file unik untuk setiap file yang diupload.
+         * Nama file terdiri dari 32 karakter acak dan ekstensi asli file.
+         * @param req - Objek request dari Express
+         * @param file - Objek file yang diupload
+         * @param callback - Fungsi callback untuk menentukan nama file
+         */
         filename: (req, file, callback) => {
-          // Buat nama acak untuk mencegah nama file yang sama
           const randomName = Array(32)
             .fill(null)
             .map(() => Math.round(Math.random() * 16).toString(16))
             .join('');
-          // Ambil ekstensi file asli (misalnya, '.pdf')
           const fileExtension = extname(file.originalname);
-          // Gabungkan nama acak dengan ekstensi asli
           callback(null, `${randomName}${fileExtension}`);
         },
       }),
@@ -30,4 +48,9 @@ import { extname } from 'path'; // 2. Impor extname dari path
   controllers: [InternshipApplicationsController],
   providers: [InternshipApplicationsService],
 })
-export class InternshipApplicationsModule {}
+export class InternshipApplicationsModule {
+  /**
+   * Kelas modul untuk aplikasi magang.
+   * Mengatur dependency controller dan service terkait aplikasi magang.
+   */
+}

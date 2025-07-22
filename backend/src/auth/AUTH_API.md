@@ -425,6 +425,47 @@ Callback setelah login Google OAuth. Akan redirect ke frontend dengan token dan 
 
 ---
 
+## Error Umum
+
+- **400 Bad Request**  
+  Request tidak valid, misal format email salah, field kurang, atau file upload tidak sesuai.
+
+- **401 Unauthorized**  
+  Token tidak valid, belum login, atau akses tidak diizinkan.
+
+- **409 Conflict**  
+  Data sudah ada, misal email sudah terdaftar.
+
+- **500 Internal Server Error**  
+  Kesalahan server, silakan coba lagi nanti.
+
+---
+
+## Contoh Request PATCH `/auth/profile` dengan curl
+
+```bash
+curl -X PATCH "http://localhost:3000/auth/profile" ^
+  -H "Authorization: Bearer {jwt_token}" ^
+  -F "name=John Doe Updated" ^
+  -F "profilePhoto=@/path/to/photo.jpg"
+```
+
+---
+
+## Catatan Google OAuth
+
+- **GET `/auth/google`**  
+  Akan mengarahkan user ke halaman login Google. Tidak mengembalikan response JSON.
+
+- **GET `/auth/google/callback`**  
+  Setelah login Google berhasil, user akan diarahkan ke frontend dengan parameter token dan data user di URL.  
+  Contoh redirect:
+  ```
+  http://localhost:3001/auth/callback?token={jwt_token}&user={user_json}
+  ```
+
+---
+
 ## Catatan Tambahan
 
 - Semua endpoint yang membutuhkan autentikasi JWT harus menyertakan header:  
@@ -434,7 +475,3 @@ Callback setelah login Google OAuth. Akan redirect ke frontend dengan token dan 
   User harus melakukan verifikasi OTP sebelum bisa login.
 - Rate limit resend OTP: 1x per jam per user.
 - Semua response error menggunakan format standar NestJS.
-
----
-
-\*\*Jika ada kebutuhan field tambahan, silakan hubungi tim
