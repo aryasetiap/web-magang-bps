@@ -6,6 +6,7 @@ import { CertificateStatus } from '@prisma/client';
 import { join } from 'path';
 import * as fs from 'fs';
 import { PDFDocument } from 'pdf-lib';
+import * as path from 'path';
 
 @Injectable()
 /**
@@ -51,8 +52,17 @@ export class CertificatesService {
             }
         }
 
+        // Sanitize certificateNumber untuk nama file
+        const safeCertificateNumber = dto.certificateNumber.replace(/[\/\\:*?"<>|]/g, '-');
+        const outputDir = 'uploads/certificates/generated';
+        const outputPath = path.join(outputDir, `certificate-${safeCertificateNumber}.pdf`);
+
+        // Pastikan folder output ada
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
         const templatePath = 'uploads/certificate-templates/certificate-template.pdf';
-        const outputPath = join('uploads/certificates/generated', `certificate-${dto.certificateNumber}.pdf`);
 
         if (!fs.existsSync(templatePath)) {
             throw new BadRequestException('Template sertifikat tidak ditemukan.');
