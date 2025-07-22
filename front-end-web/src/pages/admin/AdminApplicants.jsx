@@ -5,7 +5,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { formatDate } from "../../utils/formatDate"; // Assuming you have a utility for formatting dates
+import { formatDate } from "../../utils/formatDateTime"; // Assuming you have a utility for formatting dates
 
 function AdminApplicantsPage() {
   const [applicants, setApplicants] = useState([]);

@@ -7,8 +7,8 @@ import {
   postCheckIn,
   postCheckOut,
   fetchUserDailyAttendance,
+  requestLeave,
 } from "../../../utils/attendance";
-import { requestLeave } from "../../../utils/attendance";
 import AlertDialog from "../../../components/AlertDialog";
 
 function PresenceSection() {

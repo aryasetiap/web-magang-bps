@@ -105,26 +105,6 @@ export async function requestLeave(token, { type, description, proof }) {
   return data;
 }
 
-// Fungsi untuk format waktu dari string ISO
-export const formatTime = (isoString) => {
-  if (!isoString) return "-";
-  const date = new Date(isoString);
-
-  const time = date.toLocaleString("id-ID", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-
-  const offset = date.getTimezoneOffset();
-  const timeOffset = -offset / 60;
-
-  let zone = "WIB";
-  if (timeOffset === 8) zone = "WITA";
-  else if (timeOffset === 9) zone = "WIT";
-
-  return `${time} ${zone}`;
-};
-
 // Fungsi hitung jarak (dalam meter) antara dua koordinat
 export const getDistance = (lat1, lng1, lat2, lng2) => {
   const toRad = (value) => (value * Math.PI) / 180;

@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useState } from "react";
-import { fetchPresensiData, formatTime } from "../../../utils/attendance";
+import { fetchPresensiData } from "../../../utils/attendance";
+import { formatTime } from "../../../utils/formatDateTime";
 import { PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 
