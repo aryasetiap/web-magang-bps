@@ -9,18 +9,28 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
-import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto'; // 1. Impor DTO
+import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto';
 import * as path from 'path';
 import * as fs from 'fs';
 
+/**
+ * Service untuk mengelola tugas, penugasan, pengumpulan, dan penilaian tugas.
+ */
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
+  /**
+   * Membuat tugas baru dan meng-assign ke intern jika ada.
+   * @param creatorId ID pembuat tugas
+   * @param createTaskDto Data tugas yang akan dibuat
+   * @param file File tugas (opsional)
+   * @returns Data tugas yang telah dibuat
+   */
   async create(
     creatorId: number,
     createTaskDto: CreateTaskDto,
-    file?: Express.Multer.File, // Tambahkan file opsional
+    file?: Express.Multer.File,
   ) {
     const { title, description, deadline, internIds } = createTaskDto;
     let filePath: string | undefined = undefined;
@@ -33,11 +43,10 @@ export class TasksService {
         description,
         deadline: new Date(deadline),
         createdBy: creatorId,
-        filePath, // Simpan path file jika ada
+        filePath,
       },
     });
 
-    // Jika internIds disediakan, langsung assign
     if (internIds && internIds.length > 0) {
       const assignmentsData = internIds.map((internId) => ({
         taskId: task.id,
@@ -48,6 +57,7 @@ export class TasksService {
         skipDuplicates: true,
       });
     }
+
     await this.prisma.auditLog.create({
       data: {
         action: 'create',
@@ -57,9 +67,16 @@ export class TasksService {
         description: `Membuat tugas "${task.title}"`,
       },
     });
+
     return task;
   }
 
+  /**
+   * Meng-assign tugas ke beberapa intern.
+   * @param taskId ID tugas
+   * @param assignTaskDto Data penugasan
+   * @returns Hasil assign tugas
+   */
   async assignTask(taskId: number, assignTaskDto: AssignTaskDto) {
     const { internIds } = assignTaskDto;
     const task = await this.prisma.task.findUnique({
@@ -78,6 +95,14 @@ export class TasksService {
     });
   }
 
+  /**
+   * Mengumpulkan tugas oleh intern.
+   * @param userId ID user yang mengumpulkan
+   * @param taskId ID tugas
+   * @param file File hasil tugas (opsional)
+   * @param description Deskripsi pengumpulan (opsional)
+   * @returns Data submission yang telah dibuat
+   */
   async submitTask(
     userId: number,
     taskId: number,
@@ -88,7 +113,6 @@ export class TasksService {
       throw new BadRequestException('Minimal file atau deskripsi harus diisi.');
     }
 
-    // Validasi file jika ada
     if (file) {
       const allowedTypes = [
         'application/pdf',
@@ -142,6 +166,11 @@ export class TasksService {
     });
   }
 
+  /**
+   * Mengambil semua submission untuk suatu tugas.
+   * @param taskId ID tugas
+   * @returns Daftar submission beserta data user
+   */
   async findSubmissionsForTask(taskId: number) {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
@@ -164,7 +193,13 @@ export class TasksService {
     });
   }
 
-  // 2. Implementasikan method gradeSubmission
+  /**
+   * Memberikan penilaian pada submission.
+   * @param submissionId ID submission
+   * @param gradeSubmissionDto Data penilaian
+   * @param graderId ID user penilai (harus creator tugas)
+   * @returns Submission yang sudah dinilai
+   */
   async gradeSubmission(
     submissionId: number,
     gradeSubmissionDto: GradeSubmissionDto,
@@ -175,11 +210,9 @@ export class TasksService {
       include: { task: true },
     });
     if (!submission) throw new NotFoundException('Submission tidak ditemukan.');
-    // Cek apakah grader adalah creator tugas
     if (submission.task.createdBy !== graderId) {
       throw new ForbiddenException('Anda tidak berhak menilai submission ini.');
     }
-    // Cek status submission
     if (!['submitted', 'revisi'].includes(submission.status)) {
       throw new BadRequestException(
         'Submission hanya bisa dinilai jika status submitted/revisi.',
@@ -203,7 +236,6 @@ export class TasksService {
       });
       return updated;
     }
-    // Update status ke 'reviewed'
     const updated = await this.prisma.submission.update({
       where: { id: submissionId },
       data: {
@@ -232,6 +264,13 @@ export class TasksService {
     return updated;
   }
 
+  /**
+   * Mengambil daftar tugas yang diassign ke user tertentu, beserta status submission terakhir.
+   * @param userId ID user
+   * @param page Halaman (opsional)
+   * @param limit Jumlah per halaman (opsional)
+   * @returns Daftar tugas beserta submission terakhir
+   */
   findTasksForUser(userId: number, page = 1, limit = 10) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     return this.prisma.task
@@ -262,7 +301,6 @@ export class TasksService {
       .then((tasks) =>
         tasks.map((task) => ({
           ...task,
-          // Ambil submission dengan id terbesar (terbaru)
           submission: task.submissions.length
             ? task.submissions.sort((a, b) => b.id - a.id)[0]
             : null,
@@ -273,6 +311,10 @@ export class TasksService {
       );
   }
 
+  /**
+   * Mengambil semua tugas yang belum dihapus.
+   * @returns Daftar tugas
+   */
   async findAll() {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const tasks = await this.prisma.task.findMany({
@@ -296,6 +338,11 @@ export class TasksService {
     };
   }
 
+  /**
+   * Mengambil detail satu tugas berdasarkan ID.
+   * @param id ID tugas
+   * @returns Data tugas
+   */
   async findOne(id: number) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
     const task = await this.prisma.task.findUnique({
@@ -320,6 +367,12 @@ export class TasksService {
     };
   }
 
+  /**
+   * Mengupdate data tugas jika belum melewati deadline.
+   * @param id ID tugas
+   * @param updateTaskDto Data update tugas
+   * @returns Data tugas yang sudah diupdate
+   */
   async update(id: number, updateTaskDto: UpdateTaskDto) {
     const task = await this.prisma.task.findUnique({
       where: { id },
@@ -332,7 +385,6 @@ export class TasksService {
     if (!task || task.deletedAt) {
       throw new NotFoundException('Task tidak ditemukan atau sudah dihapus.');
     }
-    // Opsional: Cegah update jika sudah lewat deadline
     if (task.deadline && new Date() > task.deadline) {
       throw new BadRequestException(
         'Task sudah melewati deadline dan tidak bisa diubah.',
@@ -359,6 +411,11 @@ export class TasksService {
     return updated;
   }
 
+  /**
+   * Melakukan soft delete pada tugas.
+   * @param id ID tugas
+   * @returns Data tugas yang sudah dihapus
+   */
   async remove(id: number) {
     const deleted = await this.prisma.task.update({
       where: { id },
@@ -376,6 +433,12 @@ export class TasksService {
     return deleted;
   }
 
+  /**
+   * Mengecek apakah user sudah diassign ke tugas tertentu.
+   * @param taskId ID tugas
+   * @param userId ID user
+   * @returns True jika user sudah diassign, false jika tidak
+   */
   async isUserAssignedToTask(taskId: number, userId: number) {
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: { taskId_userId: { taskId, userId } },

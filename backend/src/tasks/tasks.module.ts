@@ -5,12 +5,29 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
+/**
+ * Modul Tasks
+ * 
+ * Modul ini bertanggung jawab untuk mengelola fitur terkait tugas (tasks),
+ * termasuk konfigurasi upload lampiran menggunakan Multer.
+ */
 @Module({
-  // 1. Tambahkan impor dan konfigurasi MulterModule di sini
   imports: [
     MulterModule.register({
       storage: diskStorage({
-        destination: './uploads/tasks', // Folder khusus lampiran task
+        /**
+         * Menentukan folder tujuan penyimpanan file upload.
+         * Semua lampiran tugas akan disimpan di folder './uploads/tasks'.
+         */
+        destination: './uploads/tasks',
+        /**
+         * Membuat nama file unik untuk setiap file yang di-upload.
+         * Nama file dihasilkan secara acak dan mempertahankan ekstensi aslinya.
+         * 
+         * @param req - Objek request dari Express
+         * @param file - Objek file yang di-upload
+         * @param callback - Fungsi callback untuk mengembalikan nama file
+         */
         filename: (req, file, callback) => {
           const randomName = Array(32)
             .fill(null)
