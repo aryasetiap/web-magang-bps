@@ -1,31 +1,31 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma Schema untuk Web Magang BPS
+// File ini mendefinisikan struktur database, enum, dan relasi antar model.
+// Dokumentasi ditulis dalam Bahasa Indonesia untuk memudahkan pengembangan tim.
 
-// 1. Generator: Defines what to generate from this schema.
-// In this case, it's the Prisma Client for TypeScript.
 generator client {
   provider = "prisma-client-js"
 }
 
-// 2. Datasource: Specifies the database connection details.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // Loads the URL from the .env file
+  url      = env("DATABASE_URL")
 }
 
-// 3. Enums: Defines custom types for status fields, ensuring data consistency.
+// Enum status magang, memastikan konsistensi data status pengajuan magang.
 enum StatusInternship {
   pending
   diterima
   ditolak
 }
 
+// Enum status logbook harian.
 enum StatusLogbook {
   draft
   submitted
   reviewed
 }
 
+// Enum status tugas akhir.
 enum StatusFinalProject {
   draft
   submitted
@@ -34,13 +34,15 @@ enum StatusFinalProject {
   revisi
 }
 
+// Enum status pengumpulan tugas.
 enum StatusSubmission {
   not_submitted
   submitted
   reviewed
-  revisi // Tambahkan status revisi
+  revisi
 }
 
+// Enum status kehadiran.
 enum AttendanceStatus {
   hadir
   sakit
@@ -48,20 +50,22 @@ enum AttendanceStatus {
   tanpa_keterangan
 }
 
+// Enum status sertifikat.
 enum CertificateStatus {
   generated
   signed
   issued
 }
 
-// 4. Data Models: Defines the tables in your database.
-
+/// Model User
+/// Menyimpan data pengguna, baik mahasiswa, staf, maupun koordinator.
+/// Relasi: Role, InternshipApplication, Attendance, Logbook, Task, Submission, FinalProject, Document, Certificate.
 model User {
   id            Int       @id @default(autoincrement())
   name          String
   email         String    @unique
   password      String
-  profilePhoto  String? // Field baru untuk foto profil
+  profilePhoto  String?
   namaLengkap   String?
   nimNisn       String?
   asalInstitusi String?
@@ -73,68 +77,70 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
+  // Relasi ke Role
   role Role @relation(fields: [roleId], references: [id])
 
-  // Relations - BERSIHKAN DUPLIKASI
-  // User sebagai applicant (one-to-one)
+  // Relasi ke pengajuan magang sebagai applicant (satu user satu pengajuan)
   internshipApplication InternshipApplication? @relation("ApplicantApplication")
 
-  // User sebagai verifier (one-to-many)
+  // Relasi ke pengajuan magang yang diverifikasi (user sebagai verifier)
   verifiedApplications InternshipApplication[] @relation("VerifierApplications")
 
-  // User attendance records
+  // Relasi ke data kehadiran
   attendances Attendance[]
 
-  // User logbook entries
+  // Relasi ke logbook harian
   logbooks Logbook[]
 
-  // User created tasks (as staff/coordinator)
+  // Relasi ke tugas yang dibuat (user sebagai pembuat tugas)
   createdTasks Task[] @relation("CreatedTasks")
 
-  // User task assignments
+  // Relasi ke penugasan tugas (user sebagai penerima tugas)
   taskAssignments TaskAssignment[]
 
-  // User submissions
+  // Relasi ke pengumpulan tugas
   submissions Submission[]
 
-  // User final projects (as student)
+  // Relasi ke tugas akhir (user sebagai mahasiswa)
   finalProjects FinalProject[]
 
-  // User reviewed final projects (as reviewer)
+  // Relasi ke tugas akhir yang direview (user sebagai reviewer)
   reviewedFinalProjects FinalProject[] @relation("FinalProjectReviewer")
 
-  // User uploaded documents
+  // Relasi ke dokumen yang diunggah
   uploadedDocuments Document[]
 
-  educationStatus String? // Status pendidikan
-  activityType    String? // Jenis kegiatan
-  activityStart   DateTime? // Tanggal mulai kegiatan
-  activityEnd     DateTime? // Tanggal selesai kegiatan
+  educationStatus String?
+  activityType    String?
+  activityStart   DateTime?
+  activityEnd     DateTime?
   Certificate     Certificate?
 
   isEmailVerified         Boolean   @default(false)
-  emailOtp                String? // kode OTP
-  emailOtpExpires         DateTime? // waktu kadaluarsa OTP
-  lastOtpSentAt           DateTime? // waktu terakhir OTP dikirim
+  emailOtp                String?
+  emailOtpExpires         DateTime?
+  lastOtpSentAt           DateTime?
   resetPasswordOtp        String?
   resetPasswordOtpExpires DateTime?
 
   @@map("users")
 }
 
+/// Model Role
+/// Menyimpan data peran pengguna (mahasiswa, staf, koordinator).
 model Role {
   id   Int    @id @default(autoincrement())
   name String @unique
 
-  // --- Relations ---
-  // A role can be assigned to many users
   users User[]
 }
 
+/// Model InternshipApplication
+/// Menyimpan data pengajuan magang oleh mahasiswa.
 model InternshipApplication {
   id                Int              @id @default(autoincrement())
   status            StatusInternship @default(pending)
-  cvPath            String?          @map("cv_path") // Ubah jadi opsional
+  cvPath            String?          @map("cv_path")
   transcriptPath    String           @map("transcript_path")
   requestLetterPath String           @map("request_letter_path")
   verifiedAt        DateTime?        @map("verified_at")
@@ -142,10 +148,11 @@ model InternshipApplication {
   startDate         DateTime?
   endDate           DateTime?
 
-  // --- Relations ---
+  // Relasi ke user sebagai applicant
   applicant User @relation("ApplicantApplication", fields: [userId], references: [id])
   userId    Int  @unique @map("user_id")
 
+  // Relasi ke user sebagai verifier
   verifier   User? @relation("VerifierApplications", fields: [verifiedBy], references: [id])
   verifiedBy Int?  @map("verified_by")
 
@@ -155,6 +162,8 @@ model InternshipApplication {
   @@map("internship_applications")
 }
 
+/// Model Attendance
+/// Menyimpan data kehadiran harian mahasiswa.
 model Attendance {
   id                Int       @id @default(autoincrement())
   clockIn           DateTime? @map("clock_in")
@@ -167,7 +176,6 @@ model Attendance {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  // --- New fields for izin/sakit ---
   status            AttendanceStatus @default(hadir)
   reasonDescription String?          @db.Text
   proofFilePath     String?
@@ -175,61 +183,66 @@ model Attendance {
   validatedBy       Int?
   validatedAt       DateTime?
 
-  // --- Relations ---
+  // Relasi ke user
   user   User @relation(fields: [userId], references: [id])
   userId Int  @map("user_id")
 
   @@map("attendances")
 }
 
+/// Model Logbook
+/// Menyimpan catatan harian aktivitas magang mahasiswa.
 model Logbook {
   id      Int           @id @default(autoincrement())
   logDate DateTime      @map("log_date") @db.Date
   content String        @db.Text
   status  StatusLogbook @default(draft)
 
-  // --- Relations ---
+  // Relasi ke user
   user   User @relation(fields: [userId], references: [id])
   userId Int  @map("user_id")
 
   @@map("logbooks")
 }
 
+/// Model Task
+/// Menyimpan data tugas yang diberikan kepada mahasiswa.
 model Task {
   id          Int       @id @default(autoincrement())
   title       String
   description String    @db.Text
   deadline    DateTime
-  filePath    String?   @map("file_path") // <--- Tambahkan ini
-  deletedAt   DateTime? // Soft delete
+  filePath    String?   @map("file_path")
+  deletedAt   DateTime?
 
-  // --- Relations ---
-  // A task is created by one user (staff/coordinator)
+  // Relasi ke user sebagai pembuat tugas
   creator   User @relation("CreatedTasks", fields: [createdBy], references: [id])
   createdBy Int  @map("created_by")
 
-  // A task can have many submissions
+  // Relasi ke pengumpulan tugas
   submissions Submission[]
 
-  // A task can be assigned to many users via the TaskAssignment table
+  // Relasi ke penugasan tugas
   assignments TaskAssignment[]
 
   @@map("tasks")
 }
 
+/// Model TaskAssignment
+/// Menyimpan relasi penugasan tugas ke mahasiswa (many-to-many).
 model TaskAssignment {
-  // --- Relations ---
   task   Task @relation(fields: [taskId], references: [id])
   taskId Int  @map("task_id")
 
   user   User @relation(fields: [userId], references: [id])
   userId Int  @map("user_id")
 
-  // --- Composite Primary Key ---
   @@id([taskId, userId])
   @@map("task_assignments")
 }
 
+/// Model Submission
+/// Menyimpan data pengumpulan tugas oleh mahasiswa.
 model Submission {
   id          Int              @id @default(autoincrement())
   filePath    String?          @map("file_path")
@@ -240,18 +253,21 @@ model Submission {
   gradedAt    DateTime?
   deletedAt   DateTime?
   isLate      Boolean          @default(false)
-  description String? // <--- Tambahkan field ini
+  description String?
 
-  // --- Relations ---
+  // Relasi ke tugas
   task   Task @relation(fields: [taskId], references: [id])
   taskId Int  @map("task_id")
 
+  // Relasi ke user
   user   User @relation(fields: [userId], references: [id])
   userId Int  @map("user_id")
 
   @@map("submissions")
 }
 
+/// Model FinalProject
+/// Menyimpan data tugas akhir mahasiswa.
 model FinalProject {
   id          Int                @id @default(autoincrement())
   title       String
@@ -265,27 +281,33 @@ model FinalProject {
   createdAt   DateTime           @default(now()) @map("created_at")
   updatedAt   DateTime           @updatedAt @map("updated_at")
 
-  // --- Relations ---
-  user         User  @relation(fields: [userId], references: [id])
-  userId       Int   @map("user_id")
+  // Relasi ke user sebagai mahasiswa
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @map("user_id")
+
+  // Relasi ke user sebagai reviewer
   reviewedBy   User? @relation("FinalProjectReviewer", fields: [reviewedById], references: [id])
   reviewedById Int?  @map("reviewed_by_id")
 
   @@map("final_projects")
 }
 
+/// Model Document
+/// Menyimpan dokumen yang diunggah oleh user.
 model Document {
   id       Int    @id @default(autoincrement())
   title    String
   filePath String @map("file_path")
 
-  // --- Relations ---
+  // Relasi ke user sebagai pengunggah
   uploader   User? @relation(fields: [uploadedBy], references: [id])
   uploadedBy Int?  @map("uploaded_by")
 
   @@map("documents")
 }
 
+/// Model AuditLog
+/// Menyimpan log audit aktivitas penting dalam sistem.
 model AuditLog {
   id          Int      @id @default(autoincrement())
   action      String
@@ -296,6 +318,8 @@ model AuditLog {
   createdAt   DateTime @default(now())
 }
 
+/// Model Notification
+/// Menyimpan notifikasi yang dikirim ke user.
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -304,6 +328,8 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
+/// Model Certificate
+/// Menyimpan data sertifikat magang mahasiswa.
 model Certificate {
   id                Int               @id @default(autoincrement())
   certificateNumber String            @unique
@@ -328,6 +354,7 @@ model Certificate {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
+  // Relasi ke user penerima sertifikat
   user User @relation(fields: [userId], references: [id])
 
   @@map("certificates")

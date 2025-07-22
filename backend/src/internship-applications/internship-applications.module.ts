@@ -3,28 +3,36 @@ import { InternshipApplicationsService } from './internship-applications.service
 import { InternshipApplicationsController } from './internship-applications.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import * as fs from 'fs';
 
 /**
- * Modul untuk mengelola aplikasi magang, termasuk konfigurasi upload file.
+ * Modul utama untuk mengelola aplikasi magang, termasuk konfigurasi upload file.
  */
 @Module({
   imports: [
     MulterModule.register({
       storage: diskStorage({
         /**
-         * Menentukan folder tujuan penyimpanan file upload.
-         * @param req - Request yang masuk
-         * @param file - File yang diupload
-         * @param callback - Callback untuk menentukan folder tujuan
+         * Menentukan folder tujuan penyimpanan file upload berdasarkan fieldname.
+         * Folder akan dibuat secara otomatis jika belum ada.
+         * @param req - Objek request dari Express
+         * @param file - Objek file yang diupload
+         * @param callback - Fungsi callback untuk menentukan folder tujuan
          */
-        destination: './uploads',
+        destination: (req, file, callback) => {
+          const folder = join('uploads', file.fieldname);
+          if (!fs.existsSync(folder)) {
+            fs.mkdirSync(folder, { recursive: true });
+          }
+          callback(null, folder);
+        },
         /**
          * Membuat nama file unik untuk setiap file yang diupload.
-         * Nama file dihasilkan secara acak dan mempertahankan ekstensi asli.
-         * @param req - Request yang masuk
-         * @param file - File yang diupload
-         * @param callback - Callback untuk menentukan nama file
+         * Nama file terdiri dari 32 karakter acak dan ekstensi asli file.
+         * @param req - Objek request dari Express
+         * @param file - Objek file yang diupload
+         * @param callback - Fungsi callback untuk menentukan nama file
          */
         filename: (req, file, callback) => {
           const randomName = Array(32)
@@ -40,4 +48,9 @@ import { extname } from 'path';
   controllers: [InternshipApplicationsController],
   providers: [InternshipApplicationsService],
 })
-export class InternshipApplicationsModule {}
+export class InternshipApplicationsModule {
+  /**
+   * Kelas modul untuk aplikasi magang.
+   * Mengatur dependency controller dan service terkait aplikasi magang.
+   */
+}
