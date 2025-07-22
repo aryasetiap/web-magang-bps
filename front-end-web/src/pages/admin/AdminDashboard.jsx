@@ -21,16 +21,26 @@ function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("authToken"); // atau sessionStorage.getItem("token")
+
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
         const [applicationsRes, projectsRes, tasksRes, attendancesRes] =
           await Promise.all([
-            fetch(`${API_BASE_URL}/internship-applications`).then((res) =>
+            fetch(`${API_BASE_URL}/internship-applications`, { headers }).then(
+              (res) => res.json()
+            ),
+            fetch(`${API_BASE_URL}/final-projects/all`, { headers }).then(
+              (res) => res.json()
+            ),
+            fetch(`${API_BASE_URL}/tasks`, { headers }).then((res) =>
               res.json()
             ),
-            fetch(`${API_BASE_URL}/final-projects/all`).then((res) =>
+            fetch(`${API_BASE_URL}/attendances/all`, { headers }).then((res) =>
               res.json()
             ),
-            fetch(`${API_BASE_URL}/tasks`).then((res) => res.json()),
-            fetch(`${API_BASE_URL}/attendances/all`).then((res) => res.json()),
           ]);
 
         setInternshipApplications(
@@ -46,7 +56,7 @@ function AdminDashboard() {
         setLoading(false);
       } catch (err) {
         setError(
-          "Gagal memuat data. Pastikan server berjalan di localhost:3000."
+          "Gagal memuat data. Pastikan token login tersedia dan server berjalan."
         );
         setLoading(false);
         console.error("Error fetching data:", err);
