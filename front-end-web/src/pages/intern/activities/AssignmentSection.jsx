@@ -1,23 +1,10 @@
 import React, { useEffect, useState } from "react";
-
-// Helper untuk format tanggal
-const formatDate = (dateStr) =>
-  new Date(dateStr).toLocaleDateString("id-ID", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-// Helper validasi file
-const isValidFile = (file) => {
-  if (!file) return true; // file kosong = valid (karena boleh hanya deskripsi)
-  const allowedTypes = [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
-  return allowedTypes.includes(file.type) && file.size <= 5 * 1024 * 1024;
-};
+import { formatDate } from "../../../utils/formatDateTime";
+import {
+  isValidFile,
+  fetchAssignments,
+  statusBadge,
+} from "../../../utils/assignment";
 
 function AssignmentSection() {
   const [assignments, setAssignments] = useState([]);
@@ -36,25 +23,18 @@ function AssignmentSection() {
 
   // Fetch daftar tugas
   useEffect(() => {
-    const fetchAssignments = async () => {
+    const loadAssignments = async () => {
       setLoading(true);
       setError("");
       try {
-        const res = await fetch(
-          "http://localhost:3000/tasks/my-tasks?page=1&limit=20",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        if (!res.ok) throw new Error("Gagal memuat tugas");
-        const data = await res.json();
+        const data = await fetchAssignments(token);
         setAssignments(data);
       } catch (err) {
         setError(err.message || "Gagal memuat tugas");
       }
       setLoading(false);
     };
-    fetchAssignments();
+    loadAssignments();
   }, [token, successMsg]);
 
   // Filter tugas aktif dan riwayat
@@ -128,7 +108,8 @@ function AssignmentSection() {
     try {
       const formData = new FormData();
       // File
-      if (submitFile && fileIsValid) formData.append("submissionFile", submitFile);
+      if (submitFile && fileIsValid)
+        formData.append("submissionFile", submitFile);
       // Deskripsi
       if (descIsValid) formData.append("description", submitDesc.trim());
       const res = await fetch(
@@ -316,7 +297,8 @@ function AssignmentSection() {
                   <div className="text-sm mb-2">
                     {assignment.submission.description && (
                       <span className="block text-gray-700 mb-1">
-                        <strong>Deskripsi Submission:</strong> {assignment.submission.description}
+                        <strong>Deskripsi Submission:</strong>{" "}
+                        {assignment.submission.description}
                       </span>
                     )}
                     {assignment.submission.grade !== null && (
@@ -326,7 +308,8 @@ function AssignmentSection() {
                     )}
                     {assignment.submission.feedback && (
                       <span className="text-red-600">
-                        <strong>Feedback:</strong> {assignment.submission.feedback}
+                        <strong>Feedback:</strong>{" "}
+                        {assignment.submission.feedback}
                       </span>
                     )}
                   </div>
@@ -368,7 +351,9 @@ function AssignmentSection() {
             <h3 className="text-xl font-bold mb-2">
               {selectedAssignment.title}
             </h3>
-            <p className="mb-2 text-gray-700">{selectedAssignment.description}</p>
+            <p className="mb-2 text-gray-700">
+              {selectedAssignment.description}
+            </p>
             <p className="mb-2 text-sm text-gray-500">
               Deadline: {formatDate(selectedAssignment.deadline)}
             </p>
@@ -382,11 +367,13 @@ function AssignmentSection() {
                 Download File Tugas
               </a>
             )}
-            {selectedAssignment.submission && selectedAssignment.submission.description && (
-              <div className="mb-2 text-sm text-gray-700">
-                <strong>Deskripsi Submission:</strong> {selectedAssignment.submission.description}
-              </div>
-            )}
+            {selectedAssignment.submission &&
+              selectedAssignment.submission.description && (
+                <div className="mb-2 text-sm text-gray-700">
+                  <strong>Deskripsi Submission:</strong>{" "}
+                  {selectedAssignment.submission.description}
+                </div>
+              )}
             <div className="mt-4">
               {/* Status dan aksi submit/resubmit */}
               {selectedAssignment.submission ? (
@@ -407,7 +394,8 @@ function AssignmentSection() {
                         </button>
                       )}
                     </>
-                  ) : selectedAssignment.submission.status === "not_submitted" ? (
+                  ) : selectedAssignment.submission.status ===
+                    "not_submitted" ? (
                     !isSubmitOpen && (
                       <button
                         className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg mb-2"

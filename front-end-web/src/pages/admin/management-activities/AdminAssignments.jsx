@@ -28,6 +28,7 @@ function AdminAssignmentsPage() {
   const [reviewingSubmission, setReviewingSubmission] = useState(null);
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [reviewScore, setReviewScore] = useState("");
+  const [reviewStatus, setReviewStatus] = useState("");
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -351,6 +352,7 @@ function AdminAssignmentsPage() {
     setReviewingSubmission(submission); // Simpan objek submission lengkap
     setReviewFeedback(submission.feedback || "");
     setReviewScore(submission.grade || ""); // Asumsi grade adalah nama field nilai
+    setReviewStatus(submission.status || "");
     setIsReviewModalOpen(true);
   }
 
@@ -360,6 +362,7 @@ function AdminAssignmentsPage() {
     setReviewingSubmission(null);
     setReviewFeedback("");
     setReviewScore("");
+    setReviewStatus("");
   }
 
   const handleSubmitReview = async (e) => {
@@ -389,7 +392,7 @@ function AdminAssignmentsPage() {
           body: JSON.stringify({
             grade: reviewScore ? parseFloat(reviewScore) : null,
             feedback: reviewFeedback,
-            status: "reviewed", // Asumsi status diubah ke 'reviewed' setelah dinilai
+            status: reviewStatus || reviewingSubmission.status, // Gunakan status baru jika ada
           }),
         }
       );
@@ -855,6 +858,26 @@ function AdminAssignmentsPage() {
 
                   {/* Form Feedback dan Nilai */}
                   <form onSubmit={handleSubmitReview}>
+                    {/* tambah select status */}
+                    <div className="mb-4">
+                      <label
+                        htmlFor="status"
+                        className="block text-gray-700 text-sm font-bold mb-2"
+                      >
+                        Status:
+                      </label>
+                      <select
+                        id="status"
+                        value={reviewStatus}
+                        onChange={(e) => setReviewStatus(e.target.value)}
+                        className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+                        required
+                      >
+                        <option value="">Ganti status</option>
+                        <option value="reviewed">Di-review</option>
+                        <option value="revisi">Revisi</option>
+                      </select>
+                    </div>
                     <div className="mb-4">
                       <label
                         htmlFor="feedback"

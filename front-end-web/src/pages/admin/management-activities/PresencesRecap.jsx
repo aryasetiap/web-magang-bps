@@ -1,7 +1,12 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { fetchPresensiData } from "../../../utils/attendance";
 import { formatTime } from "../../../utils/formatDateTime";
-import { PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PencilSquareIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 
 function PresencesRecap() {
@@ -10,12 +15,18 @@ function PresencesRecap() {
   const [editModeId, setEditModeId] = useState(null);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 5; // Jumlah item per halaman
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
     const fetchData = async () => {
       const data = await fetchPresensiData(token);
-      console.log("recapData fetched:", data); // ⬅ tambahkan ini
+      console.log("recapData fetched:", data);
       setRecapData(data);
       setLoading(false);
     };
@@ -64,11 +75,87 @@ function PresencesRecap() {
     }
   };
 
+  const filteredData = recapData.filter((row) => {
+    const isStatusMatch = filterStatus ? row.status === filterStatus : true;
+    const isDateMatch =
+      (!startDate || new Date(row.checkIn) >= new Date(startDate)) &&
+      (!endDate || new Date(row.checkIn) <= new Date(endDate));
+    return isStatusMatch && isDateMatch;
+  });
+
+  const searchedData = filteredData.filter((row) =>
+    row.internName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(searchedData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = searchedData.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="mb-8 p-6 border rounded-lg bg-blue-50">
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">
         Rekap Presensi Peserta
       </h3>
+
+      {/* 🔍 Baris filter gabungan */}
+      <div className="mb-4 flex flex-col md:flex-row md:items-end gap-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Pencarian Nama
+          </label>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border rounded px-3 py-2 text-sm w-full"
+            placeholder="Masukkan nama peserta"
+          />
+        </div>
+
+        <div className="w-full md:w-48">
+          <label className="block text-sm font-medium text-gray-700">
+            Status
+          </label>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border rounded px-3 py-2 text-sm w-full"
+          >
+            <option value="">Semua</option>
+            <option value="hadir">Hadir</option>
+            <option value="izin">Izin</option>
+            <option value="sakit">Sakit</option>
+            <option value="tanpa_keterangan">Tanpa Keterangan</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Dari Tanggal
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border rounded px-3 py-2 text-sm w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Sampai Tanggal
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border rounded px-3 py-2 text-sm w-full"
+            />
+          </div>
+        </div>
+      </div>
+
       {loading ? (
         <p>Memuat...</p>
       ) : (
@@ -97,7 +184,7 @@ function PresencesRecap() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recapData.map((row, index) => (
+              {currentItems.map((row, index) => (
                 <tr
                   key={index}
                   className="bg-white hover:bg-gray-50 transition-colors duration-150"
@@ -155,7 +242,7 @@ function PresencesRecap() {
                   </td>
                 </tr>
               ))}
-              {recapData.length === 0 && (
+              {currentItems.length === 0 && (
                 <tr>
                   <td
                     colSpan="6"
@@ -169,6 +256,29 @@ function PresencesRecap() {
           </table>
         </div>
       )}
+
+      {/* Kontrol Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronLeftIcon className="h-5 w-5 inline-block" />
+        </button>
+        <span className="text-sm text-gray-600">
+          Halaman {currentPage} dari {totalPages}
+        </span>
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronRightIcon className="h-5 w-5 inline-block" />
+        </button>
+      </div>
 
       {/* Modal Validasi */}
       <Transition appear show={showModal} as={Fragment}>
