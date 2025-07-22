@@ -30,9 +30,6 @@ import AdminApplicantsPage from "./pages/admin/AdminApplicants";
 import AdminMonitoringPage from "./pages/admin/AdminMonitoring";
 import AdminManagementSettingsPage from "./pages/admin/AdminManagementSettings";
 import AdminFinalReviewsPage from "./pages/admin/AdminFinalReview";
-import AdminGraduationPage from "./pages/admin/AdminGraduation";
-import AdminReportsPage from "./pages/admin/AdminReports";
-import AdminMasterDocsPage from "./pages/admin/AdminMasterDocs";
 import AdminCertSettingsPage from "./pages/admin/AdminCertSettings";
 
 // Import Halaman Dashboard Staff
@@ -141,9 +138,6 @@ function App() {
             <Route path="applicants" element={<AdminApplicantsPage />} />
             <Route path="monitoring" element={<AdminMonitoringPage />} />
             <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
-            <Route path="graduation" element={<AdminGraduationPage />} />
-            <Route path="reports" element={<AdminReportsPage />} />
-            <Route path="master-docs" element={<AdminMasterDocsPage />} />
             <Route path="cert-settings" element={<AdminCertSettingsPage />} />
           </Route>
 

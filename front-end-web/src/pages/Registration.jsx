@@ -3,17 +3,14 @@ import { useNavigate } from "react-router-dom";
 import BrandLogo from "../components/BrandLogo";
 import kantorBPS from "../assets/kantor-bps-3.jpg";
 import AlertDialog from "../components/AlertDialog";
+import { registerUser, redirectToGoogleOAuth } from "../utils/auth";
 
 function Registration() {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
-  // inisialisasikan alert
-
   const [alert, setAlert] = useState({
     isOpen: false,
     title: "",
@@ -42,8 +39,6 @@ function Registration() {
         onConfirm: closeAlert,
         showCancelButton: false,
       });
-
-      // alert('Mohon lengkapi semua bidang.');
       return;
     }
 
@@ -58,92 +53,42 @@ function Registration() {
         onConfirm: closeAlert,
         showCancelButton: false,
       });
-
-      // alert('Konfirmasi password tidak cocok.');
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:3000/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name: fullName, password }),
-      });
+      await registerUser({ email, fullName, password });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setAlert({
-          isOpen: true,
-          title: "Berhasil",
-          message: "Registrasi berhasil! Silakan login.",
-          type: "success",
-          autoCloseDelay: 1500,
-          onConfirm: () => {
-            closeAlert();
-            navigate("/login");
-          },
-          showCancelButton: false,
-        });
-        setTimeout(() => {
-          closeAlert();
-          navigate("/login");
-        }, 1500);
-        return;
-      } else {
-        // Tampilkan alert gagal
-        setAlert({
-          isOpen: true,
-          title: "Gagal",
-          message: data?.message || "Registrasi gagal.",
-          type: "error",
-          autoCloseDelay: 3000,
-          onConfirm: closeAlert,
-          showCancelButton: false,
-        });
-        // alert(data?.message || 'Registrasi gagal.');
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      // Tampilkan alert jika terjadi kesalahan
       setAlert({
         isOpen: true,
-        title: "Kesalahan",
-        message: "Terjadi kesalahan saat registrasi.",
+        title: "Berhasil",
+        message: "Registrasi berhasil! Silakan login.",
+        type: "success",
+        autoCloseDelay: 1500,
+        showCancelButton: false,
+      });
+
+      setTimeout(() => {
+        closeAlert();
+        navigate("/login");
+      }, 1500);
+    } catch (error) {
+      console.error("Registration error:", error);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: error.message || "Registrasi gagal. Silakan coba lagi.",
         type: "error",
         autoCloseDelay: 3000,
         onConfirm: closeAlert,
         showCancelButton: false,
       });
-      // alert('Terjadi kesalahan saat registrasi.');
     }
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = "http://localhost:3000/auth/google";
+    redirectToGoogleOAuth();
   };
-
-  // const handleRegister = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   try {
-  //     const res = await fetch("http://localhost:3000/auth/register", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ name: fullName, email, password }),
-  //     });
-  //     const data = await res.json();
-  //     if (res.ok) {
-  //       alert("Registrasi berhasil! Silakan login.");
-  //       navigate("/login");
-  //     } else {
-  //       setError(data.message || "Registrasi gagal");
-  //     }
-  //   } catch (err) {
-  //     setError("Terjadi kesalahan jaringan");
-  //   }
-  //   setLoading(false);
-  // };
 
   return (
     <div

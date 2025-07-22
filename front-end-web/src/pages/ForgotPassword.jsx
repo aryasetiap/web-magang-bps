@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AlertDialog from "../components/AlertDialog"; // Pastikan path ini sesuai dengan struktur proyek Anda
+import AlertDialog from "../components/AlertDialog";
 import BrandLogo from "../components/BrandLogo";
 import kantorBPSBg from "../assets/kantor-bps-3.jpg";
+import { forgotPasswordRequest } from "../utils/auth";
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -25,7 +26,6 @@ function ForgotPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi email sederhana
     if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) {
       setAlert({
         isOpen: true,
@@ -38,39 +38,22 @@ function ForgotPasswordPage() {
     }
 
     try {
-      const apiResponse = await fetch(
-        "http://localhost:3000/auth/forgot-password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
+      await forgotPasswordRequest(email);
 
-      const data = await apiResponse.json();
+      setAlert({
+        isOpen: true,
+        title: "Permintaan Terkirim!",
+        message:
+          "Jika email Anda terdaftar, tautan untuk mereset kata sandi telah dikirim ke email Anda.",
+        type: "success",
+        autoCloseDelay: 3000,
+      });
 
-      if (apiResponse.ok) {
-        setAlert({
-          isOpen: true,
-          title: "Permintaan Terkirim!",
-          message:
-            "Jika email Anda terdaftar, tautan untuk mereset kata sandi telah dikirim ke email Anda.",
-          type: "success",
-          autoCloseDelay: 3000,
-        });
-        setTimeout(() => {
-          closeAlert();
-          navigate("/verify-otp", { state: { email: email } }); // Teruskan email via state
-        }, 3000);
-        setEmail("");
-      } else {
-        // Backend mengirimkan status error (misal 404 jika email tidak ditemukan, 500 server error)
-        throw new Error(
-          data.message || "Gagal mengirim tautan reset kata sandi."
-        );
-      }
+      setTimeout(() => {
+        closeAlert();
+        navigate("/verify-otp", { state: { email } });
+      }, 3000);
+      setEmail("");
     } catch (error) {
       console.error("Forgot password error:", error);
       setAlert({

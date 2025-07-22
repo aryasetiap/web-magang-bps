@@ -4,6 +4,11 @@ import AlertDialog from "../components/AlertDialog";
 import BrandLogo from "../components/BrandLogo";
 import kantorBPS from "../assets/kantor-bps-3.jpg";
 import { jwtDecode } from "jwt-decode";
+import {
+  loginUser,
+  redirectToGoogleOAuth,
+  handlGoogleLoginRedirect,
+} from "../utils/auth";
 
 function LoginPage({ setUserRole }) {
   const [email, setEmail] = useState("");
@@ -29,34 +34,13 @@ function LoginPage({ setUserRole }) {
 
   // ✅ Menangkap token dari redirect Google OAuth
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get("token");
-    const role = params.get("role");
-
-    if (token && role) {
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("userRole", role);
-      setUserRole(role);
-
-      setAlert({
-        isOpen: true,
-        title: "Login Google Berhasil!",
-        message: `Selamat datang, ${role}! Anda akan diarahkan ke dashboard.`,
-        type: "success",
-        autoCloseDelay: 1500,
-      });
-
-      setTimeout(() => {
-        closeAlert();
-        navigate(
-          role === "admin"
-            ? "/admin"
-            : role === "staff"
-            ? "/staff/dashboard"
-            : "/dashboard"
-        );
-      }, 1500);
-    }
+    handlGoogleLoginRedirect({
+      location,
+      navigate,
+      setUserRole,
+      setAlert,
+      closeAlert,
+    });
   }, [location, navigate, setUserRole]);
 
   // ✅ Login Email/Password
@@ -65,42 +49,30 @@ function LoginPage({ setUserRole }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:3000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (res.ok && data.access_token) {
-        localStorage.setItem("authToken", data.access_token);
-        localStorage.setItem("userId", data.user.id);
-        // Ambil role dari data.user.role.name
-        const role = data.user.role?.name || "Mahasiswa";
-        localStorage.setItem("userRole", role);
-        if (setUserRole) setUserRole(role);
+      const data = await loginUser({ email, password });
 
-        // Redirect sesuai role
-        if (role === "Intern") {
-          navigate("/dashboard");
-        } else if (role === "Admin") {
-          navigate("/admin");
-        } else if (role === "Staff BPS") {
-          navigate("/staff");
-        } else {
-          navigate("/");
-        }
-      } else {
-        setError(data.message || "Login gagal");
-      }
+      localStorage.setItem("authToken", data.access_token);
+      localStorage.setItem("userId", data.user.id);
+
+      const role = data.user.role?.name || "Mahasiswa";
+      localStorage.setItem("userRole", role);
+      if (setUserRole) setUserRole(role);
+
+      // Redirect sesuai role
+      if (role === "Intern") navigate("/dashboard");
+      else if (role === "Admin") navigate("/admin");
+      else if (role === "Staff BPS") navigate("/staff");
+      else navigate("/");
     } catch (err) {
-      setError("Terjadi kesalahan jaringan");
+      setError(err.message || "Login gagal. Silakan coba lagi.");
+      console.error("Login error:", err);
     }
     setLoading(false);
   };
 
   // ✅ Handle klik tombol Google
   const handleGoogleLogin = () => {
-    window.location.href = "http://localhost:3000/auth/google";
+    redirectToGoogleOAuth();
   };
 
   return (
