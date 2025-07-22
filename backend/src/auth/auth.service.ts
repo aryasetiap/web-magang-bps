@@ -306,17 +306,45 @@ export class AuthService {
     });
 
     const subject = isReset
-      ? 'Kode OTP Reset Password'
-      : 'Kode OTP Verifikasi Email';
+      ? '🔒 Permintaan Reset Password - Kode OTP Magang BPS Kab. Pringsewu'
+      : '🔑 Verifikasi Email Anda - Kode OTP Magang BPS Kab. Pringsewu';
+
     const text = isReset
-      ? `Kode OTP reset password Anda: ${otp}`
-      : `Kode OTP Anda: ${otp}`;
+      ? `Halo!\n\nAnda meminta reset password akun Magang BPS Kab. Pringsewu.\nKode OTP Anda: ${otp}\n\nJangan bagikan kode ini kepada siapapun.\n\nSalam,\nMagang BPS Kab. Pringsewu\n\n© Arya Setia Pratama & Divany Pangestika | Universitas Lampung 2025`
+      : `Halo!\n\nTerima kasih telah mendaftar di Magang BPS Kab. Pringsewu.\nKode OTP verifikasi email Anda: ${otp}\n\nJangan bagikan kode ini kepada siapapun.\n\nSalam,\nMagang BPS Kab. Pringsewu\n\n© Arya Setia Pratama & Divany Pangestika | Universitas Lampung 2025`;
+
     const html = isReset
-      ? `<p>Kode OTP reset password Anda: <b>${otp}</b></p>`
-      : `<p>Kode OTP Anda: <b>${otp}</b></p>`;
+      ? `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;border:1px solid #eee;padding:24px;">
+          <h2 style="color:#1976d2;">Permintaan Reset Password</h2>
+          <p>Halo!</p>
+          <p>Anda meminta reset password akun <b>Magang BPS Kab. Pringsewu</b>.</p>
+          <p style="font-size:18px;">Kode OTP Anda:</p>
+          <div style="font-size:32px;font-weight:bold;letter-spacing:4px;color:#1976d2;margin:16px 0;">${otp}</div>
+          <p>Jangan bagikan kode ini kepada siapapun. Kode berlaku selama 10 menit.</p>
+          <br>
+          <p>Salam,<br>Magang BPS Kab. Pringsewu</p>
+          <hr>
+          <small style="color:#888;">&copy; Arya Setia Pratama &amp; Divany Pangestika | Universitas Lampung 2025</small>
+        </div>
+      `
+      : `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto;border:1px solid #eee;padding:24px;">
+          <h2 style="color:#1976d2;">Verifikasi Email Anda</h2>
+          <p>Halo!</p>
+          <p>Terima kasih telah mendaftar di <b>Magang BPS Kab. Pringsewu</b>.</p>
+          <p style="font-size:18px;">Kode OTP verifikasi email Anda:</p>
+          <div style="font-size:32px;font-weight:bold;letter-spacing:4px;color:#1976d2;margin:16px 0;">${otp}</div>
+          <p>Jangan bagikan kode ini kepada siapapun. Kode berlaku selama 10 menit.</p>
+          <br>
+          <p>Salam,<br>Magang BPS Kab. Pringsewu</p>
+          <hr>
+          <small style="color:#888;">&copy; Arya Setia Pratama &amp; Divany Pangestika | Universitas Lampung 2025</small>
+        </div>
+      `;
 
     await transporter.sendMail({
-      from: '"BPS Magang" <noreply@bps.go.id>',
+      from: '"Magang BPS Kab. Pringsewu" <noreply@bps.go.id>',
       to: email,
       subject,
       text,
