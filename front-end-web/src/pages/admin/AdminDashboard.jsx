@@ -1,294 +1,374 @@
-// File: AdminDashboard.jsx
 import React, { useState, useEffect } from "react";
 import {
-  ChartBarIcon,
-  DocumentChartBarIcon,
   UserGroupIcon,
-  AcademicCapIcon,
-} from "@heroicons/react/24/outline";
+  CheckCircleIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+} from "@heroicons/react/24/outline"; // Mengimpor ikon dari Heroicons
 
 function AdminDashboard() {
-  const [recapData, setRecapData] = useState({
-    allInterns: [],
-    finalReports: [],
-    tasks: [],
-    attendances: [],
-  });
+  const [internshipApplications, setInternshipApplications] = useState([]);
+  const [finalProjects, setFinalProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [attendances, setAttendances] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [stats, setStats] = useState({
-    totalRegisteredInterns: 0,
-    finalReportGraduation: {
-      totalFinalReportsSubmitted: 0,
-      finalReportsPending: 0,
-      finalReportsRevised: 0,
-      finalReportsApproved: 0,
-      totalGraduatedInterns: 0,
-    },
-    internPerformance: [],
-  });
-
-  const API_BASE_URL = "http://localhost:3000";
+  const API_BASE_URL = "http://localhost:3000"; // URL dasar API Anda
 
   useEffect(() => {
-    const fetchAllData = async () => {
+    const fetchData = async () => {
       try {
-        // local authorization token
-        const token = localStorage.getItem("authToken");
+        const token = localStorage.getItem("authToken"); // atau sessionStorage.getItem("token")
+
         const headers = {
           Authorization: `Bearer ${token}`,
         };
-        const [internAppsRes, reportsRes, tasksRes, presensiRes] =
+
+        const [applicationsRes, projectsRes, tasksRes, attendancesRes] =
           await Promise.all([
-            fetch(`${API_BASE_URL}/internship-applications`, { headers }),
-            fetch(`${API_BASE_URL}/final-reports`, { headers }),
-            fetch(`${API_BASE_URL}/tasks`, { headers }),
-            fetch(`${API_BASE_URL}/attendances`, { headers }),
+            fetch(`${API_BASE_URL}/internship-applications`, { headers }).then(
+              (res) => res.json()
+            ),
+            fetch(`${API_BASE_URL}/final-projects/all`, { headers }).then(
+              (res) => res.json()
+            ),
+            fetch(`${API_BASE_URL}/tasks`, { headers }).then((res) =>
+              res.json()
+            ),
+            fetch(`${API_BASE_URL}/attendances/all`, { headers }).then((res) =>
+              res.json()
+            ),
           ]);
 
-        const [internApps, reports, tasks, presensi] = await Promise.all([
-          internAppsRes.json(),
-          reportsRes.json(),
-          tasksRes.json(),
-          presensiRes.json(),
-        ]);
-
-        // Ambil peserta diterima dari internship-applications
-        const acceptedInterns = Array.isArray(internApps.data)
-          ? internApps.data
-              .filter((app) => app.status === "diterima" && app.applicant)
-              .map((app) => ({
-                ...app.applicant,
-                applicationId: app.id,
-                status: app.status,
-              }))
-          : [];
-
-        setRecapData({
-          allInterns: acceptedInterns,
-          finalReports: Array.isArray(reports.data) ? reports.data : [],
-          tasks: Array.isArray(tasks.data) ? tasks.data : [],
-          attendances: Array.isArray(presensi.data) ? presensi.data : [],
-        });
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
+        setInternshipApplications(
+          Array.isArray(applicationsRes.data) ? applicationsRes.data : []
+        );
+        setFinalProjects(
+          Array.isArray(projectsRes.data) ? projectsRes.data : []
+        );
+        setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
+        setAttendances(
+          Array.isArray(attendancesRes.data) ? attendancesRes.data : []
+        );
+        setLoading(false);
+      } catch (err) {
+        setError(
+          "Gagal memuat data. Pastikan token login tersedia dan server berjalan."
+        );
+        setLoading(false);
+        console.error("Error fetching data:", err);
       }
     };
 
-    fetchAllData();
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    const { allInterns, finalReports, tasks, attendances } = recapData;
-    const totalRegisteredInterns = allInterns.length;
+  // Hitung statistik
+  const totalApplicants = internshipApplications.length;
+  const acceptedApplicants = internshipApplications.filter(
+    (app) => app.status === "diterima"
+  ).length;
+  const pendingApplicants = internshipApplications.filter(
+    (app) => app.status === "pending"
+  ).length;
+  const rejectedApplicants = internshipApplications.filter(
+    (app) => app.status === "ditolak"
+  ).length;
 
-    // Pastikan finalReports adalah array
-    const reportsArr = Array.isArray(finalReports)
-      ? finalReports
-      : finalReports?.data || [];
+  const totalFinalProjects = finalProjects.length;
+  const acceptedFinalProjects = finalProjects.filter(
+    (project) => project.status === "accepted"
+  ).length;
+  const pendingFinalProjects = finalProjects.filter(
+    (project) => project.status === "pending"
+  ).length; // Asumsi status 'pending'
 
-    let finalReportsPending = 0;
-    let finalReportsRevised = 0;
-    let finalReportsApproved = 0;
+  const totalTasks = tasks.length;
 
-    reportsArr.forEach((r) => {
-      if (r.status === "not_submitted") finalReportsPending++;
-      if (r.status === "revisi") finalReportsRevised++;
-      if (r.status === "accepted") finalReportsApproved++;
-    });
+  const totalAttendances = attendances.length;
+  const presentAttendances = attendances.filter(
+    (att) => att.status === "hadir"
+  ).length;
+  const absentAttendances = attendances.filter(
+    (att) => att.status === "izin" || att.status === "alpha"
+  ).length; // Asumsi 'izin' atau 'alpha' untuk tidak hadir
 
-    const internPerformance = allInterns.map((intern) => {
-      const internAttendances = attendances.filter(
-        (a) => a.internId === intern.id
-      );
-      const internTasks = tasks.filter((t) => t.internId === intern.id);
-      const internFinalReport = reportsArr.find(
-        (r) => r.internId === intern.id
-      );
+  // Kelompokkan pendaftar berdasarkan institusi dan jenis kegiatan
+  const applicantsByInstitution = internshipApplications.reduce((acc, app) => {
+    if (app.applicant && app.applicant.asalInstitusi) {
+      const institution = app.applicant.asalInstitusi;
+      acc[institution] = (acc[institution] || 0) + 1;
+    }
+    return acc;
+  }, {});
 
-      const totalPresensiHari = new Set(internAttendances.map((a) => a.date))
-        .size;
-      const presensiPenuh = internAttendances.filter(
-        (a) => a.checkIn && a.checkOut
-      ).length;
+  const applicantsByActivityType = internshipApplications.reduce((acc, app) => {
+    if (app.applicant && app.applicant.activityType) {
+      const activityType = app.applicant.activityType;
+      acc[activityType] = (acc[activityType] || 0) + 1;
+    }
+    return acc;
+  }, {});
 
-      const totalTugasDiberikan = internTasks.length;
-      const tugasDiselesaikan = internTasks.filter(
-        (t) => t.status === "accepted"
-      ).length;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <p className="text-xl font-semibold text-gray-700">
+          Memuat data statistik...
+        </p>
+      </div>
+    );
+  }
 
-      const statusLaporanAkhir =
-        internFinalReport?.status || "Belum Mengunggah";
-      const statusKelulusan =
-        statusLaporanAkhir === "accepted" ? "Lulus" : "Belum Lulus";
-
-      return {
-        id: intern.id,
-        name: intern.name,
-        email: intern.email,
-        totalPresensiHari,
-        presensiPenuh,
-        totalTugasDiberikan,
-        tugasDiselesaikan,
-        statusLaporanAkhir,
-        statusKelulusan,
-      };
-    });
-
-    setStats({
-      totalRegisteredInterns,
-      finalReportGraduation: {
-        totalFinalReportsSubmitted: reportsArr.length,
-        finalReportsPending,
-        finalReportsRevised,
-        finalReportsApproved,
-        totalGraduatedInterns: internPerformance.filter(
-          (i) => i.statusKelulusan === "Lulus"
-        ).length,
-      },
-      internPerformance,
-    });
-  }, [recapData]);
-
-  return (
-    <div className="bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-bps-blue mb-4">
-        Selamat Datang di Dashboard Admin!
-      </h2>
-      <p className="text-gray-700 mb-6">
-        Di sini Anda dapat mengelola seluruh aspek sistem manajemen magang.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="p-5 bg-blue-50 rounded-lg border-l-4 border-blue-500 flex items-center space-x-3">
-          <UserGroupIcon className="h-8 w-8 text-blue-700" />
-          <div>
-            <h3 className="font-semibold text-lg text-blue-800">
-              Total Peserta Diterima
-            </h3>
-            <p className="text-2xl font-bold text-blue-700">
-              {stats.totalRegisteredInterns}
-            </p>
-          </div>
-        </div>
-        <div className="p-5 bg-purple-50 rounded-lg border-l-4 border-purple-500 flex items-center space-x-3">
-          <DocumentChartBarIcon className="h-8 w-8 text-purple-700" />
-          <div>
-            <h3 className="font-semibold text-lg text-purple-800">
-              Laporan Akhir Disetujui
-            </h3>
-            <p className="text-2xl font-bold text-purple-700">
-              {stats.finalReportGraduation.finalReportsApproved}
-            </p>
-          </div>
-        </div>
-        <div className="p-5 bg-green-50 rounded-lg border-l-4 border-green-500 flex items-center space-x-3">
-          <AcademicCapIcon className="h-8 w-8 text-green-700" />
-          <div>
-            <h3 className="font-semibold text-lg text-green-800">
-              Total Peserta Lulus
-            </h3>
-            <p className="text-2xl font-bold text-green-700">
-              {stats.finalReportGraduation.totalGraduatedInterns}
-            </p>
-          </div>
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-red-50 p-4">
+        <div className="text-center text-red-700 font-medium">
+          <p className="text-lg mb-2">Terjadi kesalahan:</p>
+          <p>{error}</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="mb-8 p-6 border rounded-lg bg-gray-50">
-        <h3 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
-          <ChartBarIcon className="h-7 w-7 mr-2" /> Rekap Performa Peserta
-        </h3>
+  return (
+    <div className="min-h-screen bg-white shadow-md rounded-lg p-6 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-bps-blue mb-8 text-left">
+          Dashboard Admin Sistem Magang Kabupaten Pringsewu
+        </h1>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Nama Peserta
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                  Total Presensi
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
-                  Presensi Penuh
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Tugas Diberikan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Tugas Diselesaikan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Status Laporan Akhir
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
-                  Status Kelulusan
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {stats.internPerformance.map((intern) => (
-                <tr
-                  key={intern.id}
-                  className="bg-white hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">
-                    {intern.name}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {intern.totalPresensiHari} Hari
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {intern.presensiPenuh} Hari
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {intern.totalTugasDiberikan}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {intern.tugasDiselesaikan}
-                  </td>
-                  <td className="px-6 py-4 text-sm break-words">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        intern.statusLaporanAkhir === "Disetujui"
-                          ? "bg-green-100 text-green-800"
-                          : intern.statusLaporanAkhir === "Perlu Revisi"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {intern.statusLaporanAkhir}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm break-words">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        intern.statusKelulusan === "Lulus"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {intern.statusKelulusan}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {stats.internPerformance.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-4 text-center text-gray-500"
+        {/* Statistik Gambaran Umum */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard
+            title="Total Pendaftar"
+            value={totalApplicants}
+            icon={<UserGroupIcon className="h-8 w-8 text-blue-500" />}
+            color="bg-blue-100"
+          />
+          <StatCard
+            title="Pendaftar Diterima"
+            value={acceptedApplicants}
+            icon={<CheckCircleIcon className="h-8 w-8 text-green-500" />}
+            color="bg-green-100"
+          />
+          <StatCard
+            title="Pendaftar Pending"
+            value={pendingApplicants}
+            icon={<ClockIcon className="h-8 w-8 text-yellow-500" />}
+            color="bg-yellow-100"
+          />
+          <StatCard
+            title="Proyek Akhir Diterima"
+            value={acceptedFinalProjects}
+            icon={<DocumentTextIcon className="h-8 w-8 text-purple-500" />}
+            color="bg-purple-100"
+          />
+        </div>
+
+        {/* Bagian Detail */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Status Aplikasi Magang */}
+          <SectionCard title="Status Pendaftar Magang">
+            <ul className="space-y-2">
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-gray-50">
+                <span className="font-medium text-gray-700">
+                  Total Pendaftar:
+                </span>
+                <span className="text-lg font-bold text-gray-900">
+                  {totalApplicants}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-green-50">
+                <span className="font-medium text-green-700">Diterima:</span>
+                <span className="text-lg font-bold text-green-700">
+                  {acceptedApplicants}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-yellow-50">
+                <span className="font-medium text-yellow-700">Pending:</span>
+                <span className="text-lg font-bold text-yellow-700">
+                  {pendingApplicants}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-red-50">
+                <span className="font-medium text-red-700">Ditolak:</span>
+                <span className="text-lg font-bold text-red-700">
+                  {rejectedApplicants}
+                </span>
+              </li>
+            </ul>
+          </SectionCard>
+
+          {/* Status Proyek Akhir */}
+          <SectionCard title="Status Proyek Akhir">
+            <ul className="space-y-2">
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-gray-50">
+                <span className="font-medium text-gray-700">
+                  Total Proyek Akhir:
+                </span>
+                <span className="text-lg font-bold text-gray-900">
+                  {totalFinalProjects}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-green-50">
+                <span className="font-medium text-green-700">Diterima:</span>
+                <span className="text-lg font-bold text-green-700">
+                  {acceptedFinalProjects}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-yellow-50">
+                <span className="font-medium text-yellow-700">
+                  Pending/Belum Dinilai:
+                </span>
+                <span className="text-lg font-bold text-yellow-700">
+                  {pendingFinalProjects}
+                </span>
+              </li>
+            </ul>
+          </SectionCard>
+
+          {/* Ikhtisar Kehadiran */}
+          <SectionCard title="Rekapitulasi Kehadiran">
+            <ul className="space-y-2">
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-gray-50">
+                <span className="font-medium text-gray-700">
+                  Total Catatan Kehadiran:
+                </span>
+                <span className="text-lg font-bold text-gray-900">
+                  {totalAttendances}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-green-50">
+                <span className="font-medium text-green-700">Hadir:</span>
+                <span className="text-lg font-bold text-green-700">
+                  {presentAttendances}
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-red-50">
+                <span className="font-medium text-red-700">
+                  Tidak Hadir (Izin/Alpha):
+                </span>
+                <span className="text-lg font-bold text-red-700">
+                  {absentAttendances}
+                </span>
+              </li>
+            </ul>
+          </SectionCard>
+
+          {/* Ikhtisar Tugas */}
+          <SectionCard title="Daftar Tugas Aktif">
+            <ul className="space-y-2">
+              <li className="flex justify-between items-center py-2 px-4 rounded-lg bg-gray-50">
+                <span className="font-medium text-gray-700">
+                  Total Tugas Aktif:
+                </span>
+                <span className="text-lg font-bold text-gray-900">
+                  {totalTasks}
+                </span>
+              </li>
+              {tasks.length > 0 ? (
+                tasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="py-2 px-4 rounded-lg bg-indigo-50 flex items-center justify-between"
                   >
-                    Belum ada data performa peserta.
-                  </td>
-                </tr>
+                    <span className="font-medium text-indigo-700">
+                      <ClipboardDocumentListIcon className="inline-block h-5 w-5 mr-2" />
+                      {task.title}
+                    </span>
+                    <span className="text-sm text-indigo-600">
+                      <CalendarDaysIcon className="inline-block h-4 w-4 mr-1" />
+                      Deadline:{" "}
+                      {new Date(task.deadline).toLocaleDateString("id-ID")}
+                    </span>
+                  </li>
+                ))
+              ) : (
+                <li className="text-gray-600 italic">Tidak ada tugas aktif.</li>
               )}
-            </tbody>
-          </table>
+            </ul>
+          </SectionCard>
+
+          {/* Pendaftar berdasarkan Institusi */}
+          <SectionCard title="Pendaftar Berdasarkan Asal Institusi">
+            {Object.keys(applicantsByInstitution).length > 0 ? (
+              <ul className="space-y-2">
+                {Object.entries(applicantsByInstitution).map(
+                  ([institution, count]) => (
+                    <li
+                      key={institution}
+                      className="flex justify-between items-center py-2 px-4 rounded-lg bg-purple-50"
+                    >
+                      <span className="font-medium text-purple-700">
+                        {institution}:
+                      </span>
+                      <span className="text-lg font-bold text-purple-700">
+                        {count}
+                      </span>
+                    </li>
+                  )
+                )}
+              </ul>
+            ) : (
+              <p className="text-gray-600 italic">Tidak ada data institusi.</p>
+            )}
+          </SectionCard>
+
+          {/* Pendaftar berdasarkan Jenis Kegiatan */}
+          <SectionCard title="Pendaftar Berdasarkan Jenis Kegiatan">
+            {Object.keys(applicantsByActivityType).length > 0 ? (
+              <ul className="space-y-2">
+                {Object.entries(applicantsByActivityType).map(
+                  ([activityType, count]) => (
+                    <li
+                      key={activityType}
+                      className="flex justify-between items-center py-2 px-4 rounded-lg bg-orange-50"
+                    >
+                      <span className="font-medium text-orange-700">
+                        {activityType}:
+                      </span>
+                      <span className="text-lg font-bold text-orange-700">
+                        {count}
+                      </span>
+                    </li>
+                  )
+                )}
+              </ul>
+            ) : (
+              <p className="text-gray-600 italic">
+                Tidak ada data jenis kegiatan.
+              </p>
+            )}
+          </SectionCard>
         </div>
       </div>
     </div>
   );
 }
+
+// Komponen Stat Card yang Dapat Digunakan Kembali
+const StatCard = ({ title, value, icon, color }) => (
+  <div className={`flex items-center p-6 rounded-xl shadow-lg ${color}`}>
+    <div className="flex-shrink-0 mr-4">{icon}</div>
+    <div>
+      <p className="text-sm font-medium text-gray-600">{title}</p>
+      <p className="text-3xl font-extrabold text-gray-900">{value}</p>
+    </div>
+  </div>
+);
+
+// Komponen Section Card yang Dapat Digunakan Kembali
+const SectionCard = ({ title, children }) => (
+  <div className="bg-white p-6 rounded-xl shadow-lg">
+    <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-3">
+      {title}
+    </h2>
+    {children}
+  </div>
+);
 
 export default AdminDashboard;
