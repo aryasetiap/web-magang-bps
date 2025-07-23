@@ -4,42 +4,157 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 const staffBpsAccounts = [
-  { nip: '197309131994031004', name: 'Eko Purnomo, SST., MM', username: 'eko.purnomo' },
+  {
+    nip: '197309131994031004',
+    name: 'Eko Purnomo, SST., MM',
+    username: 'eko.purnomo',
+  },
   { nip: '197205201994031004', name: 'Erwansyah Yusup', username: 'erwansyah' },
   { nip: '197509032006041020', name: 'Tri Budi Setiawan', username: 'tri.bs' },
   { nip: '198405212007011001', name: 'Fazani', username: 'fazani' },
-  { nip: '197008032007012004', name: 'Agistin Nafta', username: 'agustin.nafta' },
-  { nip: '198002022009011010', name: 'Saifu Rohmatullah', username: 'saifu.rohmatullah' },
-  { nip: '198810132010122005', name: 'Resty Sopiyono, SST, M.E.K.K.', username: 'sresty' },
-  { nip: '197205231995121001', name: 'Syamsul Bahri, S.Si', username: 'bahri.syamsul' },
-  { nip: '197007112003121003', name: 'Andi Stiawan, SP', username: 'andi.stiawan' },
-  { nip: '198207182005022001', name: 'Dewi Yuliana S., S.T.', username: 'dewiyuliana' },
+  {
+    nip: '197008032007012004',
+    name: 'Agistin Nafta',
+    username: 'agustin.nafta',
+  },
+  {
+    nip: '198002022009011010',
+    name: 'Saifu Rohmatullah',
+    username: 'saifu.rohmatullah',
+  },
+  {
+    nip: '198810132010122005',
+    name: 'Resty Sopiyono, SST, M.E.K.K.',
+    username: 'sresty',
+  },
+  {
+    nip: '197205231995121001',
+    name: 'Syamsul Bahri, S.Si',
+    username: 'bahri.syamsul',
+  },
+  {
+    nip: '197007112003121003',
+    name: 'Andi Stiawan, SP',
+    username: 'andi.stiawan',
+  },
+  {
+    nip: '198207182005022001',
+    name: 'Dewi Yuliana S., S.T.',
+    username: 'dewiyuliana',
+  },
   { nip: '198506202007012005', name: 'Fithriyah, SST', username: 'fitriyah' },
   { nip: '198309022009022008', name: 'Arum Pratiwi, SST', username: 'arump' },
-  { nip: '198702162009022009', name: 'Nisalasi Ikhsan Nurfathillah, SST', username: 'nisalasi' },
-  { nip: '198902082010121005', name: 'Ahmad Rifki Febrianto, SST, M.EKK', username: 'arifki' },
-  { nip: '198005262011011005', name: 'Muhamad Zaenuri, S.P.', username: 'muh.zaenuri' },
-  { nip: '198908092013112001', name: 'Dinny Pravitasari, SST, M.S.E.', username: 'dinnypravita' },
-  { nip: '198410012011011013', name: 'Surachman Budiarto, S.Si', username: 'budi.surachman' },
-  { nip: '199405092016022001', name: 'Fanisa Dwita Hanggarani, SST', username: 'fanisa' },
-  { nip: '199404202017012001', name: 'Annisa Fauziatul Mardiyah, SST', username: 'annisa.mardiyah' },
-  { nip: '199707132019122001', name: 'Sela Anisada, S.Tr.Stat.', username: 'sela.anisada' },
-  { nip: '199910302022012002', name: 'Esa Anindika Sari, S.Tr.Stat.', username: 'esa.anindika' },
-  { nip: '199911292022012002', name: 'Miftahul Husna, S.Tr.Stat.', username: 'miftahul.husna' },
-  { nip: '200006222023021004', name: 'Ahmad Rifjayansyah, S.Tr.Stat.', username: 'ahmadrifjayansyah' },
-  { nip: '199304242024211005', name: 'Riki Afrianto, A.Md.', username: 'rikiafrianto-pppk' },
-  { nip: '200002092023022003', name: 'Ayu Setianingsih, A.Md.Stat.', username: 'ayusetianingsih' },
-  { nip: '200001262023022001', name: 'Dini Alfitri Zahra, A.Md.Stat.', username: 'dinialfitrizahra' },
-  { nip: '198605302009111001', name: 'Singgih Adiwijaya, S.E., M.M.', username: 'singgih.adiwijaya' },
-  { nip: '198512212012122002', name: 'Diah Hadianing Putri, S.Si', username: 'diah.hp' },
-  { nip: '198905052011012013', name: 'Fitri Nurjanah, S.E., M.M.', username: 'fitri.nurjanah' },
-  { nip: '199902142022012004', name: 'Eklesia Valentia, A.Md.Kb.N.', username: 'eklesia.valentia' },
+  {
+    nip: '198702162009022009',
+    name: 'Nisalasi Ikhsan Nurfathillah, SST',
+    username: 'nisalasi',
+  },
+  {
+    nip: '198902082010121005',
+    name: 'Ahmad Rifki Febrianto, SST, M.EKK',
+    username: 'arifki',
+  },
+  {
+    nip: '198005262011011005',
+    name: 'Muhamad Zaenuri, S.P.',
+    username: 'muh.zaenuri',
+  },
+  {
+    nip: '198908092013112001',
+    name: 'Dinny Pravitasari, SST, M.S.E.',
+    username: 'dinnypravita',
+  },
+  {
+    nip: '198410012011011013',
+    name: 'Surachman Budiarto, S.Si',
+    username: 'budi.surachman',
+  },
+  {
+    nip: '199405092016022001',
+    name: 'Fanisa Dwita Hanggarani, SST',
+    username: 'fanisa',
+  },
+  {
+    nip: '199404202017012001',
+    name: 'Annisa Fauziatul Mardiyah, SST',
+    username: 'annisa.mardiyah',
+  },
+  {
+    nip: '199707132019122001',
+    name: 'Sela Anisada, S.Tr.Stat.',
+    username: 'sela.anisada',
+  },
+  {
+    nip: '199910302022012002',
+    name: 'Esa Anindika Sari, S.Tr.Stat.',
+    username: 'esa.anindika',
+  },
+  {
+    nip: '199911292022012002',
+    name: 'Miftahul Husna, S.Tr.Stat.',
+    username: 'miftahul.husna',
+  },
+  {
+    nip: '200006222023021004',
+    name: 'Ahmad Rifjayansyah, S.Tr.Stat.',
+    username: 'ahmadrifjayansyah',
+  },
+  {
+    nip: '199304242024211005',
+    name: 'Riki Afrianto, A.Md.',
+    username: 'rikiafrianto-pppk',
+  },
+  {
+    nip: '200002092023022003',
+    name: 'Ayu Setianingsih, A.Md.Stat.',
+    username: 'ayusetianingsih',
+  },
+  {
+    nip: '200001262023022001',
+    name: 'Dini Alfitri Zahra, A.Md.Stat.',
+    username: 'dinialfitrizahra',
+  },
+  {
+    nip: '198605302009111001',
+    name: 'Singgih Adiwijaya, S.E., M.M.',
+    username: 'singgih.adiwijaya',
+  },
+  {
+    nip: '198512212012122002',
+    name: 'Diah Hadianing Putri, S.Si',
+    username: 'diah.hp',
+  },
+  {
+    nip: '198905052011012013',
+    name: 'Fitri Nurjanah, S.E., M.M.',
+    username: 'fitri.nurjanah',
+  },
+  {
+    nip: '199902142022012004',
+    name: 'Eklesia Valentia, A.Md.Kb.N.',
+    username: 'eklesia.valentia',
+  },
 ];
 
 const adminAccounts = [
-  { id: 0, name: 'Admin', email: 'admin@webmagangbps.com', password: 'WebMagangBPSKabPringsewu2025' },
-  { id: 1, name: 'AdminArya', email: 'adminarya@webmagangbps.com', password: 'WebMagangBPSKabPringsewu2025' },
-  { id: 2, name: 'AdminDivany', email: 'admindivany@webmagangbps.com', password: 'WebMagangBPSKabPringsewu2025' },
+  {
+    id: 0,
+    name: 'Admin',
+    email: 'admin@webmagangbps.com',
+    password: 'WebMagangBPSKabPringsewu2025',
+  },
+  {
+    id: 1,
+    name: 'AdminArya',
+    email: 'adminarya@webmagangbps.com',
+    password: 'WebMagangBPSKabPringsewu2025',
+  },
+  {
+    id: 2,
+    name: 'AdminDivany',
+    email: 'admindivany@webmagangbps.com',
+    password: 'WebMagangBPSKabPringsewu2025',
+  },
 ];
 
 const interns = [
@@ -111,8 +226,11 @@ async function seedRoles(): Promise<void> {
  * @param staffRoleId ID role Staff BPS
  * @returns {Promise<void>}
  */
-async function seedStaffBpsAccounts(staffRoleId: number | undefined): Promise<void> {
-  if (typeof staffRoleId !== 'number') throw new Error('Staff roleId is undefined');
+async function seedStaffBpsAccounts(
+  staffRoleId: number | undefined,
+): Promise<void> {
+  if (typeof staffRoleId !== 'number')
+    throw new Error('Staff roleId is undefined');
   for (const staff of staffBpsAccounts) {
     const email = `${staff.username}@bps.go.id`;
     const passwordHash = await bcrypt.hash(staff.nip, 10);
@@ -128,7 +246,9 @@ async function seedStaffBpsAccounts(staffRoleId: number | undefined): Promise<vo
         isEmailVerified: true,
       },
     });
-    console.log(`Akun Staff BPS '${staff.name}' (${email}) berhasil dibuat/ditemukan.`);
+    console.log(
+      `Akun Staff BPS '${staff.name}' (${email}) berhasil dibuat/ditemukan.`,
+    );
   }
 }
 
@@ -138,8 +258,11 @@ async function seedStaffBpsAccounts(staffRoleId: number | undefined): Promise<vo
  * @param adminRoleId ID role Admin
  * @returns {Promise<void>}
  */
-async function seedAdminAccounts(adminRoleId: number | undefined): Promise<void> {
-  if (typeof adminRoleId !== 'number') throw new Error('Admin roleId is undefined');
+async function seedAdminAccounts(
+  adminRoleId: number | undefined,
+): Promise<void> {
+  if (typeof adminRoleId !== 'number')
+    throw new Error('Admin roleId is undefined');
   for (const admin of adminAccounts) {
     const passwordHash = await bcrypt.hash(admin.password, 10);
 
@@ -154,7 +277,9 @@ async function seedAdminAccounts(adminRoleId: number | undefined): Promise<void>
         isEmailVerified: true,
       },
     });
-    console.log(`Akun Admin '${admin.name}' (${admin.email}) berhasil dibuat/ditemukan.`);
+    console.log(
+      `Akun Admin '${admin.name}' (${admin.email}) berhasil dibuat/ditemukan.`,
+    );
   }
 }
 
@@ -164,8 +289,11 @@ async function seedAdminAccounts(adminRoleId: number | undefined): Promise<void>
  * @param internRoleId ID role Intern
  * @returns {Promise<void>}
  */
-async function seedInternAccounts(internRoleId: number | undefined): Promise<void> {
-  if (typeof internRoleId !== 'number') throw new Error('Intern roleId is undefined');
+async function seedInternAccounts(
+  internRoleId: number | undefined,
+): Promise<void> {
+  if (typeof internRoleId !== 'number')
+    throw new Error('Intern roleId is undefined');
   for (const intern of interns) {
     await prisma.user.upsert({
       where: { email: intern.email },
@@ -186,7 +314,9 @@ async function seedInternAccounts(internRoleId: number | undefined): Promise<voi
         activityEnd: intern.activityEnd,
       },
     });
-    console.log(`Akun Intern '${intern.name}' (${intern.email}) berhasil dibuat/ditemukan.`);
+    console.log(
+      `Akun Intern '${intern.name}' (${intern.email}) berhasil dibuat/ditemukan.`,
+    );
   }
 }
 
@@ -208,7 +338,9 @@ async function seedInternshipApplications(): Promise<void> {
         endDate: intern.activityEnd,
       },
     });
-    console.log(`Internship Application untuk '${intern.name}' berhasil dibuat/ditemukan.`);
+    console.log(
+      `Internship Application untuk '${intern.name}' berhasil dibuat/ditemukan.`,
+    );
   }
 }
 
@@ -237,8 +369,13 @@ async function seedLogbooks(): Promise<void> {
  * @param staffRoleId ID role Staff BPS
  * @returns {Promise<any[]>} Daftar tugas yang telah dibuat
  */
-async function seedTasksAndAssignments(staffRoleId: number | undefined): Promise<any[]> {
-  const staffList = await prisma.user.findMany({ where: { roleId: staffRoleId }, take: 3 });
+async function seedTasksAndAssignments(
+  staffRoleId: number | undefined,
+): Promise<any[]> {
+  const staffList = await prisma.user.findMany({
+    where: { roleId: staffRoleId },
+    take: 3,
+  });
   const tasks: any[] = [];
   for (let i = 0; i < 3; i++) {
     const task = await prisma.task.create({
@@ -352,9 +489,13 @@ async function main(): Promise<void> {
 
   await seedRoles();
 
-  const staffRole = await prisma.role.findUnique({ where: { name: 'Staff BPS' } });
+  const staffRole = await prisma.role.findUnique({
+    where: { name: 'Staff BPS' },
+  });
   const adminRole = await prisma.role.findUnique({ where: { name: 'Admin' } });
-  const internRole = await prisma.role.findUnique({ where: { name: 'Intern' } });
+  const internRole = await prisma.role.findUnique({
+    where: { name: 'Intern' },
+  });
 
   await seedStaffBpsAccounts(staffRole?.id);
   await seedAdminAccounts(adminRole?.id);
@@ -365,7 +506,10 @@ async function main(): Promise<void> {
   const tasks = await seedTasksAndAssignments(staffRole?.id);
   await seedSubmissions(tasks);
 
-  const staffList = await prisma.user.findMany({ where: { roleId: staffRole?.id }, take: 3 });
+  const staffList = await prisma.user.findMany({
+    where: { roleId: staffRole?.id },
+    take: 3,
+  });
   await seedFinalProjects(staffList);
 
   await seedCertificates(adminAccounts[0].id);
