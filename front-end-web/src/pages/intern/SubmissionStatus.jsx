@@ -85,32 +85,61 @@ function SubmissionStatusPage() {
   }, [token]);
 
   // Fungsi submit pengajuan magang
+  // Helper konversi base64 ke objek File
+  const dataURLtoFile = (dataurl, filename) => {
+    if (!dataurl) return null;
+    const arr = dataurl.split(",");
+    if (arr.length < 2) return null;
+
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
   const handleAjukan = async () => {
+    if (!token) {
+      setAlert({
+        isOpen: true,
+        title: "Token Tidak Ditemukan",
+        message: "Sesi login kamu telah habis. Silakan login kembali.",
+        type: "error",
+        autoCloseDelay: 3000,
+      });
+      return;
+    }
+
     const formData = new FormData();
-    if (localStorage.getItem("cvFileBase64"))
-      formData.append(
-        "cv",
-        dataURLtoFile(
-          localStorage.getItem("cvFileBase64"),
-          localStorage.getItem("cvFileName") || "cv.pdf"
-        )
-      );
-    if (localStorage.getItem("transkripNilaiFileBase64"))
-      formData.append(
-        "transcript",
-        dataURLtoFile(
-          localStorage.getItem("transkripNilaiFileBase64"),
-          localStorage.getItem("transkripNilaiFileName") || "transkrip.pdf"
-        )
-      );
-    if (localStorage.getItem("suratPermohonanFileBase64"))
-      formData.append(
-        "requestLetter",
-        dataURLtoFile(
-          localStorage.getItem("suratPermohonanFileBase64"),
-          localStorage.getItem("suratPermohonanFileName") || "surat.pdf"
-        )
-      );
+
+    const fileMap = [
+      { key: "cv", field: "cv", defaultName: "cv.pdf" },
+      {
+        key: "transkripNilai",
+        field: "transcript",
+        defaultName: "transkrip.pdf",
+      },
+      {
+        key: "suratPermohonan",
+        field: "requestLetter",
+        defaultName: "surat.pdf",
+      },
+    ];
+
+    fileMap.forEach(({ key, field, defaultName }) => {
+      const base64 = localStorage.getItem(`${key}FileBase64`);
+      const filename = localStorage.getItem(`${key}FileName`) || defaultName;
+
+      if (base64 && base64.startsWith("data:")) {
+        const file = dataURLtoFile(base64, filename);
+        if (file) {
+          formData.append(field, file);
+        }
+      }
+    });
 
     try {
       const res = await fetch("http://localhost:3000/internship-applications", {
@@ -120,8 +149,10 @@ function SubmissionStatusPage() {
         },
         body: formData,
       });
+
+      const data = await res.json();
+
       if (res.ok) {
-        // alert("Ajuan kamu berhasil dikirim! Menunggu verifikasi.");
         setAlert({
           isOpen: true,
           title: "Ajuan Berhasil Dikirim",
@@ -130,14 +161,13 @@ function SubmissionStatusPage() {
           autoCloseDelay: 3000,
         });
         setSubmissionStatus("pending");
-        // Bersihkan localStorage setelah berhasil
-        ["cv", "transkripNilai", "suratPermohonan"].forEach((key) => {
+
+        // Hapus file dari localStorage hanya jika berhasil
+        fileMap.forEach(({ key }) => {
           localStorage.removeItem(`${key}FileBase64`);
           localStorage.removeItem(`${key}FileName`);
         });
       } else {
-        const data = await res.json();
-        // alert(data.message || "Gagal mengajukan permohonan.");
         setAlert({
           isOpen: true,
           title: "Gagal Mengajukan Permohonan",
@@ -147,7 +177,7 @@ function SubmissionStatusPage() {
         });
       }
     } catch (error) {
-      // alert("Terjadi kesalahan saat mengirim permohonan.");
+      console.error("AJUAN ERROR:", error);
       setAlert({
         isOpen: true,
         title: "Kesalahan",
@@ -156,17 +186,6 @@ function SubmissionStatusPage() {
         autoCloseDelay: 3000,
       });
     }
-  };
-
-  // Helper konversi base64 ke File
-  const dataURLtoFile = (dataurl, filename) => {
-    const arr = dataurl.split(","),
-      mime = arr[0].match(/:(.*?);/)[1],
-      bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) u8arr[n] = bstr.charCodeAt(n);
-    return new File([u8arr], filename, { type: mime });
   };
 
   // UI
@@ -192,98 +211,103 @@ function SubmissionStatusPage() {
             </p>
             <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
               <h4 className="font-bold text-blue-800 text-lg mb-3">
-                Ringkasan Biodata:
+                Ringkasan Biodata
               </h4>
-              <ul className="list-none space-y-2 text-gray-700">
-                <li>
-                  <strong>Nama Lengkap:</strong> {biodata.namaLengkap}
-                </li>
-                <li>
-                  <strong>NIM / NIS:</strong> {biodata.nimNisn}
-                </li>
-                <li>
-                  <strong>Asal Institusi:</strong> {biodata.asalInstitusi}
-                </li>
-                <li>
-                  <strong>Jurusan/Prodi:</strong> {biodata.jurusanProdi}
-                </li>
-                <li>
-                  <strong>Nomor Telepon:</strong> {biodata.nomorTelepon}
-                </li>
-                <li>
-                  <strong>Email:</strong> {biodata.email}
-                </li>
-                <li>
-                  <strong>Alamat:</strong> {biodata.alamat}
-                </li>
-              </ul>
+              <table className="table-auto w-full text-left text-sm text-gray-700 border border-blue-100 rounded-md overflow-hidden">
+                <tbody>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Nama Lengkap</td>
+                    <td className="px-4 py-2">: {biodata.namaLengkap}</td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">NIM / NIS</td>
+                    <td className="px-4 py-2">: {biodata.nimNisn}</td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Asal Institusi</td>
+                    <td className="px-4 py-2">: {biodata.asalInstitusi}</td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Jurusan / Prodi</td>
+                    <td className="px-4 py-2">: {biodata.jurusanProdi}</td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Nomor Telepon</td>
+                    <td className="px-4 py-2">: {biodata.nomorTelepon}</td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Email</td>
+                    <td className="px-4 py-2">: {biodata.email}</td>
+                  </tr>
+                  <tr>
+                    <td className="font-semibold">Alamat</td>
+                    <td className="px-4 py-2">: {biodata.alamat}</td>
+                  </tr>
+                </tbody>
+              </table>
+
               <h4 className="font-bold text-blue-800 text-lg mt-4 mb-3">
-                Kelengkapan Berkas:
+                Kelengkapan Berkas
               </h4>
-              <ul className="list-disc list-inside space-y-1 text-gray-700">
-                <li
-                  className={filesExist.cv ? "text-green-700" : "text-red-700"}
-                >
-                  CV: {filesExist.cv ? "Sudah Diunggah" : "Belum Diunggah!"}
+              <ul className="list-none space-y-2 text-sm text-gray-700">
+                <li className="flex items-center gap-2">
+                  {filesExist.cv ? (
+                    <span className="text-green-600">✅</span>
+                  ) : (
+                    <span className="text-red-600">❌</span>
+                  )}
+                  CV: {filesExist.cv ? "Sudah Diunggah" : "Belum Diunggah"}
                 </li>
-                <li
-                  className={
-                    filesExist.transkripNilai
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }
-                >
+                <li className="flex items-center gap-2">
+                  {filesExist.transkripNilai ? (
+                    <span className="text-green-600">✅</span>
+                  ) : (
+                    <span className="text-red-600">❌</span>
+                  )}
                   Transkrip Nilai / Rapor:{" "}
                   {filesExist.transkripNilai
                     ? "Sudah Diunggah"
-                    : "Belum Diunggah!"}
+                    : "Belum Diunggah"}
                 </li>
-                <li
-                  className={
-                    filesExist.suratPermohonan
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }
-                >
+                <li className="flex items-center gap-2">
+                  {filesExist.suratPermohonan ? (
+                    <span className="text-green-600">✅</span>
+                  ) : (
+                    <span className="text-red-600">❌</span>
+                  )}
                   Surat Permohonan Magang:{" "}
                   {filesExist.suratPermohonan
                     ? "Sudah Diunggah"
-                    : "Belum Diunggah!"}
+                    : "Belum Diunggah"}
                 </li>
               </ul>
+
               <p className="mt-4 text-sm text-gray-600">
                 Jika ada data yang belum benar atau berkas yang belum lengkap,
-                silakan{" "}
-                <a
-                  href="/dashboard/biodata"
-                  className="text-bps-blue hover:underline font-semibold"
+                silakan lengkapi di halaman {/* use navigate */}
+                <span
+                  className="font-semibold text-bps-blue cursor-pointer hover:underline"
+                  onClick={() => navigate("/dashboard/biodata")}
                 >
-                  ubah di halaman Biodata
-                </a>
+                  Biodata
+                </span>
                 .
               </p>
             </div>
             <button
+              type="button"
               onClick={handleAjukan}
               className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
               disabled={
-                !(
-                  filesExist.cv &&
-                  filesExist.transkripNilai &&
-                  filesExist.suratPermohonan
-                )
+                !(filesExist.transkripNilai && filesExist.suratPermohonan)
               }
             >
               Ajukan Permohonan Magang
             </button>
-            {!(
-              filesExist.cv &&
-              filesExist.transkripNilai &&
-              filesExist.suratPermohonan
-            ) && (
+            {!(filesExist.transkripNilai && filesExist.suratPermohonan) && (
               <p className="text-red-500 text-sm mt-2">
-                Mohon lengkapi semua berkas di halaman Biodata sebelum
-                mengajukan.
+                Mohon lengkapi berkas transkrip nilai dan surat permohonan
+                magang di halaman Biodata sebelum mengajukan.
               </p>
             )}
           </div>
