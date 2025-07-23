@@ -8,6 +8,8 @@ import {
   DocumentArrowDownIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
+import DocumentPreview from "../../components/DocumentPreview";
+import AlertDialog from "../../components/AlertDialog";
 
 function AdminCertSettingsPage() {
   const [certificates, setCertificates] = useState([]);
@@ -20,7 +22,22 @@ function AdminCertSettingsPage() {
     nipKepalaBPS: "",
   });
   const [uploadingId, setUploadingId] = useState(null);
-  const [eligibleInterns, setEligibleInterns] = useState([]);
+  const [selectedSignedFiles, setSelectedSignedFiles] = useState({});
+  const [confirmUploadId, setConfirmUploadId] = useState(null);
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+  //close alert function
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // Tambahkan state search dan pagination
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,11 +145,23 @@ function AdminCertSettingsPage() {
         throw new Error(data.message || "Gagal generate sertifikat");
       }
 
-      alert("Sertifikat berhasil dibuat!");
+      setAlert({
+        isOpen: true,
+        title: "Berhasil",
+        message: "Sertifikat berhasil dibuat!",
+        type: "success",
+        autoCloseDelay: 2500,
+      });
       closeModal();
       window.location.reload();
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal upload file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     }
   };
 
@@ -152,7 +181,13 @@ function AdminCertSettingsPage() {
       link.download = `Sertifikat_${certificateId}.pdf`;
       link.click();
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal mengunduh file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     }
   };
 
@@ -188,12 +223,48 @@ function AdminCertSettingsPage() {
         )
       );
 
-      alert("Upload berhasil!");
+      setAlert({
+        isOpen: true,
+        title: "Berhasil",
+        message: "Sertifikat bertandatangan berhasil diunggah!",
+        type: "success",
+        autoCloseDelay: 2500,
+      });
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal upload file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     } finally {
       setUploadingId(null);
     }
+  };
+
+  const handleConfirmUpload = (certificateId) => {
+    setConfirmUploadId(certificateId);
+    setAlert({
+      isOpen: true,
+      title: "Konfirmasi Upload",
+      message: "Apakah yakin ingin mengunggah file ini?",
+      type: "confirm",
+      confirmButtonText: "Ya, Upload",
+      cancelButtonText: "Batal",
+      onConfirm: async () => {
+        await handleUploadSigned(
+          certificateId,
+          selectedSignedFiles[certificateId]
+        );
+        setSelectedSignedFiles((prev) => {
+          const updated = { ...prev };
+          delete updated[certificateId];
+          return updated;
+        });
+      },
+      showCancelButton: true,
+    });
   };
 
   return (
@@ -267,21 +338,46 @@ function AdminCertSettingsPage() {
               </td>
               <td className="p-3 text-center">
                 {cert.status === "generated" && (
-                  <label className="inline-flex items-center justify-center cursor-pointer text-bps-blue hover:text-blue-700">
-                    <ArrowUpTrayIcon
-                      className="h-5 w-5"
-                      title="Unggah Sertifikat Bertandatangan"
-                    />
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={() =>
+                        document.getElementById(`fileInput-${cert.id}`).click()
+                      }
+                      className="text-sm text-bps-blue font-semibold hover:text-blue-800"
+                    >
+                      Pilih File
+                    </button>
                     <input
                       type="file"
                       accept="application/pdf"
-                      onChange={(e) =>
-                        handleUploadSigned(cert.id, e.target.files[0])
-                      }
-                      disabled={uploadingId === cert.id}
+                      id={`fileInput-${cert.id}`}
                       className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setSelectedSignedFiles((prev) => ({
+                            ...prev,
+                            [cert.id]: file,
+                          }));
+                        }
+                      }}
                     />
-                  </label>
+
+                    {/* Preview Komponen */}
+                    {selectedSignedFiles[cert.id] && (
+                      <div className="flex flex-col items-center">
+                        <DocumentPreview file={selectedSignedFiles[cert.id]} />
+                        <button
+                          onClick={() => handleConfirmUpload(cert.id)}
+                          disabled={uploadingId === cert.id}
+                          title="Unggah Sertifikat Bertandatangan"
+                          className="mt-1 text-bps-blue hover:text-blue-800"
+                        >
+                          <ArrowUpTrayIcon className="h-5 w-5 inline" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {cert.status === "signed" && (
@@ -469,6 +565,18 @@ function AdminCertSettingsPage() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+        confirmButtonText={alert.confirmButtonText}
+        cancelButtonText={alert.cancelButtonText}
+      />
     </div>
   );
 }

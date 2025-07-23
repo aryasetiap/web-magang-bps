@@ -2,7 +2,12 @@ import React from "react";
 import { Tab, TabGroup, TabList, TabPanels, TabPanel } from "@headlessui/react";
 import BiodataSection from "./biodata/BiodataSection";
 import UploadDocumentsSection from "./biodata/UploadDocumentsSections";
-import { UserIcon, ArrowUpOnSquareIcon } from "@heroicons/react/24/outline";
+import SubmissionStatusPage from "./biodata/SubmissionStatus";
+import {
+  UserIcon,
+  ArrowUpOnSquareIcon,
+  DocumentCheckIcon,
+} from "@heroicons/react/24/outline";
 
 function BiodataTabsPage() {
   return (
@@ -41,6 +46,21 @@ function BiodataTabsPage() {
               Unggah Berkas
             </div>
           </Tab>
+          <Tab
+            className={({ selected }) =>
+              `w-full p-4 text-md font-medium leading-5 text-bps-blue
+      ${
+        selected
+          ? "border-b-2 border-bps-blue"
+          : "hover:bg-white/[0.12] hover:text-blue-900"
+      }`
+            }
+          >
+            <div className="flex items-center gap-2">
+              <DocumentCheckIcon className="h-6 w-6" />
+              Status Pengajuan
+            </div>
+          </Tab>
         </TabList>
 
         <TabPanels>
@@ -49,6 +69,9 @@ function BiodataTabsPage() {
           </TabPanel>
           <TabPanel>
             <UploadDocumentsSection />
+          </TabPanel>
+          <TabPanel>
+            <SubmissionStatusPage />
           </TabPanel>
         </TabPanels>
       </TabGroup>
