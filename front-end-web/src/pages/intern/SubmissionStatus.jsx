@@ -115,6 +115,13 @@ function SubmissionStatusPage() {
 
     const formData = new FormData();
 
+    if (biodata?.activityStart) {
+      formData.append("startDate", biodata.activityStart);
+    }
+    if (biodata?.activityEnd) {
+      formData.append("endDate", biodata.activityEnd);
+    }
+
     const fileMap = [
       { key: "cv", field: "cv", defaultName: "cv.pdf" },
       {
@@ -238,6 +245,28 @@ function SubmissionStatusPage() {
                   <tr className="border-b border-blue-100">
                     <td className="font-semibold">Email</td>
                     <td className="px-4 py-2">: {biodata.email}</td>
+                  </tr>
+                  {/* tambah jenis kegiatan serta tanggal mulai - selesai */}
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">Jenis Kegiatan</td>
+                    <td className="px-4 py-2">
+                      : {biodata.activityType || "Tidak Diketahui"}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-blue-100">
+                    <td className="font-semibold">
+                      Tanggal Mulai - Selesai Kegiatan
+                    </td>
+                    <td className="px-4 py-2">
+                      :{" "}
+                      {new Date(biodata.activityStart).toLocaleDateString(
+                        "id-ID"
+                      )}
+                      {" - "}
+                      {new Date(biodata.activityEnd).toLocaleDateString(
+                        "id-ID"
+                      )}
+                    </td>
                   </tr>
                   <tr>
                     <td className="font-semibold">Alamat</td>

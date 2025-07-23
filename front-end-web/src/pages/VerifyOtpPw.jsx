@@ -9,7 +9,7 @@ function VerifyOtpPw() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const navigate = useNavigate();
-  const location = useLocation(); // Untuk mengambil email atau token dari state/params
+  const location = useLocation();
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -27,9 +27,9 @@ function VerifyOtpPw() {
   // Atau bisa juga dari URL params jika backend mengirimkannya di redirect
   const emailFromLocation = location.state?.email || "";
   // Atau token reset dari URL params jika backend mengirimkannya
-  const resetTokenFromParams = new URLSearchParams(location.search).get(
-    "token"
-  );
+  // const resetTokenFromParams = new URLSearchParams(location.search).get(
+  //   "token"
+  // );
 
   const handleVerifyOtpAndResetPassword = async (e) => {
     e.preventDefault();
@@ -72,7 +72,7 @@ function VerifyOtpPw() {
       const apiResponse = await fetch(
         "http://localhost:3000/auth/verify-reset-password",
         {
-          method: "PATCH", // Atau POST, sesuai implementasi backend Anda
+          method: "POST", // Atau POST, sesuai implementasi backend Anda
           headers: {
             "Content-Type": "application/json",
           },

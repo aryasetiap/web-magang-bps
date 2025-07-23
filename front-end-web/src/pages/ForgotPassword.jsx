@@ -51,7 +51,7 @@ function ForgotPasswordPage() {
 
       setTimeout(() => {
         closeAlert();
-        navigate("/verify-otp", { state: { email } });
+        navigate("/verify-otp-pw", { state: { email } });
       }, 3000);
       setEmail("");
     } catch (error) {

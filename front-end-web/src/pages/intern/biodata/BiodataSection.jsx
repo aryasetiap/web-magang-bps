@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useProfile } from "../../../contexts/ProfileContext";
 import AlertDialog from "../../../components/AlertDialog";
+import { formatDateInputSafe } from "../../../utils/formatDateTime";
 
 function BiodataSection() {
   const { profile, fetchProfile } = useProfile();
@@ -44,8 +45,8 @@ function BiodataSection() {
         alamat: profile.alamat || "",
         educationStatus: profile.educationStatus || "",
         activityType: profile.activityType || "",
-        activityStart: profile.activityStart || "",
-        activityEnd: profile.activityEnd || "",
+        activityStart: formatDateInputSafe(profile.activityStart),
+        activityEnd: formatDateInputSafe(profile.activityEnd),
       });
     }
   }, [profile]);

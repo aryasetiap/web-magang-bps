@@ -27,3 +27,9 @@ export const formatTime = (isoString) => {
 
   return `${time} ${zone}`;
 };
+
+export const formatDateInputSafe = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+};

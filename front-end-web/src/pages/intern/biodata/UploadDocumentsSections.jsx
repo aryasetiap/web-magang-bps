@@ -140,7 +140,7 @@ function UploadDocumentsSection() {
 
       <button
         onClick={handleSave}
-        className="bg-bps-blue hover:bg-bps-light-blue text-white font-semibold px-6 py-2 rounded-lg transition-colors"
+        className="bg-bps-green hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
       >
         Simpan Berkas
       </button>

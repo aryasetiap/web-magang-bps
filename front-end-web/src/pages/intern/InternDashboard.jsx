@@ -10,11 +10,11 @@ import {
   AcademicCapIcon,
   InformationCircleIcon,
   BookOpenIcon,
-  ArrowRightCircleIcon, // Menambahkan ikon untuk tombol "Lengkapi Biodata"
+  ArrowRightCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 
-function InternDashboard({ userId = 4 }) {
+function InternDashboard() {
   const [internshipApplication, setInternshipApplication] = useState(null);
   const [attendances, setAttendances] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -30,6 +30,12 @@ function InternDashboard({ userId = 4 }) {
     const fetchData = async () => {
       const token = localStorage.getItem("authToken");
 
+      if (!token) {
+        setError("Token tidak ditemukan. Silakan login ulang.");
+        setLoading(false);
+        return;
+      }
+
       const headers = {
         Authorization: `Bearer ${token}`,
       };
@@ -39,12 +45,8 @@ function InternDashboard({ userId = 4 }) {
           const response = await fetch(url, { headers });
           if (!response.ok) {
             if (response.status === 401) {
-              // Jika 401, bersihkan token dan arahkan ke login
               localStorage.removeItem("authToken");
-              // Atau window.location.href = "/login"; jika ada halaman login
-              throw new Error(
-                "Sesi telah berakhir atau tidak terotentikasi. Silakan login kembali."
-              );
+              throw new Error("Sesi berakhir. Harap login kembali.");
             }
             throw new Error(
               `Gagal mengambil data dari ${url}: ${response.statusText}`
@@ -53,49 +55,29 @@ function InternDashboard({ userId = 4 }) {
           return response.json();
         };
 
-        // Fetch data aplikasi magang
+        // Fetch aplikasi magang user login
         const appRes = await fetchWithAuth(
           `${API_BASE_URL}/internship-applications/me`
         );
-        let userApplication = null;
-        if (Array.isArray(appRes.data)) {
-          userApplication =
-            appRes.data.find((app) => Number(app.userId) === Number(userId)) ||
-            null;
-        } else if (appRes.data && typeof appRes.data === "object") {
-          userApplication = appRes.data;
-        }
+        const userApplication = Array.isArray(appRes.data)
+          ? appRes.data[0]
+          : appRes.data;
         setInternshipApplication(userApplication);
-        console.log("Status aplikasi magang:", userApplication?.status);
 
-        // Hanya fetch data aktivitas jika status aplikasi adalah 'diterima'
-        if (userApplication && userApplication.status === "diterima") {
-          const [attendancesRes, tasksRes, finalProjectRes, logbooksRes] =
-            await Promise.all([
-              fetchWithAuth(`${API_BASE_URL}/attendances`),
-              fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`),
-              fetchWithAuth(`${API_BASE_URL}/final-projects`),
-              fetchWithAuth(`${API_BASE_URL}/logbooks`),
-            ]);
+        // Jika diterima, ambil semua data aktivitas
+        if (userApplication?.status === "diterima") {
+          const [attRes, taskRes, projRes, logRes] = await Promise.all([
+            fetchWithAuth(`${API_BASE_URL}/attendances`),
+            fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`),
+            fetchWithAuth(`${API_BASE_URL}/final-projects`),
+            fetchWithAuth(`${API_BASE_URL}/logbooks`),
+          ]);
 
-          const userAttendances = attendancesRes.data.filter(
-            (att) => att.userId === userId
-          );
-          setAttendances(userAttendances);
-
-          setTasks(tasksRes); // Asumsi tasks/my-tasks sudah memfilter by user
-
-          const userFinalProject = finalProjectRes.find(
-            (fp) => fp.userId === userId
-          );
-          setFinalProject(userFinalProject);
-
-          const userLogbooks = logbooksRes.filter(
-            (log) => log.userId === userId
-          );
-          setLogbooks(userLogbooks);
+          setAttendances(attRes.data || []);
+          setTasks(taskRes.data || taskRes || []); // tergantung respons backend
+          setFinalProject(projRes.data?.[0] || projRes[0] || null);
+          setLogbooks(logRes.data || logRes || []);
         } else {
-          // Jika aplikasi belum diterima, kosongkan data aktivitas
           setAttendances([]);
           setTasks([]);
           setFinalProject(null);
@@ -104,47 +86,41 @@ function InternDashboard({ userId = 4 }) {
 
         setLoading(false);
       } catch (err) {
-        setError(
-          err.message ||
-            "Gagal memuat data. Pastikan server berjalan di localhost:3000 dan terautentikasi."
-        );
+        console.error("Error:", err);
+        setError(err.message || "Terjadi kesalahan.");
         setLoading(false);
-        console.error("Error fetching intern data:", err);
       }
     };
 
     fetchData();
-  }, [userId]);
+  }, []);
 
   const goToBiodata = () => {
     navigate("/dashboard/biodata");
   };
 
-  // Calculate activity statistics
-  // Perhitungan ini tetap ada karena state akan dikosongkan jika aplikasi belum diterima
+  // Statistik
   const totalAttendances = attendances.length;
-  const presentCount = attendances.filter(
-    (att) => att.status === "hadir"
-  ).length;
-  const izinCount = attendances.filter((att) => att.status === "izin").length;
+  const presentCount = attendances.filter((a) => a.status === "hadir").length;
+  const izinCount = attendances.filter((a) => a.status === "izin").length;
   const alphaCount = attendances.filter(
-    (att) => att.status === "tanpa_keterangan"
+    (a) => a.status === "tanpa_keterangan"
   ).length;
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(
-    (task) => task.submission && task.submission.status === "reviewed"
+    (t) => t.submission?.status === "reviewed"
   ).length;
-  const pendingTasks = tasks.filter((task) => !task.submission).length;
+  const pendingTasks = tasks.filter((t) => !t.submission).length;
   const revisionTasks = tasks.filter(
-    (task) => task.submission && task.submission.status === "revisi"
+    (t) => t.submission?.status === "revisi"
   ).length;
 
   const totalLogbooks = logbooks.length;
   const submittedLogbooks = logbooks.filter(
-    (log) => log.status === "submitted"
+    (l) => l.status === "submitted"
   ).length;
-  const draftLogbooks = logbooks.filter((log) => log.status === "draft").length;
+  const draftLogbooks = logbooks.filter((l) => l.status === "draft").length;
 
   if (loading) {
     return (
@@ -170,9 +146,9 @@ function InternDashboard({ userId = 4 }) {
     );
   }
 
-  // Kondisi untuk menampilkan rekapitulasi aktivitas
   const showActivitySummary =
-    internshipApplication && internshipApplication.status === "diterima";
+    internshipApplication?.status &&
+    internshipApplication.status === "diterima";
 
   return (
     <div className="min-h-screen bg-white shadow-md rounded-lg p-8">
@@ -210,17 +186,25 @@ function InternDashboard({ userId = 4 }) {
                       {internshipApplication.feedback ||
                         "Selamat! Pengajuan kamu telah disetujui."}
                     </p>
-                    {internshipApplication.startDate &&
-                    internshipApplication.endDate ? (
+                    {internshipApplication.activityStart &&
+                    internshipApplication.activityEnd ? (
                       <p className="text-sm mt-1">
                         Periode Magang:{" "}
                         {new Date(
-                          internshipApplication.startDate
-                        ).toLocaleDateString("id-ID")}{" "}
-                        -{" "}
+                          internshipApplication.activityStart
+                        ).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })}{" "}
+                        –{" "}
                         {new Date(
-                          internshipApplication.endDate
-                        ).toLocaleDateString("id-ID")}
+                          internshipApplication.activityEnd
+                        ).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })}
                       </p>
                     ) : (
                       <p className="text-sm mt-1 text-yellow-700">
