@@ -4,6 +4,8 @@ import {
   EyeIcon,
   CheckCircleIcon,
   XCircleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { formatDate } from "../../utils/formatDateTime"; // Assuming you have a utility for formatting dates
 
@@ -12,6 +14,10 @@ function AdminApplicantsPage() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingApplicant, setReviewingApplicant] = useState(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const token = localStorage.getItem("authToken");
 
@@ -87,6 +93,22 @@ function AdminApplicantsPage() {
 
     fetchApplicants();
   }, [token]);
+
+  // --- Search, Filter, Pagination ---
+  const filteredApplicants = applicants.filter((app) => {
+    const matchName = app.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus =
+      statusFilter === "All" ? true : app.status === statusFilter;
+    return matchName && matchStatus;
+  });
+
+  const totalPages = Math.ceil(filteredApplicants.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentApplicants = filteredApplicants.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // --- Review Pendaftar ---
   function openReviewModal(applicant) {
@@ -169,8 +191,35 @@ function AdminApplicantsPage() {
         penerimaan.
       </p>
 
+      {/* Search & Filter */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="Cari nama pendaftar..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full md:w-64"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg p-3 w-full md:w-48"
+        >
+          <option value="All">Semua Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Accepted">Diterima</option>
+          <option value="Rejected">Ditolak</option>
+        </select>
+      </div>
+
       {/* Daftar Pendaftar */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200">
+      <div className="overflow-x-auto">
         <table className="w-full table-auto bg-white border border-gray-200 rounded-lg">
           <thead className="bg-gray-50">
             <tr>
@@ -198,7 +247,7 @@ function AdminApplicantsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {applicants.map((applicant) => (
+            {currentApplicants.map((applicant) => (
               <tr
                 key={applicant.id}
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
@@ -244,15 +293,38 @@ function AdminApplicantsPage() {
                 </td>
               </tr>
             ))}
-            {applicants.length === 0 && (
+            {currentApplicants.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                   Belum ada pendaftar baru.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
 
       {/* Modal Review Pendaftar */}

@@ -2,10 +2,10 @@ import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import {
   ArrowDownTrayIcon,
-  ArrowPathIcon,
   ArrowUpTrayIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   DocumentArrowDownIcon,
-  DocumentTextIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 
@@ -21,6 +21,12 @@ function AdminCertSettingsPage() {
   });
   const [uploadingId, setUploadingId] = useState(null);
   const [eligibleInterns, setEligibleInterns] = useState([]);
+
+  // Tambahkan state search dan pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
@@ -66,6 +72,23 @@ function AdminCertSettingsPage() {
 
     if (token) fetchData();
   }, [token]);
+
+  // --- SEARCH & PAGINATION ---
+  const filteredCertificates = certificates.filter(
+    (cert) =>
+      (cert.internName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (cert.institusi || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCertificates = filteredCertificates.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   const openGenerateModal = (cert) => {
     setSelected(cert);
@@ -178,6 +201,21 @@ function AdminCertSettingsPage() {
       <h2 className="text-3xl font-bold text-bps-blue mb-6">
         Pengaturan Sertifikat
       </h2>
+
+      {/* Search Input */}
+      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <input
+          type="text"
+          placeholder="Cari nama peserta atau institusi..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full md:w-64"
+        />
+      </div>
+
       <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
         <thead className="bg-gray-100">
           <tr>
@@ -202,7 +240,7 @@ function AdminCertSettingsPage() {
           </tr>
         </thead>
         <tbody>
-          {[...certificates, ...eligibleInterns].map((cert) => (
+          {currentCertificates.map((cert) => (
             <tr key={cert.id} className="border-t">
               <td className="p-3 text-sm font-medium text-center">
                 {cert.internName}
@@ -295,8 +333,38 @@ function AdminCertSettingsPage() {
               </td>
             </tr>
           ))}
+          {currentCertificates.length === 0 && (
+            <tr>
+              <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                Tidak ada sertifikat yang ditemukan.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+
+      {/* Kontrol Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronLeftIcon className="h-5 w-5 inline-block" />
+        </button>
+        <span className="text-sm text-gray-600">
+          Halaman {currentPage} dari {totalPages}
+        </span>
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronRightIcon className="h-5 w-5 inline-block" />
+        </button>
+      </div>
 
       {/* Modal Generate */}
       <Transition appear show={showModal} as={Fragment}>

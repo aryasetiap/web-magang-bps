@@ -1,6 +1,10 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EyeIcon,
+} from "@heroicons/react/24/outline";
 
 function AdminFinalReviewsPage() {
   const [finalReports, setFinalReports] = useState([]);
@@ -9,6 +13,10 @@ function AdminFinalReviewsPage() {
   const [reviewStatus, setReviewStatus] = useState("");
   const [reviewGrade, setReviewGrade] = useState("");
   const [reviewNotes, setReviewNotes] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const token = localStorage.getItem("authToken");
 
   // Fetch laporan akhir peserta
@@ -28,6 +36,24 @@ function AdminFinalReviewsPage() {
     };
     if (token) fetchFinalReports();
   }, [token]);
+
+  // --- Search, Filter, Pagination ---
+  const filteredFinalReports = finalReports.filter((app) => {
+    const matchesSearchTerm =
+      app.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatusFilter =
+      statusFilter === "All" || app.status === statusFilter;
+    return matchesSearchTerm && matchesStatusFilter;
+  });
+
+  const totalPages = Math.ceil(filteredFinalReports.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFinalReports = filteredFinalReports.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Modal logic
   function openReviewModal(report) {
@@ -108,6 +134,34 @@ function AdminFinalReviewsPage() {
         peserta.
       </p>
 
+      {/* Pencarian dan Filter */}
+      {/* Search & Filter */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="Cari nama pendaftar..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full md:w-64"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full md:w-48"
+        >
+          <option value="All">Semua Status</option>
+          <option value="submitted">Belum Diperiksa</option>
+          <option value="accepted">Disetujui</option>
+          <option value="revisi">Perlu Revisi</option>
+        </select>
+      </div>
+
       {/* Daftar Laporan Akhir */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
@@ -131,7 +185,7 @@ function AdminFinalReviewsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {finalReports.map((report) => (
+            {currentFinalReports.map((report) => (
               <tr
                 key={report.id}
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
@@ -176,7 +230,7 @@ function AdminFinalReviewsPage() {
                 </td>
               </tr>
             ))}
-            {finalReports.length === 0 && (
+            {currentFinalReports.length === 0 && (
               <tr>
                 <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
                   Belum ada laporan akhir untuk diperiksa.
@@ -185,6 +239,29 @@ function AdminFinalReviewsPage() {
             )}
           </tbody>
         </table>
+
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
 
       {/* Modal Review Laporan Akhir */}

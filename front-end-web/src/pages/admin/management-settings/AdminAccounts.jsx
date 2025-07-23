@@ -4,6 +4,8 @@ import {
   PlusIcon,
   TrashIcon,
   PencilSquareIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import AlertDialog from "../../../components/AlertDialog";
 
@@ -18,7 +20,10 @@ function AdminAccountsPage() {
   const [formRoleName, setFormRoleName] = useState("Staff BPS");
   const [formPassword, setFormPassword] = useState("");
   const [formConfirmPassword, setFormConfirmPassword] = useState("");
-
+  // buat state untuk pagination dan search
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 10;
   const [alert, setAlert] = useState({
     isOpen: false,
     title: "",
@@ -86,6 +91,21 @@ function AdminAccountsPage() {
   useEffect(() => {
     fetchAccounts();
   }, [token]);
+
+  // Filter dan Pagination
+  const filteredAccounts = accounts.filter((account) =>
+    account.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Ambil data sesuai halaman
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAccounts = filteredAccounts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
+  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
 
   function openCreateModal() {
     setEditingAccount(null);
@@ -278,15 +298,33 @@ function AdminAccountsPage() {
       <p className="text-gray-700 mb-6">
         Kelola akun pengguna untuk Staff BPS dan Koordinator Magang.
       </p>
-      {/* Tombol Buat Akun Baru */}
-      <div className="mb-6 text-right">
-        <button
-          onClick={openCreateModal}
-          className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center ml-auto"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" /> Buat Akun Baru
-        </button>
+
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        {/* Input Pencarian */}
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Cari nama akun..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset ke halaman 1 saat search
+            }}
+            className="border rounded-lg px-3 py-2 w-full md:w-64"
+          />
+        </div>
+        {/* Tombol Buat Akun */}
+        {/* Tombol Buat Akun Baru */}
+        <div className="text-right">
+          <button
+            onClick={openCreateModal}
+            className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center ml-auto"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" /> Buat Akun Baru
+          </button>
+        </div>
       </div>
+
       {/* Daftar Akun */}
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg">
@@ -307,7 +345,7 @@ function AdminAccountsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {accounts.map((account) => (
+            {currentAccounts.map((account) => (
               <tr
                 key={account.id}
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
@@ -350,7 +388,30 @@ function AdminAccountsPage() {
             )}
           </tbody>
         </table>
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
+
       {/* Modal Buat/Edit Akun */}
       <Transition appear show={isModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={closeModal}>
