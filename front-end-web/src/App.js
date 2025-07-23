@@ -17,7 +17,7 @@ import ProtectedRouteInternAccepted from "./components/protected/ProtectedRouteI
 
 // Import Halaman Dashboard Intern
 import InternDashboard from "./pages/intern/InternDashboard";
-import BiodataPage from "./pages/intern/Biodata";
+import BiodataTabsPage from "./pages/intern/BiodataTabs";
 import SubmissionStatusPage from "./pages/intern/SubmissionStatus";
 import ActivitiesPage from "./pages/intern/Activities";
 import InternReportPage from "./pages/intern/InternReports";
@@ -95,7 +95,7 @@ function App() {
           >
             <Route index element={<InternDashboard />} />{" "}
             {/* Halaman default /dashboard */}
-            <Route path="biodata" element={<BiodataPage />} />
+            <Route path="biodata" element={<BiodataTabsPage />} />
             <Route path="submissions" element={<SubmissionStatusPage />} />
             <Route
               path="activities"

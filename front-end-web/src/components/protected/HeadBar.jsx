@@ -180,7 +180,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     setAlert({
       isOpen: true,
       title: "Konfirmasi Logout",
-      message: "Apakah Anda yakin ingin logout dari sistem?",
+      message: "Apakah yakin ingin logout dari sistem?",
       type: "confirm",
       confirmButtonText: "Ya, Logout",
       cancelButtonText: "Tidak",
@@ -194,16 +194,17 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     setAlert({
       isOpen: true,
       title: "Logout Berhasil",
-      message: "Anda telah berhasil logout.",
+      message: "Anda telalh berhasil logout.",
       type: "success",
-      autoCloseDelay: 1500,
+      autoCloseDelay: 500,
+      showCancelButton: false,
     });
     localStorage.removeItem("userRole");
     localStorage.removeItem("authToken");
     setTimeout(() => {
       closeAlert();
       navigate("/login");
-    }, 1500);
+    }, 500);
   };
 
   const getRoleRootPath = (role) => {
