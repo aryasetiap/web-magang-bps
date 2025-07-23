@@ -1,11 +1,11 @@
 // Fungsi fetch registrasi pengguna baru
-export async function registerUser({ email, fullName, password }) {
+export async function registerUser({ email, name, password }) {
   const res = await fetch("http://localhost:3000/auth/register", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, name: fullName, password }),
+    body: JSON.stringify({ email, name, password }),
   });
 
   const result = await res.json();

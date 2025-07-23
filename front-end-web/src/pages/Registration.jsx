@@ -7,7 +7,7 @@ import { registerUser, redirectToGoogleOAuth } from "../utils/auth";
 
 function Registration() {
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ function Registration() {
   const handleEmailRegistration = async (e) => {
     e.preventDefault();
 
-    if (!email || !fullName || !password || !confirmPassword) {
+    if (!email || !name || !password || !confirmPassword) {
       // Tampilkan alert jika ada bidang yang kosong
       setAlert({
         isOpen: true,
@@ -57,7 +57,7 @@ function Registration() {
     }
 
     try {
-      await registerUser({ email, fullName, password });
+      await registerUser({ email, name, password });
 
       setAlert({
         isOpen: true,
@@ -70,7 +70,7 @@ function Registration() {
 
       setTimeout(() => {
         closeAlert();
-        navigate("/login");
+        navigate("/verify-otp", { state: { email } });
       }, 1500);
     } catch (error) {
       console.error("Registration error:", error);
@@ -164,8 +164,8 @@ function Registration() {
               id="regName"
               className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-bps-blue"
               placeholder="John Doe"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
@@ -223,7 +223,7 @@ function Registration() {
         <div className="mb-6 flex justify-center">
           <button
             onClick={handleGoogleRegister}
-            className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:shadow-md"
+            className="bg-white border border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg flex items-center hover:shadow-md"
           >
             <img
               src="https://developers.google.com/identity/images/g-logo.png"

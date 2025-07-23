@@ -364,7 +364,7 @@ const StatCard = ({ title, value, icon, color }) => (
 // Komponen Section Card yang Dapat Digunakan Kembali
 const SectionCard = ({ title, children }) => (
   <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-    <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-3">
+    <h2 className="text-2xl font-semibold text-gray-800 mb-4 border-b pb-3">
       {title}
     </h2>
     {children}
