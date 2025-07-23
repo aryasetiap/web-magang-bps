@@ -1,70 +1,93 @@
-# Getting Started with Create React App
+# Dokumentasi Front-End: Manajemen Magang BPS Kabupaten Pringsewu
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Versi: 1.0.0**
 
-## Available Scripts
+**Tanggal:** 11 Juli 2025
 
-In the project directory, you can run:
+**Pengembang Utama:** Divany Pangestika
 
-### `npm start`
+## Ikhtisar Proyek
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Sistem Manajemen Magang BPS Kabupaten Pringsewu adalah aplikasi web yang dirancang untuk memfasilitasi seluruh proses magang, mulai dari pendaftaran, aktivitas harian, penugasan, hingga kelulusan dan sertifikasi. Aplikasi ini mendukung berbagai role pengguna: Mahasiswa/Siswa (Peserta Magang), Staff BPS, dan Admin.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+**Tujuan:** Mengotomatisasi dan menyederhanakan alur kerja magang di BPS Kabupaten Pringsewu.
 
-### `npm test`
+**Target Pengguna:** Mahasiswa/Siswa (Peserta Magang), Staff BPS, Admin BPS.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Teknologi yang Digunakan
 
-### `npm run build`
+**Framework/Library Utama:** `React.js (v18.x)`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Styling:** `Tailwind CSS (v3.x)` & `Headless UI` (untuk komponen tanpa style: Dialog, Transition, Menu, Disclosure)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Routing:** `React Router DOM (v6.x)`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **State Management:** `React Hooks (useState, useEffect)` dan `localStorage` (untuk persistensi sesi/data dummy).
 
-### `npm run eject`
+- **Icon Library:** `Heroicons (v2.x)`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- **Utils:** `jwtDecode` (untuk dekode JWT di frontend)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Struktur Proyek
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```
+src/
+├── assets/                  # Gambar, ikon, font lokal
+│   ├── kantor-bps-1.jpg
+│   ├── kantor-bps-3.jpg
+│   └── logo-sistem-magang.png
+├── components/              # Komponen UI yang dapat digunakan kembali (umum & terdaftar)
+│   ├── AlertDialog.jsx      # Dialog/Modal/Alert yang generik
+│   ├── BrandLogo.jsx        # Komponen logo dan nama sistem
+|   └── landing/            # Komponen landing page
+        ├── About.jsx
+        ├── Contact.jsx
+        ├── Faq.jsx
+        ├── Footer.jsx
+        ├── Header.jsx
+        └── Hero.jsx
+│   └── protected/          # Komponen layout & sidebar untuk pengguna terdaftar
+│       ├── DashboardLayout.jsx # Layout dashboard tunggal untuk semua role
+│       ├── Sidebar.jsx         # Sidebar tunggal untuk semua role
+│       ├── HeadBar.jsx                # Header dashboard (avatar, logout, breadcrumbs)
+|       └── ProtectedRoute.jsx   # Komponen untuk melindungi rute
+├── pages/                   # Halaman-halaman utama aplikasi
+│   ├── admin/               # Halaman khusus Admin
+│   │   ├── AdminAssignmentsPage.jsx   # Manajemen Penugasan Admin
+│   │   ├── AdminCertSettingsPage.jsx  # Pengaturan Sertifikat Admin
+│   │   ├── AdminDashboard.jsx     # Dashboard Utama Admin (gabungan Laporan & Statistik)
+│   │   ├── AdminGraduation.jsx    # Manajemen Kelulusan Admin
+│   │   ├── AdminManagementSettings.jsx # Gabungan Manajemen Akun & Pengaturan Sistem
+│   │   ├── AdminMonitoring.jsx    # Monitoring Peserta Admin
+|   |   ├── AdminMasterDocs.jsx    # Manajemen Dokumen Master Admin
+│   │   └── AdminApplicants.jsx    # Manajemen Pendaftar Admin
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+│   ├── intern/              # Halaman khusus Intern
+        ├── activities
+            ├── AssignmentSection.jsx # Section Assignment
+            ├── LogbookSection # Bagian Logbook
+            └── PresenceSection # Bagian Prensensi
+│   │   ├── Activities.jsx          # Gabungan Aktivitas Harian Intern (Presensi, Penugasan, Logbook)
+│   │   ├── Biodata.jsx            # Biodata Diri Intern
+│   │   ├── InternDashboard.jsx        # Dashboard Utama Intern
+│   │   ├── InternReports.jsx       # Laporan Akhir Intern
+│   │   ├── Certificate.jsx         # Sertifikat Kelulusan Intern
+│   │   └── SubmissionStatus.jsx        # Status Ajuan Magang Intern
+│   ├── staff/               # Halaman khusus Staff
+│   │   └── StaffAssignmentsPage.jsx   # Manajemen Penugasan
+|   |   ├── StaffDashboard.jsx     # Dashboard Utama Staff
+|   |   └── StaffMonitoring.jsx    # Monitoring Peserta oleh Staff.jsx
+|   └── error/              # Halaman khusus Error
+│   |   ├── NotFoundPage.jsx     # Halaman Error 404
+|   │   ├── ServerErrorPage.jsx  # Halaman Error 500
+|   │   └── ForbiddenPage.jsx    # Halaman Error 403
+│   ├── LoginPage.jsx        # Halaman Login
+│   ├── Registration.jsx     # Halaman Registrasi
+│   ├── ForgotPasswordPage.jsx # Halaman Lupa Password
+│   └── Home.jsx     # Halaman Gabungan Landing Page
+├── App.js                   # Komponen utama dan konfigurasi routing
+├── index.js                 # Entry point aplikasi React
+├── index.css                # Import Tailwind CSS
+├── tailwind.config.js       # Konfigurasi Tailwind CSS
+└── .env                     # Variabel lingkungan (misal: REACT_APP_GOOGLE_CLIENT_ID)
+```
