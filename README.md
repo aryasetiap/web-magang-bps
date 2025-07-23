@@ -5,7 +5,7 @@
 **Developer:**
 
 - Arya Setia Pratama ([GitHub](https://github.com/aryasetiap), WA: [085669644533](https://wa.me/6285669644533))
-- Divany Pangestika ([GitHub](https://github.com/dyvaniest), WA: [+62 895-3667-40169](https://wa.me/62895366740169))  
+- Divany Pangestika ([GitHub](https://github.com/dyvaniest), WA: [0895366740169](https://wa.me/62895366740169))  
   **Institusi:** Teknik Informatika, Universitas Lampung  
   **Kolaborasi:** BPS Kabupaten Pringsewu
 
