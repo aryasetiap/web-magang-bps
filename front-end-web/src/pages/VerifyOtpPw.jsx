@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import AlertDialog from "../components/AlertDialog";
 import BrandLogo from "../components/BrandLogo";
 import kantorBPSBg from "../assets/kantor-bps-3.jpg";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 function VerifyOtpPw() {
   const [otp, setOtp] = useState("");
@@ -131,26 +132,14 @@ function VerifyOtpPw() {
       {/* Konten formulir verifikasi OTP dan reset password */}
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md relative z-20">
         {/* Tombol Kembali */}
-        <a
-          href="/login" // Kembali ke halaman login
+        {/* Tombol Kembali */}
+        <button
+          onClick={() => navigate(-1)}
           className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200"
-          aria-label="Kembali ke Login"
+          title="Kembali"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-7 w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M11 17l-5-5m0 0l5-5m-5 5h12"
-            />
-          </svg>
-        </a>
+          <ArrowLeftIcon className="h-7 w-7" />
+        </button>
 
         <div className="text-center mb-8 mt-4">
           <div className="container mx-auto flex justify-center text-left">

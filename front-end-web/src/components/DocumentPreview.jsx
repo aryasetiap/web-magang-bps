@@ -44,8 +44,10 @@ function DocumentPreview({ file }) {
             <iframe
               src={previewURL}
               title="Preview PDF"
-              className="w-full h-full rounded-b"
-            />
+              className="rounded-b"
+              allow="fullscreen"
+              style={{ border: "none", width: "100%", height: "100%" }}
+            ></iframe>
           </div>
         </div>
       )}

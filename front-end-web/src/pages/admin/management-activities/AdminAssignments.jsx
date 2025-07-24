@@ -779,31 +779,39 @@ function AdminAssignmentsPage() {
                       >
                         Ditugaskan Kepada:
                       </label>
-                      <select
-                        id="assignedTo"
-                        multiple
-                        value={formAssignedTo}
-                        onChange={(e) =>
-                          setFormAssignedTo(
-                            Array.from(e.target.selectedOptions, (option) =>
-                              Number(option.value)
-                            )
-                          )
-                        }
-                        className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue h-32"
-                        required
+
+                      <div
+                        className="border rounded-lg p-3 bg-white space-y-2 overflow-y-auto"
+                        style={{ maxHeight: "180px" }}
                       >
                         {interns.map((intern) => (
-                          <option key={intern.id} value={intern.id}>
-                            {intern.namaLengkap || intern.name}
-                          </option>
+                          <label
+                            key={intern.id}
+                            className="flex items-center space-x-2 text-gray-700 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              value={intern.id}
+                              checked={formAssignedTo.includes(intern.id)}
+                              onChange={(e) => {
+                                const selectedId = Number(e.target.value);
+                                setFormAssignedTo((prev) =>
+                                  e.target.checked
+                                    ? [...prev, selectedId]
+                                    : prev.filter((id) => id !== selectedId)
+                                );
+                              }}
+                            />
+                            <span>{intern.namaLengkap || intern.name}</span>
+                          </label>
                         ))}
-                      </select>
+                      </div>
+
                       <p className="text-xs text-gray-500 mt-1">
-                        Pilih satu atau beberapa peserta magang (gunakan
-                        Ctrl/Cmd + klik untuk multiple select).
+                        Centang satu atau beberapa peserta magang.
                       </p>
                     </div>
+
                     <div className="mb-6">
                       <label
                         htmlFor="deadline"
