@@ -407,17 +407,13 @@ export class AttendancesService {
       orderBy: [{ user: { name: 'asc' } }, { clockIn: 'asc' }],
     });
 
-    // PERUBAHAN DIMULAI DI SINI: Path ke gambar header
-    // Path ini disesuaikan untuk bekerja dari direktori 'dist' setelah kompilasi.
-    // Pastikan struktur folder Anda: src/assets/header_report/header_report.png
     const headerImagePath = path.resolve(
-      process.cwd(), // Menggunakan root project sebagai basis
+      process.cwd(),
       'src/assets/header_report/header_report.png',
     );
     const headerImageBase64 = fs.existsSync(headerImagePath)
       ? fs.readFileSync(headerImagePath).toString('base64')
       : null;
-    // PERUBAHAN SELESAI DI SINI
 
     const tableBody = [
       [
@@ -450,7 +446,7 @@ export class AttendancesService {
       { text: `Institusi: ${filter.institution || 'Semua'}` },
       {
         text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
-        margin: [0, 0, 0, 20], // Menambah margin bawah
+        margin: [0, 0, 0, 20],
       },
       {
         table: {
@@ -463,21 +459,25 @@ export class AttendancesService {
     ];
 
     const docDefinition: TDocumentDefinitions = {
-      // PERUBAHAN DIMULAI DI SINI: Menambahkan header yang berulang
+      // PERUBAHAN DIMULAI DI SINI
       header: (currentPage, pageCount, pageSize) => {
         if (headerImageBase64) {
           return {
             image: `data:image/png;base64,${headerImageBase64}`,
-            width: pageSize.width - 80, // Lebar gambar menyesuaikan lebar halaman dikurangi margin
+            // Menggunakan 'fit' untuk memastikan gambar pas tanpa distorsi,
+            // dan lebih kecil dari lebar halaman agar 'alignment' berfungsi.
+            fit: [pageSize.width - 80, 80], // [lebar_maks, tinggi_maks]
             alignment: 'center',
-            margin: [40, 20, 40, 10], // Margin: [kiri, atas, kanan, bawah]
+            // Margin hanya untuk spasi vertikal.
+            // Margin horizontal tidak diperlukan karena sudah ada 'alignment: center'.
+            margin: [0, 20, 0, 10],
           };
         }
         return null;
       },
       // PERUBAHAN SELESAI DI SINI
       content: content,
-      pageMargins: [40, 120, 40, 60], // Menambah margin atas untuk memberi ruang bagi header: [kiri, atas, kanan, bawah]
+      pageMargins: [40, 120, 40, 60],
       styles: {
         header: {
           fontSize: 16,
@@ -526,7 +526,6 @@ export class AttendancesService {
     });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    // PERUBAHAN DIMULAI DI SINI: Path ke gambar header
     const headerImagePath = path.resolve(
       process.cwd(),
       'src/assets/header_report/header_report.png',
@@ -534,7 +533,6 @@ export class AttendancesService {
     const headerImageBase64 = fs.existsSync(headerImagePath)
       ? fs.readFileSync(headerImagePath).toString('base64')
       : null;
-    // PERUBAHAN SELESAI DI SINI
 
     const tableBody = [
       ['No', 'Tanggal', 'Status', 'Clock In', 'Clock Out', 'Keterangan'],
@@ -560,7 +558,7 @@ export class AttendancesService {
       },
       {
         text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
-        margin: [0, 0, 0, 20], // Menambah margin bawah
+        margin: [0, 0, 0, 20],
         alignment: 'center',
       },
       {
@@ -574,21 +572,25 @@ export class AttendancesService {
     ];
 
     const docDefinition: TDocumentDefinitions = {
-      // PERUBAHAN DIMULAI DI SINI: Menambahkan header yang berulang
+      // PERUBAHAN DIMULAI DI SINI
       header: (currentPage, pageCount, pageSize) => {
         if (headerImageBase64) {
           return {
             image: `data:image/png;base64,${headerImageBase64}`,
-            width: pageSize.width - 80,
-            alignment: "center",
-            margin: [40, 20, 40, 10],
+            // Menggunakan 'fit' untuk memastikan gambar pas tanpa distorsi,
+            // dan lebih kecil dari lebar halaman agar 'alignment' berfungsi.
+            fit: [pageSize.width - 80, 80], // [lebar_maks, tinggi_maks]
+            alignment: 'center',
+            // Margin hanya untuk spasi vertikal.
+            // Margin horizontal tidak diperlukan karena sudah ada 'alignment: center'.
+            margin: [0, 20, 0, 10],
           };
         }
         return null;
       },
       // PERUBAHAN SELESAI DI SINI
       content: content,
-      pageMargins: [40, 120, 40, 60], // Menambah margin atas untuk memberi ruang bagi header
+      pageMargins: [40, 120, 40, 60],
       styles: {
         header: {
           fontSize: 16,
