@@ -235,9 +235,9 @@ function AdminGraduationManage() {
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold
                     ${
-                      intern.isGraduated === "Lulus"
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-blue-100 text-blue-800"
+                      intern.isGraduated
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     {intern.isGraduated ? "Lulus" : "Belum Lulus"}

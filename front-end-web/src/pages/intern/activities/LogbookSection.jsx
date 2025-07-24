@@ -139,7 +139,7 @@ function LogbookSection() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/logbooks`, {
+      const res = await fetch(`${baseUrl}/logbooks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -189,20 +189,17 @@ function LogbookSection() {
     }
     setLoading(true);
     try {
-      const res = await fetch(
-        `${BASE_URL}/logbooks/${editingLogbookEntry.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            logDate: logbookDate,
-            content: currentLogbookText.trim(),
-          }),
-        }
-      );
+      const res = await fetch(`${baseUrl}/logbooks/${editingLogbookEntry.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          logDate: logbookDate,
+          content: currentLogbookText.trim(),
+        }),
+      });
       if (!res.ok) {
         const errData = await res.json();
         setErrorMessage(errData.message || "Gagal mengedit logbook");
@@ -232,7 +229,7 @@ function LogbookSection() {
     setErrorMessage("");
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/logbooks/${id}`, {
+      const res = await fetch(`${baseUrl}/logbooks/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -271,7 +268,7 @@ function LogbookSection() {
     setErrorMessage("");
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/logbooks/${id}`, {
+      const res = await fetch(`${baseUrl}/logbooks/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

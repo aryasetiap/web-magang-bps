@@ -11,6 +11,7 @@ import {
 import AlertDialog from "../../components/AlertDialog";
 
 function StaffAssignmentsPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [interns, setInterns] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
