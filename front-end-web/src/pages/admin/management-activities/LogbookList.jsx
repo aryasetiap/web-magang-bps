@@ -4,7 +4,9 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   EyeIcon,
+  PrinterIcon,
 } from "@heroicons/react/24/outline";
+import { formatTime } from "../../../utils/formatDateTime";
 
 function LogbookList() {
   const [logbooks, setLogbooks] = useState([]);
@@ -64,19 +66,36 @@ function LogbookList() {
     currentPage * itemsPerPage
   );
 
-  const formatTime = (isoString) => {
-    if (!isoString) return "-";
-    const date = new Date(isoString);
-    const time = date.toLocaleString("id-ID", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-    const offset = date.getTimezoneOffset();
-    const timeOffset = -offset / 60;
-    let zone = "WIB";
-    if (timeOffset === 8) zone = "WITA";
-    else if (timeOffset === 9) zone = "WIT";
-    return `${time} ${zone}`;
+  const handlePrintLogbook = async (userId) => {
+    if (!startDate || !endDate) {
+      alert("Harap isi tanggal awal dan akhir.");
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams({ startDate, endDate });
+
+      const res = await fetch(
+        `http://localhost:3000/logbooks/${userId}/report?${query.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Gagal mencetak PDF logbook");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `logbook-intern-${userId}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Gagal mencetak PDF: " + err.message);
+    }
   };
 
   return (
@@ -124,7 +143,16 @@ function LogbookList() {
               key={name}
               className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
             >
-              <h4 className="font-bold text-xl text-bps-blue mb-3">{name}</h4>
+              <h4 className="text-xl text-bps-blue mb-3 flex justify-between items-center">
+                <p className="font-bold">{name}</p>
+                <button
+                  onClick={() => handlePrintLogbook(grouped[name][0].user?.id)}
+                  className="h-100 font-semibold text-sm px-3 py-1 rounded bg-bps-blue text-white hover:bg-bps-dark"
+                >
+                  <PrinterIcon className="h-5 w-5 inline-block mr-2" />
+                  Cetak
+                </button>
+              </h4>
               <ul className="space-y-3">
                 {grouped[name].map((log, i) => (
                   <li
@@ -146,36 +174,33 @@ function LogbookList() {
               </ul>
             </div>
           ))}
+          <div className="flex justify-between items-center mt-4">
+            <button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+            >
+              <ChevronLeftIcon className="h-5 w-5 inline-block" />
+            </button>
+            <span className="text-sm text-gray-600">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+            >
+              <ChevronRightIcon className="h-5 w-5 inline-block" />
+            </button>
+          </div>
         </div>
       ) : (
         <p className="text-gray-600">
           Tidak ditemukan logbook dengan filter tersebut.
         </p>
       )}
-
-      {/* Pagination */}
-      {/* Kontrol Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
-        >
-          <ChevronLeftIcon className="h-5 w-5 inline-block" />
-        </button>
-        <span className="text-sm text-gray-600">
-          Halaman {currentPage} dari {totalPages}
-        </span>
-        <button
-          onClick={() =>
-            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-          }
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
-        >
-          <ChevronRightIcon className="h-5 w-5 inline-block" />
-        </button>
-      </div>
 
       {/* Modal Logbook */}
       <Transition appear show={!!modalData} as={Fragment}>

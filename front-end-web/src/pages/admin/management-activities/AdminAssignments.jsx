@@ -369,6 +369,18 @@ function AdminAssignmentsPage() {
     });
   };
 
+  function getLoggedInfoFromToken(token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.name || payload.email;
+    } catch (error) {
+      console.error("Failed to parse token", error);
+      return null;
+    }
+  }
+
+  const name = getLoggedInfoFromToken(token);
+
   // --- Review Submission ---
   // Endpoint: GET /tasks/:id/submissions (untuk mendapatkan detail submission)
   // Endpoint: PATCH /tasks/submissions/:submissionId/grade (untuk menilai)
@@ -520,19 +532,19 @@ function AdminAssignmentsPage() {
         <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                 Judul Tugas
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                 Batas Waktu
               </th>
-              {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">
-                Ditugaskan Kepada
-              </th> */}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">
                 Status Submission
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                Dibuat Oleh
+              </th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                 Aksi
               </th>
             </tr>
@@ -540,29 +552,14 @@ function AdminAssignmentsPage() {
           <tbody className="divide-y divide-gray-200">
             {paginatedAssignments.map((assignment) => (
               <Fragment key={assignment.id}>
-                <tr className="bg-white hover:bg-gray-50 transition-colors duration-150">
+                <tr className="bg-white text-center hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">
                     {assignment.title}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 break-words">
                     {assignment.deadline.split("T")[0]}
                   </td>
-                  {/* <td className="px-6 py-4 text-sm text-gray-600 break-words">
-                    {Array.isArray(assignment.assignedTo) &&
-                    assignment.assignedTo.length > 0 ? (
-                      assignment.assignedTo.map((internId) => {
-                        const intern = interns.find((i) => i.id === internId);
-                        return (
-                          <span key={internId} className="block">
-                            {intern ? intern.name : `ID:${internId}`}
-                          </span>
-                        );
-                      })
-                    ) : (
-                      <span>-</span>
-                    )}
-                  </td> */}
-                  <td className="px-6 py-4 text-sm text-gray-600 break-words">
+                  <td className="px-6 py-4 items-center justify-center text-sm text-gray-600 break-words">
                     {/* Pastikan assignment.submissions adalah array sebelum map */}
                     {Array.isArray(assignment.submissions) &&
                     assignment.submissions.length > 0 ? (
@@ -576,7 +573,7 @@ function AdminAssignmentsPage() {
                         return (
                           <div
                             key={submission.id}
-                            className="flex items-center space-x-2 mb-1 last:mb-0"
+                            className="justify-center flex items-center space-x-2 mb-1 last:mb-0"
                           >
                             <span className="font-medium">
                               {intern ? intern.name : `ID:${submission.userId}`}
@@ -619,6 +616,9 @@ function AdminAssignmentsPage() {
                     ) : (
                       <span>Belum ada submission</span>
                     )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {assignment.createdBy}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button

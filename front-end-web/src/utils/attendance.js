@@ -12,12 +12,15 @@ export const fetchPresensiData = async (token) => {
 
     return result.data.map((item) => ({
       id: item.id,
-      internName: item.user?.name || "Tanpa Nama",
+      internName: item.user?.namaLengkap || "Tanpa Nama",
       checkIn: item.clockIn,
       checkOut: item.clockOut,
       status: item.status,
+      submittedAt: item.submittedAt,
       reasonDescription: item.reasonDescription || "Tidak ada keterangan",
       proofFilePath: item.proofFilePath || null,
+      institution: item.user?.asalInstitusi || "Tidak diketahui",
+      userId: item.user?.id || null,
     }));
   } catch (err) {
     console.error("Gagal memuat presensi:", err);

@@ -5,6 +5,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   PencilSquareIcon,
+  PrinterIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
@@ -15,9 +16,12 @@ function PresencesRecap() {
   const [editModeId, setEditModeId] = useState(null);
   const [selectedAttendance, setSelectedAttendance] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
   const [filterStatus, setFilterStatus] = useState("");
+  const [institutionFilter, setInstitutionFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 5; // Jumlah item per halaman
@@ -75,12 +79,96 @@ function PresencesRecap() {
     }
   };
 
+  const handlePrintAll = async () => {
+    if (!startDate || !endDate) {
+      alert("Harap isi tanggal awal dan akhir.");
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+
+      if (institutionFilter) {
+        query.append("institution", institutionFilter);
+      }
+
+      const res = await fetch(
+        `http://localhost:3000/attendances/report?${query.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Gagal mencetak rekap PDF");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rekap-presensi-${startDate}-${endDate}.pdf`;
+      if (institutionFilter) {
+        a.download = `rekap-presensi-${startDate}-${endDate}-${institutionFilter}.pdf`;
+      }
+
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Gagal mencetak PDF: " + err.message);
+    }
+  };
+
+  const handlePrintIndividual = async (userId) => {
+    if (!startDate || !endDate) {
+      alert("Harap isi tanggal awal dan akhir.");
+      return;
+    }
+
+    try {
+      const query = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+
+      const res = await fetch(
+        `http://localhost:3000/attendances/${userId}/report?${query.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Gagal mencetak PDF");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `presensi-intern-${userId}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Gagal mencetak PDF: " + err.message);
+    }
+  };
+
   const filteredData = recapData.filter((row) => {
     const isStatusMatch = filterStatus ? row.status === filterStatus : true;
+    const isInstitutionMatch = institutionFilter
+      ? row.institution?.toLowerCase().includes(institutionFilter.toLowerCase())
+      : true;
+    const attendanceDate =
+      row.status === "hadir" ? row.checkIn : row.submittedAt;
     const isDateMatch =
-      (!startDate || new Date(row.checkIn) >= new Date(startDate)) &&
-      (!endDate || new Date(row.checkIn) <= new Date(endDate));
-    return isStatusMatch && isDateMatch;
+      (!startDate || new Date(attendanceDate) >= new Date(startDate)) &&
+      (!endDate || new Date(attendanceDate) <= new Date(endDate));
+
+    return isStatusMatch && isInstitutionMatch && isDateMatch;
   });
 
   const searchedData = filteredData.filter((row) =>
@@ -110,6 +198,18 @@ function PresencesRecap() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="border rounded px-3 py-2 text-sm w-full"
             placeholder="Masukkan nama peserta"
+          />
+        </div>
+        <div className="w-full md:w-48">
+          <label className="block text-sm font-medium text-gray-700">
+            Institusi
+          </label>
+          <input
+            type="text"
+            value={institutionFilter}
+            onChange={(e) => setInstitutionFilter(e.target.value)}
+            className="border rounded px-3 py-2 text-sm w-full"
+            placeholder="Nama institusi lengkap"
           />
         </div>
 
@@ -156,6 +256,16 @@ function PresencesRecap() {
         </div>
       </div>
 
+      <div className="flex justify-end items-center mb-4">
+        <button
+          onClick={() => handlePrintAll()}
+          className="bg-bps-blue hover:bg-bps-dark text-white px-4 py-2 rounded text-sm font-medium"
+        >
+          <PrinterIcon className="h-5 w-5 inline-block mr-2" />
+          Cetak Semua
+        </button>
+      </div>
+
       {loading ? (
         <p>Memuat...</p>
       ) : (
@@ -167,7 +277,10 @@ function PresencesRecap() {
                   Nama Peserta
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Presensi Hadir
+                  Asal Institusi
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Kehadiran
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Presensi Pulang
@@ -193,7 +306,12 @@ function PresencesRecap() {
                     {row.internName}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {formatTime(row.checkIn)}
+                    {row.institution || "Tidak diketahui"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {row.status !== "hadir"
+                      ? formatTime(row.submittedAt)
+                      : formatTime(row.checkIn)}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {formatTime(row.checkOut)}
@@ -230,15 +348,24 @@ function PresencesRecap() {
                   </td>
 
                   <td className="px-6 py-4 text-sm">
-                    {["izin", "sakit"].includes(row.status) && (
+                    <div className="flex gap-2">
+                      {["izin", "sakit"].includes(row.status) && (
+                        <button
+                          onClick={() => openValidationModal(row)}
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Validasi kehadiran"
+                        >
+                          <PencilSquareIcon className="h-5 w-5 inline-block" />
+                        </button>
+                      )}
                       <button
-                        onClick={() => openValidationModal(row)}
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Validasi kehadiran"
+                        onClick={() => handlePrintIndividual(row.userId)}
+                        className="text-bps-blue hover:text-bps-dark"
+                        title="Cetak Presensi"
                       >
-                        <PencilSquareIcon className="h-5 w-5 inline-block" />
+                        <PrinterIcon className="h-5 w-5 inline-block" />
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
