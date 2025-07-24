@@ -185,6 +185,52 @@ Authorization: Bearer <JWT_TOKEN>
 
 ---
 
+### Export Logbook Satu Intern ke PDF
+
+**GET** `/logbooks/:userId/report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+
+- **Role:** Admin saja (intern/staff tidak bisa akses)
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params:**
+  - `startDate` (string, required): Tanggal awal periode
+  - `endDate` (string, required): Tanggal akhir periode
+
+**Contoh Request di Postman:**
+
+```
+GET http://localhost:3000/logbooks/1/report?startDate=2025-07-01&endDate=2025-07-31
+Authorization: Bearer <JWT_TOKEN_ADMIN>
+```
+
+**Response:**  
+File PDF logbook intern, dengan format:
+
+- Header gambar (jika tersedia)
+- Nama intern, institusi, periode
+- Tabel:  
+  `No | Tanggal | Status | Aktivitas`
+
+**Jika tidak ada data logbook pada periode:**
+
+- PDF tetap dihasilkan, tabel hanya berisi header.
+
+**Jika user tidak ditemukan:**
+
+- **404 Not Found**
+
+**Jika token bukan admin:**
+
+- **403 Forbidden**
+
+**Contoh Response Header:**
+
+```
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="logbook-intern-<userId>.pdf"
+```
+
+---
+
 ## DTO & Validasi
 
 ### CreateLogbookDto

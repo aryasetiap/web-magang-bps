@@ -8,13 +8,15 @@ import { CreateLogbookDto } from './dto/create-logbook.dto';
 import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatusLogbook } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Service untuk mengelola entri logbook.
  */
 @Injectable()
 export class LogbooksService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Memverifikasi apakah user adalah pemilik logbook tertentu.
@@ -167,5 +169,118 @@ export class LogbooksService {
       page,
       lastPage: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Export logbook satu intern ke PDF.
+   * @param userId ID intern
+   * @param filter {startDate, endDate}
+   * @param adminName Nama admin pencetak
+   * @returns Buffer PDF
+   */
+  async exportUserLogbookReport(
+    userId: number,
+    filter: { startDate?: string; endDate?: string },
+    adminName: string,
+  ): Promise<Buffer> {
+    const where: any = { userId };
+    if (filter.startDate && filter.endDate) {
+      where.logDate = {
+        gte: new Date(filter.startDate),
+        lte: new Date(filter.endDate),
+      };
+    }
+    const logbooks = await this.prisma.logbook.findMany({
+      where,
+      orderBy: { logDate: 'asc' },
+    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    const headerImagePath = path.resolve(
+      process.cwd(),
+      'src/assets/header_report/header_report.png',
+    );
+    const headerImageBase64 = fs.existsSync(headerImagePath)
+      ? fs.readFileSync(headerImagePath).toString('base64')
+      : null;
+
+    const tableBody = [
+      ['No', 'Tanggal', 'Status', 'Aktivitas'],
+      ...logbooks.map((l, i) => [
+        i + 1,
+        l.logDate ? new Date(l.logDate).toLocaleDateString('id-ID') : '-',
+        l.status,
+        l.content,
+      ]),
+    ];
+
+    const content = [
+      {
+        text: `Rekap Logbook Intern: ${user?.name || '-'}`,
+        style: 'header',
+      },
+      { text: `Institusi: ${user?.asalInstitusi || '-'}`, alignment: 'center' },
+      {
+        text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
+        alignment: 'center',
+      },
+      {
+        text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
+        margin: [0, 0, 0, 20],
+        alignment: 'center',
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', 'auto', 'auto', '*'],
+          body: tableBody,
+        },
+        layout: 'lightHorizontalLines',
+      },
+    ];
+
+    const docDefinition = {
+      header: (currentPage, pageCount, pageSize) => {
+        if (headerImageBase64) {
+          return {
+            image: `data:image/png;base64,${headerImageBase64}`,
+            fit: [pageSize.width - 80, 80],
+            alignment: 'center',
+            margin: [0, 20, 0, 10],
+          };
+        }
+        return null;
+      },
+      content: content,
+      pageMargins: [40, 120, 40, 60],
+      styles: {
+        header: {
+          fontSize: 16,
+          bold: true,
+          margin: [0, 0, 0, 10],
+          alignment: 'center',
+        },
+      },
+      defaultStyle: { font: 'Helvetica' },
+    };
+
+    const fonts = {
+      Helvetica: {
+        normal: 'src/assets/fonts/Helvetica-Regular.ttf',
+        bold: 'src/assets/fonts/Helvetica-Bold.ttf',
+        italics: 'src/assets/fonts/Helvetica-Oblique.ttf',
+        bolditalics: 'src/assets/fonts/Helvetica-BoldOblique.ttf',
+      },
+    };
+    const PdfPrinter = require('pdfmake');
+    const printer = new PdfPrinter(fonts);
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const chunks: Buffer[] = [];
+    return new Promise<Buffer>((resolve, reject) => {
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    });
   }
 }

@@ -15,7 +15,10 @@ import { RequestLeaveDto } from './dto/request-leave.dto';
 import { Cron } from '@nestjs/schedule';
 import { Prisma, AttendanceStatus } from '@prisma/client';
 const PdfPrinter = require('pdfmake');
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+// Import tipe yang dibutuhkan dari pdfmake
+import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Service untuk mengelola presensi (attendance) user.
@@ -125,6 +128,7 @@ export class AttendancesService {
         latitude: clockInDto.latitude,
         longitude: clockInDto.longitude,
         clockIn: new Date(),
+        status: 'hadir',
       },
     });
   }
@@ -384,17 +388,14 @@ export class AttendancesService {
     filter: { startDate?: string; endDate?: string; institution?: string },
     adminName: string,
   ): Promise<Buffer> {
-    // Query data presensi + user sesuai filter
-    const where: any = {};
+    const where: Prisma.AttendanceWhereInput = {};
     if (filter.startDate && filter.endDate) {
       where.clockIn = {
         gte: new Date(filter.startDate),
         lte: new Date(filter.endDate),
       };
     }
-    if (filter.institution) {
-      where.user = undefined; // remove this line
-    }
+
     const attendances = await this.prisma.attendance.findMany({
       where: {
         ...where,
@@ -403,10 +404,17 @@ export class AttendancesService {
           : undefined,
       },
       include: { user: true },
-      orderBy: [{ userId: 'asc' }, { clockIn: 'asc' }],
+      orderBy: [{ user: { name: 'asc' } }, { clockIn: 'asc' }],
     });
 
-    // Format data untuk tabel PDF
+    const headerImagePath = path.resolve(
+      process.cwd(),
+      'src/assets/header_report/header_report.png',
+    );
+    const headerImageBase64 = fs.existsSync(headerImagePath)
+      ? fs.readFileSync(headerImagePath).toString('base64')
+      : null;
+
     const tableBody = [
       [
         'No',
@@ -417,58 +425,70 @@ export class AttendancesService {
         'Clock In',
         'Clock Out',
         'Keterangan',
-        'Validator',
       ],
       ...attendances.map((a, i) => [
         i + 1,
         a.user?.name || '-',
         a.user?.asalInstitusi || '-',
-        a.clockIn ? new Date(a.clockIn).toLocaleDateString() : '-',
+        a.clockIn ? new Date(a.clockIn).toLocaleDateString('id-ID') : '-',
         a.status,
-        a.clockIn ? new Date(a.clockIn).toLocaleTimeString() : '-',
-        a.clockOut ? new Date(a.clockOut).toLocaleTimeString() : '-',
+        a.clockIn ? new Date(a.clockIn).toLocaleTimeString('id-ID') : '-',
+        a.clockOut ? new Date(a.clockOut).toLocaleTimeString('id-ID') : '-',
         a.reasonDescription || '-',
-        a.validatedBy ? String(a.validatedBy) : '-',
       ]),
     ];
 
-    // PDF definition
+    const content: Content[] = [
+      { text: 'Rekap Presensi Semua Intern', style: 'header' },
+      {
+        text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
+      },
+      { text: `Institusi: ${filter.institution || 'Semua'}` },
+      {
+        text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
+        margin: [0, 0, 0, 20],
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', '*', '*', 'auto', 'auto', 'auto', 'auto', '*'],
+          body: tableBody,
+        },
+        layout: 'lightHorizontalLines',
+      },
+    ];
+
     const docDefinition: TDocumentDefinitions = {
-      content: [
-        { text: 'Rekap Presensi Semua Intern', style: 'header' },
-        {
-          text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
-        },
-        { text: `Institusi: ${filter.institution || 'Semua'}` },
-        {
-          text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString()}`,
-          margin: [0, 0, 0, 10],
-        },
-        {
-          table: {
-            headerRows: 1,
-            widths: [
-              'auto',
-              '*',
-              '*',
-              'auto',
-              'auto',
-              'auto',
-              'auto',
-              '*',
-              'auto',
-            ],
-            body: tableBody,
-          },
-        },
-      ],
+      // PERUBAHAN DIMULAI DI SINI
+      header: (currentPage, pageCount, pageSize) => {
+        if (headerImageBase64) {
+          return {
+            image: `data:image/png;base64,${headerImageBase64}`,
+            // Menggunakan 'fit' untuk memastikan gambar pas tanpa distorsi,
+            // dan lebih kecil dari lebar halaman agar 'alignment' berfungsi.
+            fit: [pageSize.width - 80, 80], // [lebar_maks, tinggi_maks]
+            alignment: 'center',
+            // Margin hanya untuk spasi vertikal.
+            // Margin horizontal tidak diperlukan karena sudah ada 'alignment: center'.
+            margin: [0, 20, 0, 10],
+          };
+        }
+        return null;
+      },
+      // PERUBAHAN SELESAI DI SINI
+      content: content,
+      pageMargins: [40, 120, 40, 60],
       styles: {
-        header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+        header: {
+          fontSize: 16,
+          bold: true,
+          margin: [0, 0, 0, 10],
+          alignment: 'center',
+        },
       },
       defaultStyle: { font: 'Helvetica' },
     };
 
-    // pdfmake printer
     const fonts = {
       Helvetica: {
         normal: 'src/assets/fonts/Helvetica-Regular.ttf',
@@ -493,8 +513,7 @@ export class AttendancesService {
     filter: { startDate?: string; endDate?: string },
     adminName: string,
   ): Promise<Buffer> {
-    // Query data presensi user sesuai filter
-    const where: any = { userId };
+    const where: Prisma.AttendanceWhereInput = { userId };
     if (filter.startDate && filter.endDate) {
       where.clockIn = {
         gte: new Date(filter.startDate),
@@ -507,58 +526,82 @@ export class AttendancesService {
     });
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
-    // Format data untuk tabel PDF
+    const headerImagePath = path.resolve(
+      process.cwd(),
+      'src/assets/header_report/header_report.png',
+    );
+    const headerImageBase64 = fs.existsSync(headerImagePath)
+      ? fs.readFileSync(headerImagePath).toString('base64')
+      : null;
+
     const tableBody = [
-      [
-        'No',
-        'Tanggal',
-        'Status',
-        'Clock In',
-        'Clock Out',
-        'Keterangan',
-        'Validator',
-      ],
+      ['No', 'Tanggal', 'Status', 'Clock In', 'Clock Out', 'Keterangan'],
       ...attendances.map((a, i) => [
         i + 1,
-        a.clockIn ? new Date(a.clockIn).toLocaleDateString() : '-',
+        a.clockIn ? new Date(a.clockIn).toLocaleDateString('id-ID') : '-',
         a.status,
-        a.clockIn ? new Date(a.clockIn).toLocaleTimeString() : '-',
-        a.clockOut ? new Date(a.clockOut).toLocaleTimeString() : '-',
+        a.clockIn ? new Date(a.clockIn).toLocaleTimeString('id-ID') : '-',
+        a.clockOut ? new Date(a.clockOut).toLocaleTimeString('id-ID') : '-',
         a.reasonDescription || '-',
-        a.validatedBy ? String(a.validatedBy) : '-',
       ]),
     ];
 
-    // PDF definition
+    const content: Content[] = [
+      {
+        text: `Rekap Presensi Intern: ${user?.name || '-'}`,
+        style: 'header',
+      },
+      { text: `Institusi: ${user?.asalInstitusi || '-'}`, alignment: 'center' },
+      {
+        text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
+        alignment: 'center',
+      },
+      {
+        text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
+        margin: [0, 0, 0, 20],
+        alignment: 'center',
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['auto', 'auto', 'auto', 'auto', 'auto', '*'],
+          body: tableBody,
+        },
+        layout: 'lightHorizontalLines',
+      },
+    ];
+
     const docDefinition: TDocumentDefinitions = {
-      content: [
-        {
-          text: `Rekap Presensi Intern: ${user?.name || '-'}`,
-          style: 'header',
-        },
-        { text: `Institusi: ${user?.asalInstitusi || '-'}` },
-        {
-          text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
-        },
-        {
-          text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString()}`,
-          margin: [0, 0, 0, 10],
-        },
-        {
-          table: {
-            headerRows: 1,
-            widths: ['auto', 'auto', 'auto', 'auto', 'auto', '*', 'auto'],
-            body: tableBody,
-          },
-        },
-      ],
+      // PERUBAHAN DIMULAI DI SINI
+      header: (currentPage, pageCount, pageSize) => {
+        if (headerImageBase64) {
+          return {
+            image: `data:image/png;base64,${headerImageBase64}`,
+            // Menggunakan 'fit' untuk memastikan gambar pas tanpa distorsi,
+            // dan lebih kecil dari lebar halaman agar 'alignment' berfungsi.
+            fit: [pageSize.width - 80, 80], // [lebar_maks, tinggi_maks]
+            alignment: 'center',
+            // Margin hanya untuk spasi vertikal.
+            // Margin horizontal tidak diperlukan karena sudah ada 'alignment: center'.
+            margin: [0, 20, 0, 10],
+          };
+        }
+        return null;
+      },
+      // PERUBAHAN SELESAI DI SINI
+      content: content,
+      pageMargins: [40, 120, 40, 60],
       styles: {
-        header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+        header: {
+          fontSize: 16,
+          bold: true,
+          margin: [0, 0, 0, 10],
+          alignment: 'center',
+        },
       },
       defaultStyle: { font: 'Helvetica' },
     };
 
-    // pdfmake printer
     const fonts = {
       Helvetica: {
         normal: 'src/assets/fonts/Helvetica-Regular.ttf',

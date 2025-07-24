@@ -10,6 +10,7 @@ import {
   Request,
   ParseIntPipe,
   Query,
+  Res,
 } from '@nestjs/common';
 import { LogbooksService } from './logbooks.service';
 import { CreateLogbookDto } from './dto/create-logbook.dto';
@@ -17,6 +18,7 @@ import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Response } from 'express'; // Tambahkan import ini
 
 /**
  * Controller untuk mengelola entri logbook.
@@ -25,7 +27,7 @@ import { Roles } from '../auth/roles.decorator';
 @Controller('logbooks')
 @UseGuards(AuthGuard('jwt'))
 export class LogbooksController {
-  constructor(private readonly logbooksService: LogbooksService) { }
+  constructor(private readonly logbooksService: LogbooksService) {}
 
   /**
    * Membuat entri logbook baru untuk user yang sedang login.
@@ -106,5 +108,36 @@ export class LogbooksController {
   remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
     const userId = req.user.userId;
     return this.logbooksService.remove(userId, id);
+  }
+
+  /**
+   * Export logbook satu intern ke PDF (admin only).
+   * @param userId ID intern
+   * @param startDate Tanggal awal
+   * @param endDate Tanggal akhir
+   * @param res Response object
+   * @param req Request object
+   */
+  @Get(':userId/report')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  async exportUserLogbookReport(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Request() req,
+    @Res() res: Response, // Ganti jadi @Res()
+  ) {
+    const adminName = req.user?.name || 'Admin';
+    const pdfBuffer = await this.logbooksService.exportUserLogbookReport(
+      userId,
+      { startDate, endDate },
+      adminName,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="logbook-intern-${userId}.pdf"`,
+    });
+    res.end(pdfBuffer);
   }
 }
