@@ -17,9 +17,12 @@ describe('AttendancesService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
     };
     const prismaUserMock = {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -149,5 +152,53 @@ describe('AttendancesService', () => {
       const result = await service.validateLeave(1, AttendanceStatus.sakit, 99);
       expect(result).toHaveProperty('status', AttendanceStatus.sakit);
     });
+  });
+
+  /**
+   * Test exportAllAttendancesPdf
+   */
+  it('should generate PDF buffer for all attendances', async () => {
+    (service as any).prisma.attendance.findMany.mockResolvedValueOnce([
+      {
+        user: { name: 'Budi', asalInstitusi: 'ITS' },
+        clockIn: new Date('2025-07-01T08:00:00Z'),
+        clockOut: new Date('2025-07-01T16:00:00Z'),
+        status: 'hadir',
+        reasonDescription: '',
+        validatedBy: 99,
+      },
+    ]);
+    const buffer = await service.exportAllAttendancesPdf(
+      { startDate: '2025-07-01', endDate: '2025-07-31', institution: 'ITS' },
+      'Admin',
+    );
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect(buffer.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * Test exportUserAttendancePdf
+   */
+  it('should generate PDF buffer for user attendance', async () => {
+    (service as any).prisma.attendance.findMany.mockResolvedValueOnce([
+      {
+        clockIn: new Date('2025-07-01T08:00:00Z'),
+        clockOut: new Date('2025-07-01T16:00:00Z'),
+        status: 'hadir',
+        reasonDescription: '',
+        validatedBy: 99,
+      },
+    ]);
+    (service as any).prisma.user.findUnique.mockResolvedValueOnce({
+      name: 'Budi',
+      asalInstitusi: 'ITS',
+    });
+    const buffer = await service.exportUserAttendancePdf(
+      123,
+      { startDate: '2025-07-01', endDate: '2025-07-31' },
+      'Admin',
+    );
+    expect(buffer).toBeInstanceOf(Buffer);
+    expect(buffer.length).toBeGreaterThan(0);
   });
 });

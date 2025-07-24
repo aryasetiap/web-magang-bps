@@ -12,6 +12,7 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { ClockInDto } from './dto/clock-in.dto';
@@ -31,6 +32,7 @@ import { RequestLeaveDto } from './dto/request-leave.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Response } from 'express';
 
 @ApiTags('attendances')
 @Controller('attendances')
@@ -152,6 +154,30 @@ export class AttendancesController {
    * Mendapatkan detail presensi berdasarkan ID.
    * @param id ID presensi.
    */
+
+  @Get('report')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Export rekap presensi semua intern ke PDF' })
+  async exportAllAttendancesPdf(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Query('institution') institution: string,
+    @Res() res: Response,
+    @Request() req,
+  ) {
+    const adminName = req.user?.name || 'Admin';
+    const pdfBuffer = await this.attendancesService.exportAllAttendancesPdf(
+      { startDate, endDate, institution },
+      adminName,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="rekap-presensi.pdf"`,
+    });
+    res.end(pdfBuffer);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Melihat detail presensi berdasarkan ID' })
   findOne(@Param('id') id: string) {
@@ -213,5 +239,29 @@ export class AttendancesController {
   ) {
     const adminId = req.user.userId;
     return this.attendancesService.validateLeave(+id, status, adminId);
+  }
+
+  @Get(':userId/report')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Export presensi satu intern ke PDF' })
+  async exportUserAttendancePdf(
+    @Param('userId') userId: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() res: Response,
+    @Request() req,
+  ) {
+    const adminName = req.user?.name || 'Admin';
+    const pdfBuffer = await this.attendancesService.exportUserAttendancePdf(
+      Number(userId),
+      { startDate, endDate },
+      adminName,
+    );
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="presensi-intern-${userId}.pdf"`,
+    });
+    res.end(pdfBuffer);
   }
 }

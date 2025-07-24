@@ -18,7 +18,7 @@ import * as path from 'path';
  */
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Membuat user baru.
@@ -87,10 +87,9 @@ export class UsersService {
         activityStart: true,
         activityEnd: true,
         createdAt: true,
+        isGraduated: true,
         role: {
-          select: {
-            name: true,
-          },
+          select: { name: true },
         },
       },
     });
@@ -196,8 +195,10 @@ export class UsersService {
    * @returns Daftar user beserta metadata paginasi.
    */
   async findAll(paginationQuery: PaginationQueryDto) {
-    const page = Number(paginationQuery.page) > 0 ? Number(paginationQuery.page) : 1;
-    const limit = Number(paginationQuery.limit) > 0 ? Number(paginationQuery.limit) : 10;
+    const page =
+      Number(paginationQuery.page) > 0 ? Number(paginationQuery.page) : 1;
+    const limit =
+      Number(paginationQuery.limit) > 0 ? Number(paginationQuery.limit) : 10;
     const skip = (page - 1) * limit;
 
     const [users, total] = await this.prisma.$transaction([

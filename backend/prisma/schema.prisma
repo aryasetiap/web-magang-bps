@@ -116,6 +116,8 @@ model User {
   activityEnd     DateTime?
   Certificate     Certificate?
 
+  isGraduated Boolean @default(false)
+
   isEmailVerified         Boolean   @default(false)
   emailOtp                String?
   emailOtpExpires         DateTime?
