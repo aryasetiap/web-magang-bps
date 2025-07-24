@@ -20,6 +20,8 @@ describe('AttendancesController', () => {
       findAll: jest.fn(),
       findAllForAdmin: jest.fn(),
       findOne: jest.fn(),
+      exportAllAttendancesPdf: jest.fn(),
+      exportUserAttendancePdf: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -82,5 +84,58 @@ describe('AttendancesController', () => {
     const req = { user: { userId: 99 } };
     const result = await controller.validateLeave('2', 'izin', req);
     expect(result).toHaveProperty('status', 'izin');
+  });
+
+  /**
+   * Test exportAllAttendancesPdf endpoint.
+   */
+  it('should export all attendances PDF', async () => {
+    (service.exportAllAttendancesPdf as jest.Mock).mockResolvedValueOnce(
+      Buffer.from('PDFDATA'),
+    );
+    const req = { user: { name: 'Admin' } };
+    const res = { set: jest.fn(), end: jest.fn() } as any;
+    await controller.exportAllAttendancesPdf(
+      '2025-07-01',
+      '2025-07-31',
+      'ITS',
+      res,
+      req,
+    );
+    expect(service.exportAllAttendancesPdf).toHaveBeenCalledWith(
+      { startDate: '2025-07-01', endDate: '2025-07-31', institution: 'ITS' },
+      'Admin',
+    );
+    expect(res.set).toHaveBeenCalledWith(
+      expect.objectContaining({ 'Content-Type': 'application/pdf' }),
+    );
+    expect(res.end).toHaveBeenCalledWith(Buffer.from('PDFDATA'));
+  });
+
+  /**
+   * Test exportUserAttendancePdf endpoint.
+   */
+  it('should export user attendance PDF', async () => {
+    (service.exportUserAttendancePdf as jest.Mock).mockResolvedValueOnce(
+      Buffer.from('PDFDATA'),
+    );
+    const req = { user: { name: 'Admin' } };
+    const res = { set: jest.fn(), end: jest.fn() } as any;
+    await controller.exportUserAttendancePdf(
+      '123',
+      '2025-07-01',
+      '2025-07-31',
+      res,
+      req,
+    );
+    expect(service.exportUserAttendancePdf).toHaveBeenCalledWith(
+      123,
+      { startDate: '2025-07-01', endDate: '2025-07-31' },
+      'Admin',
+    );
+    expect(res.set).toHaveBeenCalledWith(
+      expect.objectContaining({ 'Content-Type': 'application/pdf' }),
+    );
+    expect(res.end).toHaveBeenCalledWith(Buffer.from('PDFDATA'));
   });
 });

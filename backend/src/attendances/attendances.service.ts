@@ -14,6 +14,8 @@ import { ClockOutDto } from './dto/clock-out.dto';
 import { RequestLeaveDto } from './dto/request-leave.dto';
 import { Cron } from '@nestjs/schedule';
 import { Prisma, AttendanceStatus } from '@prisma/client';
+const PdfPrinter = require('pdfmake');
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 
 /**
  * Service untuk mengelola presensi (attendance) user.
@@ -34,7 +36,9 @@ export class AttendancesService {
   private get officeLatitude(): number {
     const latitude = this.configService.get<string>('OFFICE_LATITUDE');
     if (!latitude) {
-      throw new Error('OFFICE_LATITUDE not configured in environment variables');
+      throw new Error(
+        'OFFICE_LATITUDE not configured in environment variables',
+      );
     }
     return parseFloat(latitude);
   }
@@ -46,7 +50,9 @@ export class AttendancesService {
   private get officeLongitude(): number {
     const longitude = this.configService.get<string>('OFFICE_LONGITUDE');
     if (!longitude) {
-      throw new Error('OFFICE_LONGITUDE not configured in environment variables');
+      throw new Error(
+        'OFFICE_LONGITUDE not configured in environment variables',
+      );
     }
     return parseFloat(longitude);
   }
@@ -58,7 +64,9 @@ export class AttendancesService {
   private get allowedRadiusMeters(): number {
     const radius = this.configService.get<string>('OFFICE_RADIUS_METERS');
     if (!radius) {
-      throw new Error('OFFICE_RADIUS_METERS not configured in environment variables');
+      throw new Error(
+        'OFFICE_RADIUS_METERS not configured in environment variables',
+      );
     }
     return parseInt(radius);
   }
@@ -82,7 +90,9 @@ export class AttendancesService {
       },
     });
     if (existingAttendance) {
-      throw new ConflictException('Anda sudah melakukan presensi masuk hari ini.');
+      throw new ConflictException(
+        'Anda sudah melakukan presensi masuk hari ini.',
+      );
     }
 
     const officeLat = this.officeLatitude;
@@ -90,7 +100,9 @@ export class AttendancesService {
     const officeRadius = this.allowedRadiusMeters;
 
     if (!officeLat || !officeLon || !officeRadius) {
-      throw new InternalServerErrorException('Konfigurasi lokasi kantor tidak ditemukan.');
+      throw new InternalServerErrorException(
+        'Konfigurasi lokasi kantor tidak ditemukan.',
+      );
     }
 
     const distance = this.calculateDistance(
@@ -196,7 +208,12 @@ export class AttendancesService {
    * @param id ID attendance
    */
   async findOne(id: number) {
-    const attendance = await this.prisma.attendance.findUnique({ where: { id } });
+    if (!id || typeof id !== 'number' || isNaN(id)) {
+      throw new BadRequestException('ID presensi tidak valid');
+    }
+    const attendance = await this.prisma.attendance.findUnique({
+      where: { id },
+    });
     if (!attendance) throw new NotFoundException('Attendance tidak ditemukan');
     return attendance;
   }
@@ -361,5 +378,203 @@ export class AttendancesService {
         this.logger.log(`Set tanpa_keterangan untuk userId ${intern.id}`);
       }
     }
+  }
+
+  async exportAllAttendancesPdf(
+    filter: { startDate?: string; endDate?: string; institution?: string },
+    adminName: string,
+  ): Promise<Buffer> {
+    // Query data presensi + user sesuai filter
+    const where: any = {};
+    if (filter.startDate && filter.endDate) {
+      where.clockIn = {
+        gte: new Date(filter.startDate),
+        lte: new Date(filter.endDate),
+      };
+    }
+    if (filter.institution) {
+      where.user = undefined; // remove this line
+    }
+    const attendances = await this.prisma.attendance.findMany({
+      where: {
+        ...where,
+        user: filter.institution
+          ? { asalInstitusi: filter.institution }
+          : undefined,
+      },
+      include: { user: true },
+      orderBy: [{ userId: 'asc' }, { clockIn: 'asc' }],
+    });
+
+    // Format data untuk tabel PDF
+    const tableBody = [
+      [
+        'No',
+        'Nama Intern',
+        'Institusi',
+        'Tanggal',
+        'Status',
+        'Clock In',
+        'Clock Out',
+        'Keterangan',
+        'Validator',
+      ],
+      ...attendances.map((a, i) => [
+        i + 1,
+        a.user?.name || '-',
+        a.user?.asalInstitusi || '-',
+        a.clockIn ? new Date(a.clockIn).toLocaleDateString() : '-',
+        a.status,
+        a.clockIn ? new Date(a.clockIn).toLocaleTimeString() : '-',
+        a.clockOut ? new Date(a.clockOut).toLocaleTimeString() : '-',
+        a.reasonDescription || '-',
+        a.validatedBy ? String(a.validatedBy) : '-',
+      ]),
+    ];
+
+    // PDF definition
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        { text: 'Rekap Presensi Semua Intern', style: 'header' },
+        {
+          text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
+        },
+        { text: `Institusi: ${filter.institution || 'Semua'}` },
+        {
+          text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString()}`,
+          margin: [0, 0, 0, 10],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: [
+              'auto',
+              '*',
+              '*',
+              'auto',
+              'auto',
+              'auto',
+              'auto',
+              '*',
+              'auto',
+            ],
+            body: tableBody,
+          },
+        },
+      ],
+      styles: {
+        header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+      },
+      defaultStyle: { font: 'Helvetica' },
+    };
+
+    // pdfmake printer
+    const fonts = {
+      Helvetica: {
+        normal: 'src/assets/fonts/Helvetica-Regular.ttf',
+        bold: 'src/assets/fonts/Helvetica-Bold.ttf',
+        italics: 'src/assets/fonts/Helvetica-Oblique.ttf',
+        bolditalics: 'src/assets/fonts/Helvetica-BoldOblique.ttf',
+      },
+    };
+    const printer = new PdfPrinter(fonts);
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const chunks: Buffer[] = [];
+    return new Promise<Buffer>((resolve, reject) => {
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    });
+  }
+
+  async exportUserAttendancePdf(
+    userId: number,
+    filter: { startDate?: string; endDate?: string },
+    adminName: string,
+  ): Promise<Buffer> {
+    // Query data presensi user sesuai filter
+    const where: any = { userId };
+    if (filter.startDate && filter.endDate) {
+      where.clockIn = {
+        gte: new Date(filter.startDate),
+        lte: new Date(filter.endDate),
+      };
+    }
+    const attendances = await this.prisma.attendance.findMany({
+      where,
+      orderBy: [{ clockIn: 'asc' }],
+    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    // Format data untuk tabel PDF
+    const tableBody = [
+      [
+        'No',
+        'Tanggal',
+        'Status',
+        'Clock In',
+        'Clock Out',
+        'Keterangan',
+        'Validator',
+      ],
+      ...attendances.map((a, i) => [
+        i + 1,
+        a.clockIn ? new Date(a.clockIn).toLocaleDateString() : '-',
+        a.status,
+        a.clockIn ? new Date(a.clockIn).toLocaleTimeString() : '-',
+        a.clockOut ? new Date(a.clockOut).toLocaleTimeString() : '-',
+        a.reasonDescription || '-',
+        a.validatedBy ? String(a.validatedBy) : '-',
+      ]),
+    ];
+
+    // PDF definition
+    const docDefinition: TDocumentDefinitions = {
+      content: [
+        {
+          text: `Rekap Presensi Intern: ${user?.name || '-'}`,
+          style: 'header',
+        },
+        { text: `Institusi: ${user?.asalInstitusi || '-'}` },
+        {
+          text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
+        },
+        {
+          text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString()}`,
+          margin: [0, 0, 0, 10],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['auto', 'auto', 'auto', 'auto', 'auto', '*', 'auto'],
+            body: tableBody,
+          },
+        },
+      ],
+      styles: {
+        header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+      },
+      defaultStyle: { font: 'Helvetica' },
+    };
+
+    // pdfmake printer
+    const fonts = {
+      Helvetica: {
+        normal: 'src/assets/fonts/Helvetica-Regular.ttf',
+        bold: 'src/assets/fonts/Helvetica-Bold.ttf',
+        italics: 'src/assets/fonts/Helvetica-Oblique.ttf',
+        bolditalics: 'src/assets/fonts/Helvetica-BoldOblique.ttf',
+      },
+    };
+    const printer = new PdfPrinter(fonts);
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const chunks: Buffer[] = [];
+    return new Promise<Buffer>((resolve, reject) => {
+      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    });
   }
 }
