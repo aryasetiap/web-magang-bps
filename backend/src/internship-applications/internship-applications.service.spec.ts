@@ -1,7 +1,10 @@
+import * as fs from 'fs';
 import { Test, TestingModule } from '@nestjs/testing';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
+
+jest.spyOn(fs, 'unlinkSync').mockImplementation(() => {});
 
 /**
  * Membuat objek file tiruan untuk kebutuhan pengujian.
@@ -111,5 +114,64 @@ describe('InternshipApplicationsService', () => {
     const dto = { startDate: '2025-08-01', endDate: '2025-09-01' };
 
     await expect(service.create(2, dto, files)).resolves.toEqual({ id: 2 });
+  });
+
+  /**
+   * Menguji bahwa user tidak bisa mengajukan ulang jika status pengajuan sebelumnya masih 'pending'.
+   */
+  it('should not allow resubmission if previous application is still pending', async () => {
+    prisma.internshipApplication.findUnique.mockResolvedValue({
+      id: 10,
+      status: 'pending',
+    });
+
+    const files = {
+      transcript: [mockFile('transcript.pdf')],
+      requestLetter: [mockFile('requestLetter.pdf')],
+    };
+    const dto = { startDate: '2025-08-01', endDate: '2025-09-01' };
+
+    await expect(service.create(1, dto, files)).rejects.toThrow(
+      ConflictException,
+    );
+  });
+
+  /**
+   * Menguji bahwa user tidak bisa mengajukan ulang jika status pengajuan sebelumnya sudah 'diterima'.
+   */
+  it('should not allow resubmission if previous application is already accepted', async () => {
+    prisma.internshipApplication.findUnique.mockResolvedValue({
+      id: 11,
+      status: 'diterima',
+    });
+
+    const files = {
+      transcript: [mockFile('transcript.pdf')],
+      requestLetter: [mockFile('requestLetter.pdf')],
+    };
+    const dto = { startDate: '2025-08-01', endDate: '2025-09-01' };
+
+    await expect(service.create(1, dto, files)).rejects.toThrow(
+      ConflictException,
+    );
+  });
+
+  /**
+   * Menguji bahwa user bisa mengajukan ulang jika status pengajuan sebelumnya 'ditolak'.
+   */
+  it('should allow resubmission if previous application was rejected', async () => {
+    prisma.internshipApplication.findUnique.mockResolvedValue({
+      id: 12,
+      status: 'ditolak',
+    });
+    prisma.internshipApplication.create.mockResolvedValue({ id: 3 });
+
+    const files = {
+      transcript: [mockFile('transcript.pdf')],
+      requestLetter: [mockFile('requestLetter.pdf')],
+    };
+    const dto = { startDate: '2025-08-01', endDate: '2025-09-01' };
+
+    await expect(service.create(1, dto, files)).resolves.toEqual({ id: 3 });
   });
 });

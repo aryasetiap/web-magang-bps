@@ -15,7 +15,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
  * Service untuk mengelola aplikasi pendaftaran magang.
  */
 export class InternshipApplicationsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Menghapus file yang telah diunggah jika terjadi error atau validasi gagal.
@@ -60,13 +60,17 @@ export class InternshipApplicationsService {
       );
     }
 
-    const existingApplication = await this.prisma.internshipApplication.findUnique({
-      where: { userId: userId },
-    });
+    const existingApplication =
+      await this.prisma.internshipApplication.findUnique({
+        where: { userId: userId },
+      });
 
-    if (existingApplication) {
+    // Hanya blokir jika status masih 'pending' atau 'diterima'
+    if (existingApplication && existingApplication.status !== 'ditolak') {
       this.deleteUploadedFiles(files);
-      throw new ConflictException('Anda sudah pernah mengajukan pendaftaran magang.');
+      throw new ConflictException(
+        'Anda sudah pernah mengajukan pendaftaran magang.',
+      );
     }
 
     const cvPath = files.cv && files.cv[0] ? files.cv[0].path : null;
@@ -181,7 +185,9 @@ export class InternshipApplicationsService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Pendaftaran dengan ID ${id} tidak ditemukan.`);
+      throw new NotFoundException(
+        `Pendaftaran dengan ID ${id} tidak ditemukan.`,
+      );
     }
 
     const baseUrl = 'http://localhost:3000';

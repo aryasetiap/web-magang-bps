@@ -21,6 +21,11 @@ API ini digunakan untuk mengelola pengajuan magang, termasuk pembuatan, pengambi
 
 Membuat pengajuan magang baru. Hanya dapat diakses oleh user yang sudah login.
 
+#### Fitur Baru (Mulai Juli 2025)
+
+- **User dapat mengajukan ulang magang jika pengajuan sebelumnya berstatus `ditolak`.**
+- Jika pengajuan sebelumnya masih `pending` atau sudah `diterima`, user **tidak dapat mengajukan ulang**.
+
 #### Headers
 
 - `Authorization: Bearer <token>`
@@ -53,7 +58,13 @@ Membuat pengajuan magang baru. Hanya dapat diakses oleh user yang sudah login.
 #### Error
 
 - 400: File tidak valid, ukuran melebihi batas, atau format bukan PDF.
-- 409: User sudah pernah mengajukan magang.
+- 409: User sudah pernah mengajukan magang dan status pengajuan sebelumnya masih `pending` atau `diterima`.
+
+#### Contoh Kasus Pengajuan Ulang
+
+- **Kasus:** User pernah mengajukan magang dan statusnya `ditolak`.
+- **Aksi:** User dapat mengajukan ulang dengan endpoint ini (POST `/internship-applications`).
+- **Catatan:** Setiap pengajuan ulang akan membuat record baru di database.
 
 ---
 
@@ -254,6 +265,7 @@ Memperbarui status aplikasi magang. Hanya untuk Admin.
 - Field `cv` bersifat opsional, sedangkan `transcript` dan `requestLetter` wajib.
 - Periode magang minimal 1 bulan dan maksimal 6 bulan.
 - Tanggal mulai magang tidak boleh di masa lalu (kecuali oleh admin saat verifikasi).
+- **User dapat mengajukan ulang magang jika pengajuan sebelumnya berstatus `ditolak`.**
 
 ---
 
@@ -275,4 +287,6 @@ enum StatusInternship {
 {
   "statusCode": 400,
   "message": "Pesan error",
+  ...
+}
 ```
