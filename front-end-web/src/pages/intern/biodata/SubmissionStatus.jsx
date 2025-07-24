@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AlertDialog from "../../../components/AlertDialog";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import DocumentPreview from "../../../components/DocumentPreview";
 
 function SubmissionStatusPage() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ function SubmissionStatusPage() {
   });
   const [applicationId, setApplicationId] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [showSummary, setShowSummary] = useState(false);
   const [alert, setAlert] = useState({
     isOpen: false,
     title: "",
@@ -25,7 +28,6 @@ function SubmissionStatusPage() {
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
-    // Ambil biodata user
     const fetchProfile = async () => {
       try {
         const res = await fetch("http://localhost:3000/auth/profile", {
@@ -43,7 +45,6 @@ function SubmissionStatusPage() {
       }
     };
 
-    // Cek file di localStorage
     const checkFiles = () => {
       setFilesExist({
         cv: !!localStorage.getItem("cvFileBase64"),
@@ -52,7 +53,6 @@ function SubmissionStatusPage() {
       });
     };
 
-    // Ambil status pengajuan magang
     const fetchSubmissionStatus = async () => {
       try {
         const res = await fetch(
@@ -87,8 +87,6 @@ function SubmissionStatusPage() {
     fetchSubmissionStatus();
   }, [token]);
 
-  // Fungsi submit pengajuan magang
-  // Helper konversi base64 ke objek File
   const dataURLtoFile = (dataurl, filename) => {
     if (!dataurl) return null;
     const arr = dataurl.split(",");
@@ -125,6 +123,11 @@ function SubmissionStatusPage() {
       formData.append("endDate", biodata.activityEnd);
     }
 
+    if (submissionStatus === "ditolak" && applicationId) {
+      formData.append("applicationId", applicationId);
+      formData.append("isResubmission", "true");
+    }
+
     const fileMap = [
       { key: "cv", field: "cv", defaultName: "cv.pdf" },
       {
@@ -152,16 +155,8 @@ function SubmissionStatusPage() {
     });
 
     try {
-      const url =
-        submissionStatus === "ditolak" && applicationId
-          ? `http://localhost:3000/internship-applications/${applicationId}`
-          : "http://localhost:3000/internship-applications";
-
-      const method =
-        submissionStatus === "ditolak" && applicationId ? "PATCH" : "POST";
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("http://localhost:3000/internship-applications", {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -180,7 +175,6 @@ function SubmissionStatusPage() {
         });
         setSubmissionStatus("pending");
 
-        // Hapus file dari localStorage hanya jika berhasil
         fileMap.forEach(({ key }) => {
           localStorage.removeItem(`${key}FileBase64`);
           localStorage.removeItem(`${key}FileName`);
@@ -206,163 +200,166 @@ function SubmissionStatusPage() {
     }
   };
 
-  // UI
   const renderContent = () => {
-    if (!biodata) {
-      return (
-        <div className="text-center py-10">
-          <p className="text-lg text-gray-700">Memuat data biodata...</p>
-        </div>
-      );
-    }
-
-    switch (submissionStatus) {
-      case "initial":
-        return (
-          <div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-              Konfirmasi Data Ajuan Magang
-            </h3>
-            <p className="text-gray-700 mb-6">
-              Mohon periksa kembali data biodata dan kelengkapan berkasmu
-              sebelum mengajukan permohonan magang.
-            </p>
-            <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
-              <h4 className="font-bold text-blue-800 text-lg mb-3">
-                Ringkasan Biodata
-              </h4>
-              <table className="table-auto w-full text-left text-sm text-gray-700 border border-blue-100 rounded-md overflow-hidden">
-                <tbody>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Nama Lengkap</td>
-                    <td className="px-4 py-2">: {biodata.namaLengkap}</td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">NIM / NIS</td>
-                    <td className="px-4 py-2">: {biodata.nimNisn}</td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Asal Institusi</td>
-                    <td className="px-4 py-2">: {biodata.asalInstitusi}</td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Jurusan / Prodi</td>
-                    <td className="px-4 py-2">: {biodata.jurusanProdi}</td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Nomor Telepon</td>
-                    <td className="px-4 py-2">: {biodata.nomorTelepon}</td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Email</td>
-                    <td className="px-4 py-2">: {biodata.email}</td>
-                  </tr>
-                  {/* tambah jenis kegiatan serta tanggal mulai - selesai */}
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">Jenis Kegiatan</td>
-                    <td className="px-4 py-2">
-                      : {biodata.activityType || "Tidak Diketahui"}
-                    </td>
-                  </tr>
-                  <tr className="border-b border-blue-100">
-                    <td className="font-semibold">
-                      Tanggal Mulai - Selesai Kegiatan
-                    </td>
-                    <td className="px-4 py-2">
-                      :{" "}
-                      {new Date(biodata.activityStart).toLocaleDateString(
-                        "id-ID"
-                      )}
-                      {" - "}
-                      {new Date(biodata.activityEnd).toLocaleDateString(
-                        "id-ID"
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="font-semibold">Alamat</td>
-                    <td className="px-4 py-2">: {biodata.alamat}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <h4 className="font-bold text-blue-800 text-lg mt-4 mb-3">
-                Kelengkapan Berkas
-              </h4>
-              <ul className="list-none space-y-2 text-sm text-gray-700">
-                <li className="flex items-center gap-2">
-                  {filesExist.cv ? (
-                    <span className="text-green-600">✅</span>
-                  ) : (
-                    <span className="text-red-600">❌</span>
-                  )}
-                  CV: {filesExist.cv ? "Sudah Diunggah" : "Belum Diunggah"}
-                </li>
-                <li className="flex items-center gap-2">
-                  {filesExist.transkripNilai ? (
-                    <span className="text-green-600">✅</span>
-                  ) : (
-                    <span className="text-red-600">❌</span>
-                  )}
-                  Transkrip Nilai / Rapor:{" "}
-                  {filesExist.transkripNilai
-                    ? "Sudah Diunggah"
-                    : "Belum Diunggah"}
-                </li>
-                <li className="flex items-center gap-2">
-                  {filesExist.suratPermohonan ? (
-                    <span className="text-green-600">✅</span>
-                  ) : (
-                    <span className="text-red-600">❌</span>
-                  )}
-                  Surat Permohonan Magang:{" "}
-                  {filesExist.suratPermohonan
-                    ? "Sudah Diunggah"
-                    : "Belum Diunggah"}
-                </li>
-              </ul>
-
-              <p className="mt-4 text-sm text-gray-600">
-                Jika ada data yang belum benar atau berkas yang belum lengkap,
-                silakan lengkapi di halaman {/* use navigate */}
-                <span
-                  className="font-semibold text-bps-blue cursor-pointer hover:underline"
-                  onClick={() => navigate("/dashboard/biodata")}
-                >
-                  Biodata
-                </span>
-                .
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleAjukan}
-              className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
-              disabled={
-                !(filesExist.transkripNilai && filesExist.suratPermohonan)
-              }
-            >
-              Ajukan Permohonan Magang
-            </button>
-            {!(filesExist.transkripNilai && filesExist.suratPermohonan) && (
-              <p className="text-red-500 text-sm mt-2">
-                Mohon lengkapi berkas transkrip nilai dan surat permohonan
-                magang di halaman Biodata sebelum mengajukan.
-              </p>
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="font-bold text-blue-800 text-lg">Ringkasan Data</h4>
+          <button
+            onClick={() => setShowSummary((prev) => !prev)}
+            className="text-bps-blue hover:text-bps-dark transition"
+          >
+            {showSummary ? (
+              <EyeSlashIcon className="h-6 w-6" />
+            ) : (
+              <EyeIcon className="h-6 w-6" />
             )}
-          </div>
-        );
+          </button>
+        </div>
 
-      case "pending":
-        return (
-          <div className="text-center py-10">
-            <h3 className="text-2xl font-semibold text-orange-600 mb-4">
-              Status Ajuan: Menunggu Verifikasi
-            </h3>
-            <p className="text-gray-700 mb-4">
-              Permohonan magang kamu telah berhasil diajukan. Kami akan segera
-              memverifikasi data dan berkasmu.
-            </p>
+        {showSummary && (
+          <div className="bg-blue-50 p-6 rounded-lg mb-6 border border-blue-200">
+            <h4 className="font-bold text-blue-800 text-lg mb-3">
+              Ringkasan Biodata
+            </h4>
+            <table className="table-auto w-full text-left text-sm text-gray-700 border border-blue-100 rounded-md overflow-hidden">
+              <tbody>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Nama Lengkap</td>
+                  <td className="px-4 py-2">: {biodata?.namaLengkap}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">NIM / NIS</td>
+                  <td className="px-4 py-2">: {biodata?.nimNisn}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Asal Institusi</td>
+                  <td className="px-4 py-2">: {biodata?.asalInstitusi}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Jurusan / Prodi</td>
+                  <td className="px-4 py-2">: {biodata?.jurusanProdi}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Nomor Telepon</td>
+                  <td className="px-4 py-2">: {biodata?.nomorTelepon}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Email</td>
+                  <td className="px-4 py-2">: {biodata?.email}</td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Jenis Kegiatan</td>
+                  <td className="px-4 py-2">
+                    : {biodata?.activityType || "-"}
+                  </td>
+                </tr>
+                <tr className="border-b border-blue-100">
+                  <td className="font-semibold">Tanggal Mulai - Selesai</td>
+                  <td className="px-4 py-2">
+                    :{" "}
+                    {biodata?.activityStart &&
+                      new Date(biodata.activityStart).toLocaleDateString(
+                        "id-ID"
+                      )}
+                    {" - "}
+                    {biodata?.activityEnd &&
+                      new Date(biodata.activityEnd).toLocaleDateString("id-ID")}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="font-semibold">Alamat</td>
+                  <td className="px-4 py-2">: {biodata?.alamat}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h4 className="font-bold text-blue-800 text-lg mt-4 mb-3">
+              Kelengkapan Berkas
+            </h4>
+            <ul className="list-none space-y-4 text-sm text-gray-700">
+              {[
+                { key: "cv", label: "CV", defaultName: "cv.pdf" },
+                {
+                  key: "transkripNilai",
+                  label: "Transkrip Nilai / Rapor",
+                  defaultName: "transkrip.pdf",
+                },
+                {
+                  key: "suratPermohonan",
+                  label: "Surat Permohonan Magang",
+                  defaultName: "surat.pdf",
+                },
+              ].map(({ key, label, defaultName }) => {
+                const base64 = localStorage.getItem(`${key}FileBase64`);
+                const filename =
+                  localStorage.getItem(`${key}FileName`) || defaultName;
+                const file =
+                  base64 && base64.startsWith("data:")
+                    ? dataURLtoFile(base64, filename)
+                    : null;
+
+                return (
+                  <li key={key}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {filesExist[key] ? (
+                          <span className="text-green-600">✅</span>
+                        ) : (
+                          <span className="text-red-600">❌</span>
+                        )}
+                        {label}:{" "}
+                        {filesExist[key] ? "Sudah Diunggah" : "Belum Diunggah"}
+                      </div>
+                    </div>
+
+                    {/* Tampilkan preview jika file tersedia */}
+                    {file && (
+                      <div className="mt-2">
+                        <DocumentPreview file={file} />
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="mt-4">
+              {(submissionStatus === "initial" ||
+                submissionStatus === "ditolak") && (
+                <div className="mt-6 pt-6">
+                  <button
+                    type="button"
+                    onClick={handleAjukan}
+                    className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
+                    disabled={
+                      !(filesExist.transkripNilai && filesExist.suratPermohonan)
+                    }
+                  >
+                    {submissionStatus === "initial"
+                      ? "Ajukan Permohonan Magang"
+                      : "Ajukan Ulang Permohonan Magang"}
+                  </button>
+                  {!(
+                    filesExist.transkripNilai && filesExist.suratPermohonan
+                  ) && (
+                    <p className="text-red-500 text-sm mt-2">
+                      Mohon lengkapi berkas transkrip nilai dan surat permohonan
+                      magang di halaman Biodata sebelum mengajukan.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {submissionStatus === "pending" && (
+          <StatusDialogCard
+            type="warning"
+            title="Status Ajuan: Menunggu Verifikasi"
+            message="Permohonan magang kamu telah berhasil diajukan. Kami akan segera memverifikasi data dan berkasmu."
+          >
             <p className="text-gray-600">
               Mohon cek halaman ini secara berkala untuk mengetahui status
               terbaru ajuan kamu.
@@ -390,56 +387,43 @@ function SubmissionStatusPage() {
               </svg>
               <p className="text-gray-500 mt-2">Sedang diproses...</p>
             </div>
-          </div>
-        );
+          </StatusDialogCard>
+        )}
 
-      case "diterima":
-        return (
-          <div className="text-center py-10">
-            <h3 className="text-2xl font-semibold text-green-600 mb-4">
-              Status Ajuan: Telah Diterima! 🎉
-            </h3>
-            <p className="text-gray-700 mb-4">
-              Selamat! Permohonan magang kamu di BPS Kabupaten Pringsewu telah{" "}
-              <b>DITERIMA</b>.
-            </p>
+        {submissionStatus === "diterima" && (
+          <StatusDialogCard
+            type="success"
+            title="Status Ajuan: Diterima 🎉"
+            message="Selamat! Permohonan magang kamu di BPS Kabupaten Pringsewu telah DITERIMA."
+          >
             <p className="text-gray-600">
               Informasi lebih lanjut mengenai jadwal dan langkah berikutnya akan
-              disampaikan melalui sistem ini atau email kamu.
+              disampaikan melalui sistem atau email kamu.
             </p>
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/dashboard/activities")}
               className="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
             >
-              Kembali ke Dashboard
+              Lanjut ke Aktivitas
             </button>
-          </div>
-        );
+          </StatusDialogCard>
+        )}
 
-      case "ditolak":
-        return (
-          <div className="text-center py-10">
-            <h3 className="text-2xl font-semibold text-red-600 mb-4">
-              Status Ajuan: Ditolak 😞
-            </h3>
-            <p className="text-gray-700 mb-4">
-              Mohon maaf, permohonan magang kamu di BPS Kabupaten Pringsewu
-              telah <b>DITOLAK</b>.
+        {submissionStatus === "ditolak" && (
+          <StatusDialogCard
+            type="error"
+            title="Status Ajuan: Ditolak 😞"
+            message="Mohon maaf, permohonan magang kamu di BPS Kabupaten Pringsewu telah DITOLAK."
+          >
+            <p className="text-gray-600 mb-2">
+              Alasan penolakan: <b>{feedback || "-"}</b>
             </p>
             <p className="text-gray-600">
-              Alasan penolakan: {feedback ? feedback : "-"} Silakan periksa
-              kembali kelengkapan atau kesesuaian persyaratan.
+              Kamu dapat mengajukan ulang permohonan dengan melengkapi berkas
+              yang diperlukan.
             </p>
+
             <div className="flex flex-col items-center mt-6 space-y-4">
-              <button
-                onClick={handleAjukan}
-                className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
-                disabled={
-                  !(filesExist.transkripNilai && filesExist.suratPermohonan)
-                }
-              >
-                Ajukan Ulang Permohonan Magang
-              </button>
               <button
                 onClick={() => navigate("/dashboard")}
                 className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
@@ -453,16 +437,43 @@ function SubmissionStatusPage() {
                 </p>
               )}
             </div>
-          </div>
-        );
+          </StatusDialogCard>
+        )}
+      </div>
+    );
+  };
 
+  const StatusDialogCard = ({ type, title, message, children }) => {
+    let bgColor = "";
+    let borderColor = "";
+
+    switch (type) {
+      case "success":
+        bgColor = "bg-green-50";
+        borderColor = "border-green-300";
+        break;
+      case "warning":
+        bgColor = "bg-orange-50";
+        borderColor = "border-orange-300";
+        break;
+      case "error":
+        bgColor = "bg-red-50";
+        borderColor = "border-red-300";
+        break;
       default:
-        return (
-          <div className="text-center py-10">
-            <p className="text-lg text-gray-700">Status tidak dikenali.</p>
-          </div>
-        );
+        bgColor = "bg-blue-50";
+        borderColor = "border-blue-300";
     }
+
+    return (
+      <div
+        className={`rounded-lg p-6 border ${bgColor} ${borderColor} text-center`}
+      >
+        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <p className="text-gray-700 mb-4">{message}</p>
+        {children}
+      </div>
+    );
   };
 
   return (

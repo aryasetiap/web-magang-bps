@@ -4,6 +4,7 @@ import BrandLogo from "../components/BrandLogo";
 import kantorBPS from "../assets/kantor-bps-3.jpg";
 import AlertDialog from "../components/AlertDialog";
 import { registerUser, redirectToGoogleOAuth } from "../utils/auth";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 function Registration() {
   const [email, setEmail] = useState("");
@@ -103,24 +104,13 @@ function Registration() {
       <div className="absolute inset-0 bg-black bg-opacity-45 backdrop-blur-sm"></div>
       <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-lg shadow-xl w-full max-w-md relative">
         {/* Tombol Kembali */}
-        <a
-          href="/"
+        <button
+          onClick={() => navigate(-1)}
           className="absolute top-4 left-4 text-gray-600 hover:text-bps-blue transition-colors duration-200"
+          title="Kembali"
         >
-          <svg
-            className="h-7 w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M11 17l-5-5m0 0l5-5m-5 5h12"
-            />
-          </svg>
-        </a>
+          <ArrowLeftIcon className="h-7 w-7" />
+        </button>
 
         <div className="text-center mb-8 mt-4">
           <div className="container mx-auto flex justify-center text-left">
@@ -214,7 +204,7 @@ function Registration() {
           </button>
         </form>
 
-        <div className="relative flex py-5 items-center">
+        {/* <div className="relative flex py-5 items-center">
           <div className="flex-grow border-t border-gray-300"></div>
           <span className="flex-shrink mx-4 text-gray-500">ATAU</span>
           <div className="flex-grow border-t border-gray-300"></div>
@@ -232,7 +222,7 @@ function Registration() {
             />{" "}
             Daftar dengan Google
           </button>
-        </div>
+        </div> */}
 
         <p className="text-center text-gray-600 text-sm mt-6">
           Sudah punya akun?{" "}

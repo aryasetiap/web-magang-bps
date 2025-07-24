@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AlertDialog from "../../../components/AlertDialog";
 import DocumentPreview from "../../../components/DocumentPreview";
@@ -38,6 +38,36 @@ function UploadDocumentsSection() {
     });
   };
 
+  const base64ToFile = (base64, filename) => {
+    const arr = base64.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Ambil file dari localStorage saat komponen dimuat
+  useEffect(() => {
+    const restoredFiles = {};
+
+    ["cv", "transkripNilai", "suratPermohonan"].forEach((key) => {
+      const base64 = localStorage.getItem(`${key}FileBase64`);
+      const name = localStorage.getItem(`${key}FileName`);
+      if (base64 && name) {
+        try {
+          const file = base64ToFile(base64, name);
+          restoredFiles[key] = file;
+        } catch (err) {
+          console.error(`Gagal memuat file ${key} dari localStorage`, err);
+        }
+      }
+    });
+
+    setFiles((prev) => ({ ...prev, ...restoredFiles }));
+  }, []);
+
   const handleFileChange = (e) => {
     const { name, files: selectedFiles } = e.target;
     const file = selectedFiles[0];
@@ -51,7 +81,7 @@ function UploadDocumentsSection() {
         type: "error",
         autoCloseDelay: 2500,
       });
-      fileRefs[name].current.value = ""; // reset input file secara manual
+      fileRefs[name].current.value = "";
       return;
     }
 
@@ -63,7 +93,7 @@ function UploadDocumentsSection() {
         type: "error",
         autoCloseDelay: 2500,
       });
-      fileRefs[name].current.value = ""; // reset juga jika error
+      fileRefs[name].current.value = "";
       return;
     }
 

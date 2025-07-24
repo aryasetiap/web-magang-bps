@@ -39,6 +39,7 @@ import StaffAssignments from "./pages/staff/StaffAssigments";
 import NotFoundPage from "./pages/error/NotFound";
 import ForbiddenPage from "./pages/error/Forbidden";
 import ServerErrorPage from "./pages/error/ServerError";
+import AdminGraduationManage from "./pages/admin/AdminGraduationManage";
 
 function App() {
   // State global untuk menyimpan role pengguna.
@@ -140,6 +141,7 @@ function App() {
             <Route path="monitoring" element={<AdminMonitoringPage />} />
             <Route path="final-reviews" element={<AdminFinalReviewsPage />} />
             <Route path="cert-settings" element={<AdminCertSettingsPage />} />
+            <Route path="graduation" element={<AdminGraduationManage />} />
           </Route>
 
           {/* Rute Dashboard Staff BPS - Dilindungi */}

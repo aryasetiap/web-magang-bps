@@ -89,6 +89,11 @@ function Sidebar({ isCollapsed, userRole }) {
       path: "/admin/cert-settings",
       icon: DocumentDuplicateIcon,
     },
+    {
+      name: "Manajemen Kelulusan",
+      path: "/admin/graduation",
+      icon: AcademicCapIcon,
+    },
   ];
 
   const staffMenus = [
