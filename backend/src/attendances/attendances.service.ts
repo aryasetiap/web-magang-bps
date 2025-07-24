@@ -348,16 +348,27 @@ export class AttendancesService {
    * Cron job: Set status tanpa_keterangan untuk user yang tidak presensi/izin sebelum jam 11:00 WIB.
    * Berjalan setiap hari jam 11:01 WIB (WIB = UTC+7, berarti 04:01 UTC).
    */
-  @Cron('1 4 * * *')
+  @Cron('31 9 * * *')
   async setTanpaKeteranganForAbsentUsers() {
-    this.logger.log('Menjalankan update status tanpa_keterangan...');
+    this.logger.log(
+      'Menjalankan update status tanpa_keterangan jam 16:31 WIB...',
+    );
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
+    // Ambil semua intern yang sedang magang hari ini
     const interns = await this.prisma.user.findMany({
-      where: { role: { name: 'intern' } },
+      where: {
+        role: { name: 'intern' },
+        internshipApplication: {
+          // Sudah diverifikasi dan periode magang aktif hari ini
+          startDate: { lte: today },
+          endDate: { gte: today },
+          status: 'diterima',
+        },
+      },
       select: { id: true },
     });
 
@@ -375,7 +386,7 @@ export class AttendancesService {
             userId: intern.id,
             status: 'tanpa_keterangan',
             reasonDescription:
-              'Tidak melakukan presensi atau pengajuan izin/sakit sebelum 11:00 WIB',
+              'Tidak melakukan presensi atau pengajuan izin/sakit sebelum 16:30 WIB',
             createdAt: new Date(),
           },
         });
