@@ -401,10 +401,13 @@ export class AttendancesService {
   ): Promise<Buffer> {
     const where: Prisma.AttendanceWhereInput = {};
     if (filter.startDate && filter.endDate) {
-      where.clockIn = {
-        gte: new Date(filter.startDate),
-        lte: new Date(filter.endDate),
-      };
+      const start = new Date(filter.startDate);
+      const end = new Date(filter.endDate);
+      where.OR = [
+        { clockIn: { gte: start, lte: end } },
+        { submittedAt: { gte: start, lte: end } },
+        { createdAt: { gte: start, lte: end } },
+      ];
     }
 
     const attendances = await this.prisma.attendance.findMany({
@@ -441,7 +444,13 @@ export class AttendancesService {
         i + 1,
         a.user?.name || '-',
         a.user?.asalInstitusi || '-',
-        a.clockIn ? new Date(a.clockIn).toLocaleDateString('id-ID') : '-',
+        a.clockIn
+          ? new Date(a.clockIn).toLocaleDateString('id-ID')
+          : a.submittedAt
+            ? new Date(a.submittedAt).toLocaleDateString('id-ID')
+            : a.createdAt
+              ? new Date(a.createdAt).toLocaleDateString('id-ID')
+              : '-',
         a.status,
         a.clockIn ? new Date(a.clockIn).toLocaleTimeString('id-ID') : '-',
         a.clockOut ? new Date(a.clockOut).toLocaleTimeString('id-ID') : '-',
@@ -526,10 +535,13 @@ export class AttendancesService {
   ): Promise<Buffer> {
     const where: Prisma.AttendanceWhereInput = { userId };
     if (filter.startDate && filter.endDate) {
-      where.clockIn = {
-        gte: new Date(filter.startDate),
-        lte: new Date(filter.endDate),
-      };
+      const start = new Date(filter.startDate);
+      const end = new Date(filter.endDate);
+      where.OR = [
+        { clockIn: { gte: start, lte: end } },
+        { submittedAt: { gte: start, lte: end } },
+        { createdAt: { gte: start, lte: end } },
+      ];
     }
     const attendances = await this.prisma.attendance.findMany({
       where,
@@ -549,7 +561,13 @@ export class AttendancesService {
       ['No', 'Tanggal', 'Status', 'Clock In', 'Clock Out', 'Keterangan'],
       ...attendances.map((a, i) => [
         i + 1,
-        a.clockIn ? new Date(a.clockIn).toLocaleDateString('id-ID') : '-',
+        a.clockIn
+          ? new Date(a.clockIn).toLocaleDateString('id-ID')
+          : a.submittedAt
+            ? new Date(a.submittedAt).toLocaleDateString('id-ID')
+            : a.createdAt
+              ? new Date(a.createdAt).toLocaleDateString('id-ID')
+              : '-',
         a.status,
         a.clockIn ? new Date(a.clockIn).toLocaleTimeString('id-ID') : '-',
         a.clockOut ? new Date(a.clockOut).toLocaleTimeString('id-ID') : '-',
