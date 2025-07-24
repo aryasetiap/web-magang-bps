@@ -458,6 +458,20 @@ export class AttendancesService {
       ]),
     ];
 
+    // Rekapitulasi status
+    const statusSummary: Record<string, number> = {};
+    for (const a of attendances) {
+      statusSummary[a.status] = (statusSummary[a.status] || 0) + 1;
+    }
+    // Buat tabel rekap status
+    const statusTableBody = [
+      ['Status', 'Jumlah'],
+      ...Object.entries(statusSummary).map(([status, count]) => [
+        status,
+        count,
+      ]),
+    ];
+
     const content: Content[] = [
       { text: 'Rekap Presensi Semua Intern', style: 'header' },
       {
@@ -475,6 +489,20 @@ export class AttendancesService {
           body: tableBody,
         },
         layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 32],
+      },
+      {
+        text: 'Rekapitulasi Status Presensi:',
+        style: { bold: true, margin: [0, 20, 0, 4] },
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto'],
+          body: statusTableBody,
+        },
+        layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 0],
       },
     ];
 
@@ -575,6 +603,20 @@ export class AttendancesService {
       ]),
     ];
 
+    // Rekapitulasi status
+    const statusSummary: Record<string, number> = {};
+    for (const a of attendances) {
+      statusSummary[a.status] = (statusSummary[a.status] || 0) + 1;
+    }
+
+    const statusTableBody = [
+      ['Status', 'Jumlah'],
+      ...Object.entries(statusSummary).map(([status, count]) => [
+        status,
+        count,
+      ]),
+    ];
+
     const content: Content[] = [
       {
         text: `Rekap Presensi Intern: ${user?.name || '-'}`,
@@ -597,6 +639,20 @@ export class AttendancesService {
           body: tableBody,
         },
         layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 32],
+      },
+      {
+        text: 'Rekapitulasi Status Presensi:',
+        style: { bold: true, margin: [0, 20, 0, 4] },
+      },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['*', 'auto'],
+          body: statusTableBody,
+        },
+        layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 0],
       },
     ];
 
