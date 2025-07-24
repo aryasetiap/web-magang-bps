@@ -1,70 +1,117 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { AcademicCapIcon } from "@heroicons/react/24/outline"; // Menambahkan ikon
+import {
+  AcademicCapIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EyeIcon,
+} from "@heroicons/react/24/outline"; // Menambahkan ikon
 
 function AdminGraduationManage() {
-  // Dummy data peserta magang dengan status laporan dan kelulusan
-  const [internsGraduationData, setInternsGraduationData] = useState(() => {
-    const savedGraduationData = localStorage.getItem("adminGraduationData");
-    if (savedGraduationData) {
-      return JSON.parse(savedGraduationData);
-    }
-    return [
-      {
-        id: "int001",
-        name: "Budi Santoso",
-        email: "budi.santoso@example.com",
-        finalReportStatus: "Disetujui", // Ubah dari 'Lulus' ke 'Disetujui'
-        overallGraduationStatus: "Belum Lulus", // Status kelulusan akhir: Belum Lulus, Lulus
-        completionDate: null, // Tanggal kelulusan
-        notes: "", // Catatan admin
-      },
-      {
-        id: "int002",
-        name: "Siti Aminah",
-        email: "siti.aminah@example.com",
-        finalReportStatus: "Perlu Revisi",
-        overallGraduationStatus: "Belum Lulus",
-        completionDate: null,
-        notes: "",
-      },
-      {
-        id: "int003",
-        name: "Dedi Kurniawan",
-        email: "dedi.kurniawan@example.com",
-        finalReportStatus: "Belum Diperiksa",
-        overallGraduationStatus: "Belum Lulus",
-        completionDate: null,
-        notes: "",
-      },
-      {
-        id: "int004",
-        name: "Nurul Hidayah",
-        email: "nurul.hidayah@example.com",
-        finalReportStatus: "Disetujui", // Ubah dari 'Lulus' ke 'Disetujui'
-        overallGraduationStatus: "Lulus",
-        completionDate: "2025-07-01",
-        notes: "Lulus dengan nilai sangat baik.",
-      },
-    ];
-  });
-
-  // State untuk modal Manajemen Kelulusan
   const [isGraduationModalOpen, setIsGraduationModalOpen] = useState(false);
   const [reviewingIntern, setReviewingIntern] = useState(null); // Peserta yang sedang di-review
   const [newGraduationStatus, setNewGraduationStatus] = useState("");
-  // Efek untuk menyimpan data kelulusan ke localStorage
+  const [filterStatus, setFilterStatus] = useState("");
+  // pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  const [interns, setInterns] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const token = localStorage.getItem("authToken");
+
   useEffect(() => {
-    localStorage.setItem(
-      "adminGraduationData",
-      JSON.stringify(internsGraduationData)
+    const fetchData = async () => {
+      try {
+        const [finalProjectsRes, certificatesRes] = await Promise.all([
+          fetch("http://localhost:3000/final-projects/all", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch("http://localhost:3000/certificates", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const finalProjectsData = await finalProjectsRes.json();
+        const certificatesData = await certificatesRes.json();
+
+        // Gabungkan data berdasarkan userId
+        const acceptedProjects = finalProjectsData.data.filter(
+          (item) => item.status === "accepted"
+        );
+
+        const combined = acceptedProjects.map((project) => {
+          const cert = certificatesData.find(
+            (c) => c.userId === project.userId && c.status === "signed"
+          );
+          return {
+            id: project.user.id,
+            name: project.user.name,
+            email: project.user.email,
+            laporan_status: project.status,
+            finalReportStatus: project.status, // ⬅️ ini ditambahkan
+            laporan_path: project.filePath,
+            isGraduated: !!cert,
+            graduatedAt: cert?.signedAt || null,
+            certificateId: cert?.id,
+          };
+        });
+
+        setInterns(combined);
+        setLoading(false);
+      } catch (error) {
+        console.error("Gagal memuat data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [token]);
+
+  const toggleGraduationStatus = async (userId, isGraduated) => {
+    try {
+      const res = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isGraduated: !isGraduated }),
+      });
+
+      if (res.ok) {
+        setInterns((prev) =>
+          prev.map((i) =>
+            i.id === userId ? { ...i, isGraduated: !isGraduated } : i
+          )
+        );
+      } else {
+        console.error("Gagal memperbarui status kelulusan.");
+      }
+    } catch (err) {
+      console.error("Error patch graduation:", err);
+    }
+  };
+
+  const handleSubmitGraduation = async (e) => {
+    e.preventDefault();
+    if (!reviewingIntern) return;
+
+    await toggleGraduationStatus(
+      reviewingIntern.id,
+      reviewingIntern.isGraduated
     );
-  }, [internsGraduationData]);
+    closeGraduationModal();
+  };
+
+  if (loading) return <p>Memuat data...</p>;
 
   // --- Manajemen Kelulusan ---
   function openGraduationModal(intern) {
+    if (!intern) return;
     setReviewingIntern(intern);
-    setNewGraduationStatus(intern.overallGraduationStatus); // Set status default
+    setNewGraduationStatus(intern.isGraduated ? "Lulus" : "Belum Lulus");
     setIsGraduationModalOpen(true);
   }
 
@@ -74,44 +121,16 @@ function AdminGraduationManage() {
     setNewGraduationStatus("");
   }
 
-  const handleUpdateGraduationStatus = (e) => {
-    e.preventDefault();
-    if (!reviewingIntern) return;
-
-    if (
-      window.confirm(
-        `Apakah Anda yakin ingin mengubah status kelulusan ${reviewingIntern.name} menjadi "${newGraduationStatus}"?`
-      )
-    ) {
-      const updatedData = internsGraduationData.map((intern) =>
-        intern.id === reviewingIntern.id
-          ? {
-              ...intern,
-              overallGraduationStatus: newGraduationStatus,
-              // Ubah kondisi di sini: kelulusan terjadi jika laporan akhir 'Disetujui' DAN status kelulusan diubah jadi 'Lulus'
-              completionDate:
-                newGraduationStatus === "Lulus" &&
-                reviewingIntern.finalReportStatus === "Disetujui"
-                  ? new Date().toISOString().slice(0, 10)
-                  : null,
-            }
-          : intern
-      );
-      setInternsGraduationData(updatedData);
-      alert(
-        `Status kelulusan ${reviewingIntern.name} berhasil diubah menjadi ${newGraduationStatus}.`
-      );
-      closeGraduationModal();
-    }
-  };
-
-  // Filter untuk melihat peserta berdasarkan status
-  const [filterStatus, setFilterStatus] = useState("All"); // 'All', 'Belum Lulus', 'Lulus'
-
-  const filteredInterns = internsGraduationData.filter((intern) => {
-    if (filterStatus === "All") return true;
-    return intern.overallGraduationStatus === filterStatus;
+  const filteredInterns = interns.filter((intern) => {
+    if (filterStatus === "Lulus") return intern.isGraduated === true;
+    if (filterStatus === "Belum Lulus") return intern.isGraduated === false;
+    return true;
   });
+
+  const totalPages = Math.ceil(filteredInterns.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredInterns.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
@@ -145,16 +164,16 @@ function AdminGraduationManage() {
         <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                 Nama Peserta
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                 Laporan Akhir
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                 Status Kelulusan
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
                 Tgl. Kelulusan
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">
@@ -163,42 +182,79 @@ function AdminGraduationManage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredInterns.map((intern) => (
+            {currentItems.map((intern) => (
               <tr
                 key={intern.id}
-                className="bg-white hover:bg-gray-50 transition-colors duration-150"
+                className="bg-white hover:bg-gray-50 transition-colors duration-150 text-center"
               >
                 <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">
                   {intern.name}
                 </td>
-                <td className="px-6 py-4 text-sm break-words">
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold
-                    ${
-                      intern.finalReportStatus === "Disetujui"
-                        ? "bg-green-100 text-green-800" // Ubah ini
-                        : intern.finalReportStatus === "Perlu Revisi"
-                        ? "bg-red-100 text-red-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {intern.finalReportStatus}
-                  </span>
+                <td className="px-6 py-4 text-sm break-words text-center">
+                  <div className="flex items-center gap-2 items-center justify-center">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-semibold
+                        ${
+                          intern.laporan_status === "accepted"
+                            ? "bg-green-100 text-green-800"
+                            : intern.laporan_status === "revisi"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                    >
+                      {/* {intern.laporan_status} */}
+                      {/* kalo accepted = Disetujui */}
+                      {/* kalo revisi = Perlu Revisi */}
+                      {intern.laporan_status === "accepted"
+                        ? "Disetujui"
+                        : intern.laporan_status === "revisi"
+                        ? "Perlu Revisi"
+                        : intern.laporan_status === "review"
+                        ? "Reviewed"
+                        : "Belum Dikirim"}
+                    </span>
+
+                    {/* Tampilkan ikon jika laporan bisa dilihat */}
+                    {intern.laporan_status === "accepted" &&
+                      intern.laporan_path && (
+                        <a
+                          href={`http://localhost:3000/${intern.laporan_path}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-bps-blue hover:text-bps-dark"
+                          title="Lihat Laporan"
+                        >
+                          <EyeIcon className="h-5 w-5 inline-block" />
+                        </a>
+                      )}
+                  </div>
                 </td>
+
                 <td className="px-6 py-4 text-sm break-words">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold
                     ${
-                      intern.overallGraduationStatus === "Lulus"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-gray-800"
+                      intern.isGraduated === "Lulus"
+                        ? "bg-gray-100 text-gray-800"
+                        : "bg-blue-100 text-blue-800"
                     }`}
                   >
-                    {intern.overallGraduationStatus}
+                    {intern.isGraduated ? "Lulus" : "Belum Lulus"}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
-                  {intern.completionDate || "-"}
+                  {intern.graduatedAt && (
+                    <p className="text-sm text-gray-500 text-center">
+                      {new Date(intern.graduatedAt).toLocaleDateString(
+                        "id-ID",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right text-sm font-medium">
                   <button
@@ -220,6 +276,28 @@ function AdminGraduationManage() {
             )}
           </tbody>
         </table>
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
 
       {/* Modal Manajemen Kelulusan */}
@@ -267,20 +345,26 @@ function AdminGraduationManage() {
                     <p>
                       <strong>Status Laporan Akhir:</strong>{" "}
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-semibold
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold
                         ${
-                          reviewingIntern?.finalReportStatus === "Disetujui"
+                          reviewingIntern?.finalReportStatus === "accepted"
                             ? "bg-green-100 text-green-800" // Ubah ini
-                            : reviewingIntern?.finalReportStatus ===
-                              "Perlu Revisi"
+                            : reviewingIntern?.finalReportStatus === "revisi"
                             ? "bg-red-100 text-red-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {reviewingIntern?.finalReportStatus}
+                        {/* {reviewingIntern?.finalReportStatus} */}
+                        {reviewingIntern?.finalReportStatus === "accepted"
+                          ? "Disetujui"
+                          : reviewingIntern?.finalReportStatus === "revisi"
+                          ? "Perlu Revisi"
+                          : reviewingIntern?.finalReportStatus === "review"
+                          ? "Reviewed"
+                          : "Belum Dikirim"}
                       </span>
                     </p>
-                    {reviewingIntern?.finalReportStatus !== "Disetujui" && ( // Ubah ini
+                    {reviewingIntern?.finalReportStatus !== "accepted" && (
                       <p className="text-sm text-red-500 mt-1">
                         Laporan akhir belum Disetujui. Peserta tidak dapat
                         diluluskan.
@@ -288,7 +372,7 @@ function AdminGraduationManage() {
                     )}
                   </div>
 
-                  <form onSubmit={handleUpdateGraduationStatus}>
+                  <form onSubmit={handleSubmitGraduation}>
                     <div className="mb-4">
                       <label
                         htmlFor="newGraduationStatus"
@@ -301,10 +385,9 @@ function AdminGraduationManage() {
                         value={newGraduationStatus}
                         onChange={(e) => setNewGraduationStatus(e.target.value)}
                         className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-                        // Hanya bisa diubah jika laporan akhir sudah Disetujui
                         disabled={
-                          reviewingIntern?.finalReportStatus !== "Disetujui"
-                        } // Ubah ini
+                          reviewingIntern?.finalReportStatus !== "accepted"
+                        }
                       >
                         <option value="Belum Lulus">Belum Lulus</option>
                         <option value="Lulus">Lulus</option>
@@ -323,14 +406,10 @@ function AdminGraduationManage() {
                         type="submit"
                         className={`bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200
                             ${
-                              reviewingIntern?.finalReportStatus !== "Disetujui"
+                              reviewingIntern?.finalReportStatus !== "accepted"
                                 ? "opacity-50 cursor-not-allowed"
                                 : ""
-                            }`} // Ubah ini
-                        // Tombol submit hanya aktif jika laporan akhir sudah Disetujui
-                        disabled={
-                          reviewingIntern?.finalReportStatus !== "Disetujui"
-                        } // Ubah ini
+                            }`}
                       >
                         Simpan Status
                       </button>
