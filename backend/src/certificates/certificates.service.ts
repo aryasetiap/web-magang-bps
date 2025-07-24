@@ -342,6 +342,7 @@ export class CertificatesService {
             email: true,
             namaLengkap: true,
             asalInstitusi: true,
+            isGraduated: true,
           },
         },
       },
