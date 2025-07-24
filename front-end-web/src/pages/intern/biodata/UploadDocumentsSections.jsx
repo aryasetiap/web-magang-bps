@@ -130,10 +130,6 @@ function UploadDocumentsSection() {
     }
   };
 
-  const goToSubmissionsPage = () => {
-    navigate("/dashboard/submissions");
-  };
-
   return (
     <div className="space-y-6 mt-6 bg-emerald-50 p-6 border border-gray-200 rounded-lg">
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -183,11 +179,8 @@ function UploadDocumentsSection() {
 
       <p className="text-sm text-gray-600">
         Catatan: Berkas akan dikirim saat kamu klik tombol "Ajukan Permohonan
-        Magang" di halaman{" "}
-        <span
-          className="font-semibold text-bps-blue cursor-pointer hover:underline"
-          onClick={goToSubmissionsPage}
-        >
+        Magang" di tab{" "}
+        <span className="font-semibold text-bps-blue cursor-pointer hover:underline">
           Status Ajuan
         </span>
         .

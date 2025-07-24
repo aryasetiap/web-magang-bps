@@ -484,7 +484,7 @@ function StaffAssignmentsPage() {
   }
 
   return (
-    <div className="bg-green-50 p-6 border rounded-lg">
+    <div className="bg-white p-6 border rounded-lg shadow-md">
       <h3 className="text-2xl font-semibold text-gray-800 mb-2">
         Manajemen Penugasan
       </h3>

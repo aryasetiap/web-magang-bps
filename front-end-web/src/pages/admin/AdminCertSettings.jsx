@@ -178,7 +178,7 @@ function AdminCertSettingsPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Sertifikat_${certificateId}.pdf`;
+      link.download = `Sertifikat_${certificateId}_${new Date().getTime()}}.pdf`;
       link.click();
     } catch (err) {
       setAlert({
