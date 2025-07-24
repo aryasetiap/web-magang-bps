@@ -305,14 +305,23 @@ export class CertificatesService {
     if (cert.status !== CertificateStatus.signed)
       throw new BadRequestException('Sertifikat harus status signed.');
 
-    return await this.prisma.certificate.update({
-      where: { id },
-      data: {
-        status: CertificateStatus.issued,
-        issuedAt: new Date(),
-        updatedBy: adminId,
-      },
-    });
+    // Update status sertifikat dan user.isGraduated
+    const [updatedCert] = await this.prisma.$transaction([
+      this.prisma.certificate.update({
+        where: { id },
+        data: {
+          status: CertificateStatus.issued,
+          issuedAt: new Date(),
+          updatedBy: adminId,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: cert.userId },
+        data: { isGraduated: true },
+      }),
+    ]);
+
+    return updatedCert;
   }
 
   async getCertificateByUser(userId: number) {

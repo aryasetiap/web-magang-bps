@@ -121,10 +121,9 @@ export class InternshipApplicationsService {
               activityType: true,
               activityStart: true,
               activityEnd: true,
+              isGraduated: true,
               role: {
-                select: {
-                  name: true,
-                },
+                select: { name: true },
               },
             },
           },

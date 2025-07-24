@@ -14,7 +14,7 @@ import * as fs from 'fs';
  */
 @Injectable()
 export class FinalProjectsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Membuat final project baru untuk user tertentu.
@@ -72,7 +72,12 @@ export class FinalProjectsService {
         orderBy: { submittedAt: 'desc' },
         include: {
           user: {
-            select: { id: true, name: true, email: true },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              isGraduated: true,
+            },
           },
           reviewedBy: {
             select: { id: true, name: true },
