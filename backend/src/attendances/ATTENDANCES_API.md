@@ -283,5 +283,70 @@ curl -X POST http://localhost:3000/attendances/request-leave \
 
 ---
 
+## 10. Export Rekap Presensi ke PDF (Admin)
+
+### A. Rekap Semua Intern
+
+#### `GET /attendances/report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&institution=INSTITUSI`
+
+- **Deskripsi:** Export rekap presensi semua intern dalam format PDF, dapat difilter berdasarkan tanggal dan institusi.
+- **Headers:**  
+  `Authorization: Bearer <token>`
+- **Query Params:**
+  - `startDate` (string, required): Tanggal awal filter (format YYYY-MM-DD)
+  - `endDate` (string, required): Tanggal akhir filter (format YYYY-MM-DD)
+  - `institution` (string, optional): Nama institusi (misal: ITS, Unila, dsb)
+- **Response:**  
+  File PDF dengan header gambar BPS Pringsewu di tengah, tabel presensi tanpa kolom Validator.
+- **Contoh Response Header:**
+  ```
+  Content-Type: application/pdf
+  Content-Disposition: attachment; filename="rekap-presensi.pdf"
+  ```
+
+### B. Rekap Satu Intern
+
+#### `GET /attendances/:userId/report?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+
+- **Deskripsi:** Export rekap presensi satu intern dalam format PDF, dapat difilter berdasarkan tanggal.
+- **Headers:**  
+  `Authorization: Bearer <token>`
+- **Query Params:**
+  - `startDate` (string, required): Tanggal awal filter
+  - `endDate` (string, required): Tanggal akhir filter
+- **Response:**  
+  File PDF dengan header gambar BPS Pringsewu di tengah, tabel presensi tanpa kolom Validator.
+- **Contoh Response Header:**
+  ```
+  Content-Type: application/pdf
+  Content-Disposition: attachment; filename="presensi-intern-<userId>.pdf"
+  ```
+
+---
+
+## 11. Format Tabel PDF
+
+- **Kolom pada rekap semua intern:**  
+  `No | Nama Intern | Institusi | Tanggal | Status | Clock In | Clock Out | Keterangan`
+- **Kolom pada rekap satu intern:**  
+  `No | Tanggal | Status | Clock In | Clock Out | Keterangan`
+
+---
+
+## 12. Header PDF
+
+- Setiap file PDF presensi memiliki gambar header (logo BPS Pringsewu dan BerAKHLAK) di bagian atas, selalu di tengah halaman.
+
+---
+
+## 13. Catatan Perubahan
+
+- Kolom Validator dihapus dari semua rekap PDF.
+- Gambar header selalu di tengah secara horizontal.
+- Filter institusi pada endpoint `/attendances/report` sudah didukung.
+- Format PDF lebih ringkas dan informatif.
+
+---
+
 **Referensi Enum Status:**  
 `AttendanceStatus = ['hadir', 'sakit', 'izin', 'tanpa_keterangan']`
