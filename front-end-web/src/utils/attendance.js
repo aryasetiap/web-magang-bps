@@ -52,6 +52,19 @@ export const fetchUserDailyAttendance = async (token, selectedDateObject) => {
   }
 };
 
+export const fetchUserAllAttendances = async (token) => {
+  try {
+    const res = await fetch("http://localhost:3000/attendances", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.data || [];
+  } catch (err) {
+    console.error("Gagal memuat semua data presensi:", err);
+    return [];
+  }
+};
+
 // Kirim presensi masuk (intern)
 export const postCheckIn = async (token, location) => {
   const res = await fetch("http://localhost:3000/attendances/clock-in", {

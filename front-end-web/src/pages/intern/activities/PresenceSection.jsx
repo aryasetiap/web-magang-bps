@@ -8,6 +8,7 @@ import {
   postCheckOut,
   fetchUserDailyAttendance,
   requestLeave,
+  fetchUserAllAttendances,
 } from "../../../utils/attendance";
 import AlertDialog from "../../../components/AlertDialog";
 
@@ -29,6 +30,8 @@ function PresenceSection() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [isInRange, setIsInRange] = useState(false);
+
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
 
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [leaveType, setLeaveType] = useState("izin");
@@ -109,6 +112,18 @@ function PresenceSection() {
       });
     }
   }, [checkInTime]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    fetchUserAllAttendances(token).then((allAttendances) => {
+      const userAttendances = allAttendances.sort(
+        (a, b) =>
+          new Date(b.clockIn || b.submittedAt) -
+          new Date(a.clockIn || a.submittedAt)
+      );
+      setAttendanceHistory(userAttendances);
+    });
+  }, []);
 
   const getGeoLocation = () => {
     if (!navigator.geolocation) {
@@ -319,75 +334,77 @@ function PresenceSection() {
   };
 
   return (
-    <div className="mb-8 p-6 border rounded-lg bg-blue-50 shadow-md">
-      <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-        Presensi Kehadiran
-      </h3>
-
-      {/* Tanggal (opsional) */}
-      <div className="mb-4">
-        <label
-          htmlFor="selectedDate"
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
-          Tanggal
-        </label>
-        <input
-          type="date"
-          id="selectedDate"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="shadow appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
-        />
-      </div>
-
-      {/* Lokasi Dinamis */}
-      <div className="bg-gray-100 p-4 rounded-lg mb-4">
-        <h4 className="text-sm font-semibold text-gray-700 mb-1">
-          Lokasi Saat Ini
-        </h4>
-        {currentLocation ? (
-          <p className="text-sm text-gray-700">
-            Latitude: {currentLocation.latitude.toFixed(5)}, Longitude:{" "}
-            {currentLocation.longitude.toFixed(5)}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-400 italic">Lokasi belum diambil.</p>
-        )}
-        {locationError && (
-          <p className="text-sm text-red-600 mt-1">{locationError}</p>
-        )}
-      </div>
-
-      {/* Waktu Masuk & Pulang */}
-      <div className="flex justify-between items-center mb-6 px-2">
-        <div className="text-center flex-1">
-          <p className="text-sm text-gray-600">Presensi Masuk</p>
-          <p className="text-green-600 text-xl font-semibold">
-            {checkInTime || "-- : --"}
-          </p>
-        </div>
-        <div className="text-center flex-1">
-          <p className="text-sm text-gray-600">Presensi Pulang</p>
-          <p className="text-red-600 text-xl font-semibold">
-            {checkOutTime || "-- : --"}
-          </p>
-        </div>
-      </div>
-
-      {/* Tombol Aksi Presensi */}
-      <div className="text-center">
-        {!currentLocation ? (
-          <button
-            onClick={getGeoLocation}
-            className="w-full py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition duration-200"
+    <div>
+      <div className="mb-8 p-6 border rounded-lg bg-blue-50 shadow-md">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+          Presensi Kehadiran
+        </h3>
+        {/* Tanggal (opsional) */}
+        <div className="mb-4">
+          <label
+            htmlFor="selectedDate"
+            className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Dapatkan Lokasi
-          </button>
-        ) : (
-          <button
-            onClick={checkInTime ? handleCheckOut : handleCheckIn}
-            className={`w-full py-3 rounded-lg text-white font-semibold transition duration-200
+            Tanggal
+          </label>
+          <input
+            type="date"
+            id="selectedDate"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="shadow appearance-none border rounded-lg py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-bps-blue"
+          />
+        </div>
+
+        {/* Lokasi Dinamis */}
+        <div className="bg-gray-100 p-4 rounded-lg mb-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-1">
+            Lokasi Saat Ini
+          </h4>
+          {currentLocation ? (
+            <p className="text-sm text-gray-700">
+              Latitude: {currentLocation.latitude.toFixed(5)}, Longitude:{" "}
+              {currentLocation.longitude.toFixed(5)}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400 italic">
+              Lokasi belum diambil.
+            </p>
+          )}
+          {locationError && (
+            <p className="text-sm text-red-600 mt-1">{locationError}</p>
+          )}
+        </div>
+
+        {/* Waktu Masuk & Pulang */}
+        <div className="flex justify-between items-center mb-6 px-2">
+          <div className="text-center flex-1">
+            <p className="text-sm text-gray-600">Presensi Masuk</p>
+            <p className="text-green-600 text-xl font-semibold">
+              {checkInTime || "-- : --"}
+            </p>
+          </div>
+          <div className="text-center flex-1">
+            <p className="text-sm text-gray-600">Presensi Pulang</p>
+            <p className="text-red-600 text-xl font-semibold">
+              {checkOutTime || "-- : --"}
+            </p>
+          </div>
+        </div>
+
+        {/* Tombol Aksi Presensi */}
+        <div className="text-center">
+          {!currentLocation ? (
+            <button
+              onClick={getGeoLocation}
+              className="w-full py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition duration-200"
+            >
+              Dapatkan Lokasi
+            </button>
+          ) : (
+            <button
+              onClick={checkInTime ? handleCheckOut : handleCheckIn}
+              className={`w-full py-3 rounded-lg text-white font-semibold transition duration-200
             ${
               checkInTime
                 ? "bg-red-500 hover:bg-red-600"
@@ -398,19 +415,115 @@ function PresenceSection() {
                 ? "opacity-50 cursor-not-allowed"
                 : ""
             }`}
-            disabled={!isInRange || !isToday || (checkInTime && checkOutTime)}
-          >
-            {checkInTime ? "Presensi Pulang" : "Presensi Masuk"}
-          </button>
-        )}
+              disabled={!isInRange || !isToday || (checkInTime && checkOutTime)}
+            >
+              {checkInTime ? "Presensi Pulang" : "Presensi Masuk"}
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={() => setIsLeaveModalOpen(true)}
+          className="mt-4 w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-200"
+        >
+          Ajukan Izin/Sakit
+        </button>
       </div>
 
-      <button
-        onClick={() => setIsLeaveModalOpen(true)}
-        className="mt-4 w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-200"
-      >
-        Ajukan Izin/Sakit
-      </button>
+      <div className="overflow-x-auto mt-6 mb-8 p-6 border rounded-lg bg-blue-50 shadow-md">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+          Riwayat Presensi
+        </h2>
+        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Tanggal
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Jam Hadir
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Presensi Pulang
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Keterangan
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Bukti
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {attendanceHistory.length > 0 ? (
+              attendanceHistory.map((item, index) => {
+                const date = new Date(
+                  item.clockIn || item.submittedAt
+                ).toLocaleDateString("id-ID");
+                const jamMasuk = item.clockIn
+                  ? new Date(item.clockIn).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : item.submittedAt
+                  ? new Date(item.submittedAt).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-";
+
+                const jamKeluar = item.clockOut
+                  ? new Date(item.clockOut).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "-";
+
+                const keterangan =
+                  item.status === "hadir" ? "-" : item.reasonDescription || "-";
+
+                const proof = item.proofFilePath ? (
+                  <a
+                    href={`http://localhost:3000/${item.proofFilePath}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    Lihat
+                  </a>
+                ) : (
+                  "-"
+                );
+
+                return (
+                  <tr
+                    key={index}
+                    className="bg-white hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900">{date}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {jamMasuk}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {jamKeluar}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">
+                      {keterangan}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{proof}</td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                  Belum ada data presensi.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <Transition appear show={isLeaveModalOpen} as={Fragment}>
         <Dialog

@@ -253,7 +253,7 @@ function InternDashboard() {
         {/* --- Rekapitulasi Aktivitas Magang --- */}
         {showActivitySummary && (
           <>
-            <h2 className="text-3xl font-extrabold text-gray-900 mt-10 mb-6 text-center">
+            <h2 className="text-3xl font-semibold text-gray-900 mt-10 mb-6 text-center">
               Rekapitulasi Aktivitas Magang
             </h2>
 
