@@ -145,7 +145,7 @@ function BiodataSection() {
                   name={id}
                   value={formData[id]}
                   onChange={handleChange}
-                  className="w-full text-gray-700 shadow appearance-none border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bps-blue"
+                  className="w-full text-gray-700 bg-white shadow appearance-none border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bps-blue"
                   required
                 >
                   <option value="">Pilih status</option>
