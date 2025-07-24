@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useProfile } from "../../../contexts/ProfileContext";
 import AlertDialog from "../../../components/AlertDialog";
 import { formatDateInputSafe } from "../../../utils/formatDateTime";
+import {
+  ChevronDownIcon,
+  ChevronUpDownIcon,
+} from "@heroicons/react/24/outline";
 
 function BiodataSection() {
   const { profile, fetchProfile } = useProfile();
@@ -110,6 +114,11 @@ function BiodataSection() {
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">
           Identitas Diri
         </h3>
+        <p className="text-gray-700 text-sm mb-6">
+          Mohon lengkapi data identitas diri dan unggah berkas yang diperlukan
+          untuk kelengkapan data magang. Bidang dengan tanda (
+          <span className="text-red-500">*</span>) wajib diisi.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             { id: "namaLengkap", label: "Nama Lengkap" },
@@ -128,7 +137,7 @@ function BiodataSection() {
                 className="block text-gray-700 text-sm font-bold mb-2"
                 htmlFor={id}
               >
-                {label}
+                {label}: <span className="text-red-500">*</span>
               </label>
 
               {id === "educationStatus" ? (
@@ -136,7 +145,7 @@ function BiodataSection() {
                   name={id}
                   value={formData[id]}
                   onChange={handleChange}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full text-gray-700 shadow appearance-none border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bps-blue"
                   required
                 >
                   <option value="">Pilih status</option>
@@ -171,6 +180,7 @@ function BiodataSection() {
               htmlFor="alamat"
             >
               Alamat Lengkap
+              <span className="text-red-500">*</span>
             </label>
             <textarea
               name="alamat"

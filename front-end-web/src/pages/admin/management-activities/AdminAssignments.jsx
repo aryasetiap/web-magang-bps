@@ -5,6 +5,8 @@ import {
   EyeIcon,
   TrashIcon,
   PencilSquareIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
 } from "@heroicons/react/24/outline";
 import AlertDialog from "../../../components/AlertDialog";
 
@@ -29,6 +31,11 @@ function AdminAssignmentsPage() {
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [reviewScore, setReviewScore] = useState("");
   const [reviewStatus, setReviewStatus] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -135,6 +142,25 @@ function AdminAssignmentsPage() {
   useEffect(() => {
     fetchData();
   }, [token]);
+
+  // --- Filter dan Pagination ---
+  const filteredAssignments = assignments.filter((assignment) => {
+    const titleMatch = assignment.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const statusMatch =
+      filterStatus === "all" ||
+      assignment.submissions?.some((s) => s.status === filterStatus);
+
+    return titleMatch && statusMatch;
+  });
+
+  const totalPages = Math.ceil(filteredAssignments.length / itemsPerPage);
+  const paginatedAssignments = filteredAssignments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // --- CRUD Tugas ---
   function openCreateModal() {
@@ -446,14 +472,10 @@ function AdminAssignmentsPage() {
   }
 
   return (
-    <div className="bg-green-50 p-8 rounded-lg">
+    <div className="bg-green-50 p-6 border rounded-lg">
       <h3 className="text-2xl font-semibold text-gray-800 mb-2">
         Manajemen Penugasan
       </h3>
-      {/* <p className="text-gray-700 mb-6">
-        Sebagai Admin, Anda dapat mengelola semua penugasan untuk peserta
-        magang.
-      </p>  */}
 
       {/* Tombol Buat Tugas Baru */}
       <div className="mb-6 text-right">
@@ -463,6 +485,34 @@ function AdminAssignmentsPage() {
         >
           <PlusIcon className="h-5 w-5 mr-2" /> Buat Tugas Baru
         </button>
+      </div>
+
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <input
+          type="text"
+          placeholder="Cari judul tugas..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-bps-blue"
+        />
+
+        <select
+          value={filterStatus}
+          onChange={(e) => {
+            setFilterStatus(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-bps-blue"
+        >
+          <option value="all">Semua Status</option>
+          <option value="submitted">Submitted</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="revisi">Revisi</option>
+          <option value="not_submitted">Belum Submit</option>
+        </select>
       </div>
 
       {/* Daftar Penugasan */}
@@ -488,7 +538,7 @@ function AdminAssignmentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {assignments.map((assignment) => (
+            {paginatedAssignments.map((assignment) => (
               <Fragment key={assignment.id}>
                 <tr className="bg-white hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 break-words">
@@ -600,6 +650,29 @@ function AdminAssignmentsPage() {
             )}
           </tbody>
         </table>
+
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
       {/* Modal Buat/Edit Tugas */}
       <Transition appear show={isCreateModalOpen} as={Fragment}>

@@ -3,7 +3,6 @@ import { NavLink } from "react-router-dom";
 import {
   HomeIcon,
   UserCircleIcon,
-  DocumentCheckIcon,
   CalendarDaysIcon,
   DocumentTextIcon,
   AcademicCapIcon,
@@ -45,11 +44,7 @@ function Sidebar({ isCollapsed, userRole }) {
   const internMenus = [
     { name: "Dashboard", path: "/dashboard", icon: HomeIcon, exact: true },
     { name: "Biodata", path: "/dashboard/biodata", icon: UserCircleIcon },
-    {
-      name: "Status Ajuan",
-      path: "/dashboard/submissions",
-      icon: DocumentCheckIcon,
-    },
+
     internshipAccepted && {
       name: "Aktivitas",
       path: "/dashboard/activities",
@@ -69,7 +64,6 @@ function Sidebar({ isCollapsed, userRole }) {
 
   const adminMenus = [
     { name: "Dashboard", path: "/admin", icon: HomeIcon, exact: true },
-    // { name: 'Manajemen Akun', path: '/admin/accounts', icon: UsersIcon },
     {
       name: "Pengaturan Akun & Sistem",
       path: "/admin/settings",
@@ -85,27 +79,11 @@ function Sidebar({ isCollapsed, userRole }) {
       path: "/admin/monitoring",
       icon: ClipboardDocumentCheckIcon,
     },
-    // {
-    //   name: "Manajemen Penugasan",
-    //   path: "/admin/assignments",
-    //   icon: FolderOpenIcon,
-    // },
     {
       name: "Review Tugas Akhir",
       path: "/admin/final-reviews",
       icon: DocumentMagnifyingGlassIcon,
     },
-    // {
-    //   name: "Manajemen Kelulusan",
-    //   path: "/admin/graduation",
-    //   icon: AcademicCapIcon,
-    // },
-    // { name: 'Laporan & Statistik', path: '/admin/reports', icon: ChartPieIcon },
-    // {
-    //   name: "Master Dokumen",
-    //   path: "/admin/master-docs",
-    //   icon: DocumentArrowUpIcon,
-    // },
     {
       name: "Pengaturan Sertifikat",
       path: "/admin/cert-settings",

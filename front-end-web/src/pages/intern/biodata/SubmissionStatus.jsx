@@ -1,7 +1,7 @@
 // File: pages/StatusAjuanPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AlertDialog from "../../components/AlertDialog";
+import AlertDialog from "../../../components/AlertDialog";
 
 function SubmissionStatusPage() {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ function SubmissionStatusPage() {
     transkripNilai: false,
     suratPermohonan: false,
   });
+  const [applicationId, setApplicationId] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -66,8 +67,10 @@ function SubmissionStatusPage() {
         if (res.ok) {
           const result = await res.json();
           if (result.data && result.data.length > 0) {
-            setSubmissionStatus(result.data[0].status);
-            setFeedback(result.data[0].feedback || "");
+            const app = result.data[0];
+            setSubmissionStatus(app.status);
+            setFeedback(app.feedback || "");
+            setApplicationId(app.id);
           } else {
             setSubmissionStatus("initial");
           }
@@ -149,8 +152,16 @@ function SubmissionStatusPage() {
     });
 
     try {
-      const res = await fetch("http://localhost:3000/internship-applications", {
-        method: "POST",
+      const url =
+        submissionStatus === "ditolak" && applicationId
+          ? `http://localhost:3000/internship-applications/${applicationId}`
+          : "http://localhost:3000/internship-applications";
+
+      const method =
+        submissionStatus === "ditolak" && applicationId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -419,12 +430,29 @@ function SubmissionStatusPage() {
               Alasan penolakan: {feedback ? feedback : "-"} Silakan periksa
               kembali kelengkapan atau kesesuaian persyaratan.
             </p>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="mt-6 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
-            >
-              Kembali ke Dashboard
-            </button>
+            <div className="flex flex-col items-center mt-6 space-y-4">
+              <button
+                onClick={handleAjukan}
+                className="bg-bps-blue hover:bg-bps-light-blue text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
+                disabled={
+                  !(filesExist.transkripNilai && filesExist.suratPermohonan)
+                }
+              >
+                Ajukan Ulang Permohonan Magang
+              </button>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200"
+              >
+                Kembali ke Dashboard
+              </button>
+              {!(filesExist.transkripNilai && filesExist.suratPermohonan) && (
+                <p className="text-red-500 text-sm text-center">
+                  Mohon lengkapi berkas transkrip nilai dan surat permohonan
+                  magang di halaman Biodata sebelum mengajukan ulang.
+                </p>
+              )}
+            </div>
           </div>
         );
 
@@ -438,8 +466,8 @@ function SubmissionStatusPage() {
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold text-bps-blue mb-6">
+    <div className="bg-gray-50 p-8 border rounded-lg">
+      <h2 className="text-2xl font-semibold text-bps-blue mb-6">
         Status Ajuan Magang
       </h2>
       {renderContent()}

@@ -2,12 +2,14 @@ import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import {
   ArrowDownTrayIcon,
-  ArrowPathIcon,
   ArrowUpTrayIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   DocumentArrowDownIcon,
-  DocumentTextIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
+import DocumentPreview from "../../components/DocumentPreview";
+import AlertDialog from "../../components/AlertDialog";
 
 function AdminCertSettingsPage() {
   const [certificates, setCertificates] = useState([]);
@@ -20,7 +22,28 @@ function AdminCertSettingsPage() {
     nipKepalaBPS: "",
   });
   const [uploadingId, setUploadingId] = useState(null);
-  const [eligibleInterns, setEligibleInterns] = useState([]);
+  const [selectedSignedFiles, setSelectedSignedFiles] = useState({});
+  const [confirmUploadId, setConfirmUploadId] = useState(null);
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+  //close alert function
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  // Tambahkan state search dan pagination
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
@@ -67,6 +90,23 @@ function AdminCertSettingsPage() {
     if (token) fetchData();
   }, [token]);
 
+  // --- SEARCH & PAGINATION ---
+  const filteredCertificates = certificates.filter(
+    (cert) =>
+      (cert.internName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (cert.institusi || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCertificates = filteredCertificates.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   const openGenerateModal = (cert) => {
     setSelected(cert);
     setShowModal(true);
@@ -105,11 +145,23 @@ function AdminCertSettingsPage() {
         throw new Error(data.message || "Gagal generate sertifikat");
       }
 
-      alert("Sertifikat berhasil dibuat!");
+      setAlert({
+        isOpen: true,
+        title: "Berhasil",
+        message: "Sertifikat berhasil dibuat!",
+        type: "success",
+        autoCloseDelay: 2500,
+      });
       closeModal();
       window.location.reload();
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal upload file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     }
   };
 
@@ -129,7 +181,13 @@ function AdminCertSettingsPage() {
       link.download = `Sertifikat_${certificateId}.pdf`;
       link.click();
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal mengunduh file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     }
   };
 
@@ -165,12 +223,48 @@ function AdminCertSettingsPage() {
         )
       );
 
-      alert("Upload berhasil!");
+      setAlert({
+        isOpen: true,
+        title: "Berhasil",
+        message: "Sertifikat bertandatangan berhasil diunggah!",
+        type: "success",
+        autoCloseDelay: 2500,
+      });
     } catch (err) {
-      alert(err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal",
+        message: err.message || "Gagal upload file.",
+        type: "error",
+        autoCloseDelay: 2500,
+      });
     } finally {
       setUploadingId(null);
     }
+  };
+
+  const handleConfirmUpload = (certificateId) => {
+    setConfirmUploadId(certificateId);
+    setAlert({
+      isOpen: true,
+      title: "Konfirmasi Upload",
+      message: "Apakah yakin ingin mengunggah file ini?",
+      type: "confirm",
+      confirmButtonText: "Ya, Upload",
+      cancelButtonText: "Batal",
+      onConfirm: async () => {
+        await handleUploadSigned(
+          certificateId,
+          selectedSignedFiles[certificateId]
+        );
+        setSelectedSignedFiles((prev) => {
+          const updated = { ...prev };
+          delete updated[certificateId];
+          return updated;
+        });
+      },
+      showCancelButton: true,
+    });
   };
 
   return (
@@ -178,6 +272,21 @@ function AdminCertSettingsPage() {
       <h2 className="text-3xl font-bold text-bps-blue mb-6">
         Pengaturan Sertifikat
       </h2>
+
+      {/* Search Input */}
+      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <input
+          type="text"
+          placeholder="Cari nama peserta atau institusi..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 w-full md:w-64"
+        />
+      </div>
+
       <table className="min-w-full bg-white border border-gray-200 rounded-lg table-fixed">
         <thead className="bg-gray-100">
           <tr>
@@ -202,7 +311,7 @@ function AdminCertSettingsPage() {
           </tr>
         </thead>
         <tbody>
-          {[...certificates, ...eligibleInterns].map((cert) => (
+          {currentCertificates.map((cert) => (
             <tr key={cert.id} className="border-t">
               <td className="p-3 text-sm font-medium text-center">
                 {cert.internName}
@@ -229,21 +338,46 @@ function AdminCertSettingsPage() {
               </td>
               <td className="p-3 text-center">
                 {cert.status === "generated" && (
-                  <label className="inline-flex items-center justify-center cursor-pointer text-bps-blue hover:text-blue-700">
-                    <ArrowUpTrayIcon
-                      className="h-5 w-5"
-                      title="Unggah Sertifikat Bertandatangan"
-                    />
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={() =>
+                        document.getElementById(`fileInput-${cert.id}`).click()
+                      }
+                      className="text-sm text-bps-blue font-semibold hover:text-blue-800"
+                    >
+                      Pilih File
+                    </button>
                     <input
                       type="file"
                       accept="application/pdf"
-                      onChange={(e) =>
-                        handleUploadSigned(cert.id, e.target.files[0])
-                      }
-                      disabled={uploadingId === cert.id}
+                      id={`fileInput-${cert.id}`}
                       className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setSelectedSignedFiles((prev) => ({
+                            ...prev,
+                            [cert.id]: file,
+                          }));
+                        }
+                      }}
                     />
-                  </label>
+
+                    {/* Preview Komponen */}
+                    {selectedSignedFiles[cert.id] && (
+                      <div className="flex flex-col items-center">
+                        <DocumentPreview file={selectedSignedFiles[cert.id]} />
+                        <button
+                          onClick={() => handleConfirmUpload(cert.id)}
+                          disabled={uploadingId === cert.id}
+                          title="Unggah Sertifikat Bertandatangan"
+                          className="mt-1 text-bps-blue hover:text-blue-800"
+                        >
+                          <ArrowUpTrayIcon className="h-5 w-5 inline" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {cert.status === "signed" && (
@@ -295,8 +429,38 @@ function AdminCertSettingsPage() {
               </td>
             </tr>
           ))}
+          {currentCertificates.length === 0 && (
+            <tr>
+              <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                Tidak ada sertifikat yang ditemukan.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+
+      {/* Kontrol Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronLeftIcon className="h-5 w-5 inline-block" />
+        </button>
+        <span className="text-sm text-gray-600">
+          Halaman {currentPage} dari {totalPages}
+        </span>
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronRightIcon className="h-5 w-5 inline-block" />
+        </button>
+      </div>
 
       {/* Modal Generate */}
       <Transition appear show={showModal} as={Fragment}>
@@ -401,6 +565,18 @@ function AdminCertSettingsPage() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+        confirmButtonText={alert.confirmButtonText}
+        cancelButtonText={alert.cancelButtonText}
+      />
     </div>
   );
 }

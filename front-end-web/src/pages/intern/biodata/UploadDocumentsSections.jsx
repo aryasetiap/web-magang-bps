@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AlertDialog from "../../../components/AlertDialog";
+import DocumentPreview from "../../../components/DocumentPreview";
 
 function UploadDocumentsSection() {
   const navigate = useNavigate();
@@ -9,6 +10,12 @@ function UploadDocumentsSection() {
     transkripNilai: null,
     suratPermohonan: null,
   });
+
+  const fileRefs = {
+    cv: useRef(null),
+    transkripNilai: useRef(null),
+    suratPermohonan: useRef(null),
+  };
 
   const [alert, setAlert] = useState({
     isOpen: false,
@@ -44,6 +51,7 @@ function UploadDocumentsSection() {
         type: "error",
         autoCloseDelay: 2500,
       });
+      fileRefs[name].current.value = ""; // reset input file secara manual
       return;
     }
 
@@ -55,6 +63,7 @@ function UploadDocumentsSection() {
         type: "error",
         autoCloseDelay: 2500,
       });
+      fileRefs[name].current.value = ""; // reset juga jika error
       return;
     }
 
@@ -120,6 +129,7 @@ function UploadDocumentsSection() {
               {fileKey !== "cv" && <span className="text-red-500">*</span>}
             </label>
             <input
+              ref={fileRefs[fileKey]}
               type="file"
               name={fileKey}
               id={fileKey}
@@ -127,13 +137,9 @@ function UploadDocumentsSection() {
               onChange={handleFileChange}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-bps-blue file:text-white hover:file:bg-bps-light-blue"
               required={fileKey !== "cv"}
-              disabled={fileKey === "cv" && files.cv}
             />
-            {files[fileKey] && (
-              <p className="text-sm text-gray-600 mt-2">
-                Terpilih: {files[fileKey].name}
-              </p>
-            )}
+
+            {files[fileKey] && <DocumentPreview file={files[fileKey]} />}
           </div>
         ))}
       </div>

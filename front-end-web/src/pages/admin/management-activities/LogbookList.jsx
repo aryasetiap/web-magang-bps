@@ -1,10 +1,20 @@
 import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  EyeIcon,
+} from "@heroicons/react/24/outline";
 
 function LogbookList() {
   const [logbooks, setLogbooks] = useState([]);
   const [modalData, setModalData] = useState(null);
+  const [searchName, setSearchName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const token = localStorage.getItem("authToken");
 
   useEffect(() => {
@@ -25,32 +35,47 @@ function LogbookList() {
     fetchLogbooks();
   }, [token]);
 
+  // Filter berdasarkan nama & tanggal
+  const filteredLogbooks = logbooks.filter((entry) => {
+    const nameMatch = entry.user?.name
+      ?.toLowerCase()
+      .includes(searchName.toLowerCase());
+
+    const logDate = new Date(entry.logDate);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+
+    const dateMatch = (!start || logDate >= start) && (!end || logDate <= end);
+
+    return nameMatch && dateMatch;
+  });
+
   // Kelompokkan logbook per peserta
   const grouped = {};
-  logbooks.forEach((entry) => {
+  filteredLogbooks.forEach((entry) => {
     const name = entry.user?.name || "Peserta Tanpa Nama";
     if (!grouped[name]) grouped[name] = [];
     grouped[name].push(entry);
   });
 
+  const totalPages = Math.ceil(Object.keys(grouped).length / itemsPerPage);
+  const paginatedNames = Object.keys(grouped).slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const formatTime = (isoString) => {
     if (!isoString) return "-";
     const date = new Date(isoString);
-
     const time = date.toLocaleString("id-ID", {
       dateStyle: "short",
       timeStyle: "short",
     });
-
-    // Deteksi zona waktu
-    const offset = date.getTimezoneOffset(); // dalam menit
+    const offset = date.getTimezoneOffset();
     const timeOffset = -offset / 60;
-
-    let zone = "WIB"; // default
+    let zone = "WIB";
     if (timeOffset === 8) zone = "WITA";
     else if (timeOffset === 9) zone = "WIT";
-    else if (timeOffset === 7) zone = "WIB"; // biasanya JavaScript berjalan di zona waktu UTC+7
-
     return `${time} ${zone}`;
   };
 
@@ -59,16 +84,49 @@ function LogbookList() {
       <h3 className="text-2xl font-semibold text-gray-800 mb-4">
         Logbook Harian Peserta
       </h3>
-      {Object.keys(grouped).length > 0 ? (
+
+      {/* Search & Filter */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Cari nama peserta..."
+          value={searchName}
+          onChange={(e) => {
+            setSearchName(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 focus:outline-none"
+        />
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => {
+            setEndDate(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded-lg px-3 py-2 focus:outline-none"
+        />
+      </div>
+
+      {paginatedNames.length > 0 ? (
         <div className="space-y-6">
-          {Object.entries(grouped).map(([name, logs]) => (
+          {paginatedNames.map((name) => (
             <div
               key={name}
               className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
             >
               <h4 className="font-bold text-xl text-bps-blue mb-3">{name}</h4>
               <ul className="space-y-3">
-                {logs.map((log, i) => (
+                {grouped[name].map((log, i) => (
                   <li
                     key={i}
                     className="p-3 bg-gray-50 rounded-lg border border-gray-100 cursor-pointer hover:bg-gray-100 transition"
@@ -90,9 +148,36 @@ function LogbookList() {
           ))}
         </div>
       ) : (
-        <p className="text-gray-600">Belum ada entri logbook dari peserta.</p>
+        <p className="text-gray-600">
+          Tidak ditemukan logbook dengan filter tersebut.
+        </p>
       )}
 
+      {/* Pagination */}
+      {/* Kontrol Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronLeftIcon className="h-5 w-5 inline-block" />
+        </button>
+        <span className="text-sm text-gray-600">
+          Halaman {currentPage} dari {totalPages}
+        </span>
+        <button
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+          }
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+        >
+          <ChevronRightIcon className="h-5 w-5 inline-block" />
+        </button>
+      </div>
+
+      {/* Modal Logbook */}
       <Transition appear show={!!modalData} as={Fragment}>
         <Dialog
           as="div"
