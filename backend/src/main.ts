@@ -23,7 +23,7 @@ async function bootstrap(): Promise<void> {
   );
 
   app.enableCors({
-    origin: 'http://localhost:3001',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
     credentials: true,
   });
 
