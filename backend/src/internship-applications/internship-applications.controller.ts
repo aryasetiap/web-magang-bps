@@ -29,13 +29,13 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 export class InternshipApplicationsController {
   constructor(
     private readonly internshipApplicationsService: InternshipApplicationsService,
-  ) { }
+  ) {}
 
   /**
    * Endpoint untuk membuat pengajuan magang baru.
    * Hanya dapat diakses oleh user yang sudah login.
    * Mendukung upload file CV, transkrip, dan surat permohonan.
-   * 
+   *
    * @param files File yang diupload (cv, transcript, requestLetter)
    * @param req Request object yang berisi data user
    * @param createInternshipApplicationDto Data pengajuan magang
@@ -72,13 +72,13 @@ export class InternshipApplicationsController {
    * Endpoint untuk mengambil seluruh data pengajuan magang.
    * Hanya dapat diakses oleh Admin.
    * Mendukung fitur paginasi.
-   * 
+   *
    * @param paginationQuery Parameter paginasi
    * @returns Daftar seluruh pengajuan magang
    */
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('Admin')
+  @Roles('Admin', 'Staff BPS')
   findAll(@Query() paginationQuery: PaginationQueryDto) {
     return this.internshipApplicationsService.findAll(paginationQuery);
   }
@@ -86,7 +86,7 @@ export class InternshipApplicationsController {
   /**
    * Endpoint untuk mengambil data pengajuan magang milik user yang sedang login.
    * Hanya dapat diakses oleh user dengan peran Intern.
-   * 
+   *
    * @param req Request object yang berisi data user
    * @returns Data pengajuan magang milik user
    */
@@ -103,13 +103,13 @@ export class InternshipApplicationsController {
   /**
    * Endpoint untuk mengambil detail pengajuan magang berdasarkan ID.
    * Hanya dapat diakses oleh Admin.
-   * 
+   *
    * @param id ID pengajuan magang
    * @returns Detail pengajuan magang
    */
   @Get(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('Admin')
+  @Roles('Admin', 'Staff BPS')
   findOne(@Param('id') id: string) {
     return this.internshipApplicationsService.findOne(+id);
   }
@@ -117,7 +117,7 @@ export class InternshipApplicationsController {
   /**
    * Endpoint untuk memperbarui status pengajuan magang.
    * Hanya dapat diakses oleh Admin.
-   * 
+   *
    * @param id ID pengajuan magang
    * @param updateApplicationStatusDto Data status baru
    * @param req Request object yang berisi data admin
@@ -125,7 +125,7 @@ export class InternshipApplicationsController {
    */
   @Patch(':id/status')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('Admin')
+  @Roles('Admin', 'Staff BPS')
   updateStatus(
     @Param('id') id: string,
     @Body() updateApplicationStatusDto: UpdateApplicationStatusDto,

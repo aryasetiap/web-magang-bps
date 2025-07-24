@@ -7,7 +7,7 @@ API ini digunakan untuk mengelola pengajuan magang, termasuk pembuatan, pengambi
 ## Authentication & Authorization
 
 - Semua endpoint membutuhkan autentikasi JWT.
-- Beberapa endpoint hanya dapat diakses oleh peran tertentu (`Admin` atau `Intern`).
+- Beberapa endpoint hanya dapat diakses oleh peran tertentu (`Admin`, `Staff BPS`, atau `Intern`).
 
 ---
 
@@ -74,7 +74,7 @@ Membuat pengajuan magang baru. Hanya dapat diakses oleh user yang sudah login.
 
 #### Deskripsi
 
-Mengambil seluruh data pengajuan magang. Hanya dapat diakses oleh Admin.
+Mengambil seluruh data pengajuan magang. Hanya dapat diakses oleh **Admin dan Staff BPS**.
 
 #### Headers
 
@@ -121,7 +121,7 @@ Mengambil seluruh data pengajuan magang. Hanya dapat diakses oleh Admin.
 #### Error
 
 - 401: Unauthorized
-- 403: Forbidden (bukan Admin)
+- 403: Forbidden (bukan Admin atau Staff BPS)
 
 ---
 
@@ -169,7 +169,7 @@ Mengambil data pengajuan magang milik user yang sedang login. Hanya untuk peran 
 
 #### Deskripsi
 
-Mengambil detail pengajuan magang berdasarkan ID. Hanya untuk Admin.
+Mengambil detail pengajuan magang berdasarkan ID. Hanya untuk **Admin dan Staff BPS**.
 
 #### Headers
 
@@ -205,7 +205,7 @@ Mengambil detail pengajuan magang berdasarkan ID. Hanya untuk Admin.
 #### Error
 
 - 401: Unauthorized
-- 403: Forbidden (bukan Admin)
+- 403: Forbidden (bukan Admin atau Staff BPS)
 - 404: Data tidak ditemukan
 
 ---
@@ -216,7 +216,7 @@ Mengambil detail pengajuan magang berdasarkan ID. Hanya untuk Admin.
 
 #### Deskripsi
 
-Memperbarui status aplikasi magang. Hanya untuk Admin.
+Memperbarui status aplikasi magang. Hanya untuk **Admin dan Staff BPS**.
 
 #### Headers
 
@@ -254,7 +254,7 @@ Memperbarui status aplikasi magang. Hanya untuk Admin.
 
 - 400: Validasi gagal (periode tidak valid, dsb)
 - 401: Unauthorized
-- 403: Forbidden (bukan Admin)
+- 403: Forbidden (bukan Admin atau Staff BPS)
 - 404: Data tidak ditemukan
 
 ---
@@ -264,7 +264,7 @@ Memperbarui status aplikasi magang. Hanya untuk Admin.
 - Semua file yang diupload harus berformat PDF dan maksimal 2MB.
 - Field `cv` bersifat opsional, sedangkan `transcript` dan `requestLetter` wajib.
 - Periode magang minimal 1 bulan dan maksimal 6 bulan.
-- Tanggal mulai magang tidak boleh di masa lalu (kecuali oleh admin saat verifikasi).
+- Tanggal mulai magang tidak boleh di masa lalu (kecuali oleh admin atau staff BPS saat verifikasi).
 - **User dapat mengajukan ulang magang jika pengajuan sebelumnya berstatus `ditolak`.**
 
 ---
