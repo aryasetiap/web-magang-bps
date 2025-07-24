@@ -1,4 +1,5 @@
 // Buat tugas baru (dengan file) -> admin
+const baseUrl = process.env.REACT_APP_BASE_URL;
 export async function createAssignmentApi(
   token,
   { title, description, deadline, internIds, file }
@@ -12,7 +13,7 @@ export async function createAssignmentApi(
   }
   if (file) formData.append("file", file);
 
-  const res = await fetch("http://localhost:3000/tasks", {
+  const res = await fetch(`${baseUrl}/tasks`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -24,7 +25,7 @@ export async function createAssignmentApi(
 
 // Assign tugas ke intern
 export async function assignTaskApi(token, taskId, internIds) {
-  const res = await fetch(`http://localhost:3000/tasks/${taskId}/assign`, {
+  const res = await fetch(`${baseUrl}/tasks/${taskId}/assign`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +40,7 @@ export async function assignTaskApi(token, taskId, internIds) {
 
 // Lihat submission tugas
 export async function fetchSubmissionsApi(token, taskId) {
-  const res = await fetch(`http://localhost:3000/tasks/${taskId}/submissions`, {
+  const res = await fetch(`${baseUrl}/tasks/${taskId}/submissions`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const result = await res.json();
@@ -55,7 +56,7 @@ export async function gradeSubmissionApi(
   { score, feedback }
 ) {
   const res = await fetch(
-    `http://localhost:3000/tasks/submissions/${submissionId}/grade`,
+    `${baseUrl}/tasks/submissions/${submissionId}/grade`,
     {
       method: "POST",
       headers: {
@@ -121,12 +122,9 @@ export const statusBadge = (status) => {
 
 // Fetch data tugas dari API
 export const fetchAssignments = async (token) => {
-  const res = await fetch(
-    "http://localhost:3000/tasks/my-tasks?page=1&limit=20",
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const res = await fetch(`${baseUrl}/tasks/my-tasks?page=1&limit=20`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   if (!res.ok) throw new Error("Gagal memuat tugas");
   return await res.json();
 };

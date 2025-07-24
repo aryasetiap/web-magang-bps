@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'; // Tambahkan useEffect
-import { Navigate, useNavigate } from 'react-router-dom'; // Tambahkan useNavigate
-import AlertDialog from '../AlertDialog'; // Pastikan path ini sesuai dengan struktur proyek Anda
+import React, { useState, useEffect } from "react"; // Tambahkan useEffect
+import { Navigate, useNavigate } from "react-router-dom"; // Tambahkan useNavigate
+import AlertDialog from "../AlertDialog"; // Pastikan path ini sesuai dengan struktur proyek Anda
 
 function ProtectedRoute({ children, allowedRoles }) {
   const navigate = useNavigate(); // Inisialisasi useNavigate
@@ -10,9 +10,9 @@ function ProtectedRoute({ children, allowedRoles }) {
   // State untuk AlertDialog
   const [alert, setAlert] = useState({
     isOpen: false,
-    title: '',
-    message: '',
-    type: '',
+    title: "",
+    message: "",
+    type: "",
     autoCloseDelay: 0,
     onConfirm: null,
     showCancelButton: false,
@@ -20,15 +20,13 @@ function ProtectedRoute({ children, allowedRoles }) {
 
   // Fungsi untuk menutup AlertDialog
   const closeAlert = () => {
-    setAlert(prev => ({ ...prev, isOpen: false }));
+    setAlert((prev) => ({ ...prev, isOpen: false }));
   };
 
   // Efek untuk menangani logika proteksi rute
   useEffect(() => {
     if (!token) {
-      // Jika tidak ada role (belum login), langsung arahkan ke halaman login
-      // Tanpa alert karena ini adalah kondisi default untuk akses yang tidak diautentikasi
-      navigate('/login', { replace: true });
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -36,15 +34,15 @@ function ProtectedRoute({ children, allowedRoles }) {
       // Jika role tidak diizinkan untuk rute ini
       setAlert({
         isOpen: true,
-        title: 'Akses Ditolak!',
+        title: "Akses Ditolak!",
         message: `Role Anda (${userRole}) tidak diizinkan mengakses halaman ini.`,
-        type: 'error',
+        type: "error",
         autoCloseDelay: 2000, // Tampilkan alert sebentar sebelum redirect
       });
 
       // Redirect setelah alert ditampilkan
       const timer = setTimeout(() => {
-        navigate('/forbidden', { replace: true }); // Arahkan kembali ke login
+        navigate("/forbidden", { replace: true }); // Arahkan kembali ke login
       }, 2000); // Durasi ini harus sama dengan autoCloseDelay
 
       return () => clearTimeout(timer); // Cleanup timer

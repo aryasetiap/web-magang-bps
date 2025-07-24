@@ -24,7 +24,7 @@ function InternDashboard() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const API_BASE_URL = "http://localhost:3000";
+  const baseUrl = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +57,7 @@ function InternDashboard() {
 
         // Fetch aplikasi magang user login
         const appRes = await fetchWithAuth(
-          `${API_BASE_URL}/internship-applications/me`
+          `${baseUrl}/internship-applications/me`
         );
         const userApplication = Array.isArray(appRes.data)
           ? appRes.data[0]
@@ -67,10 +67,10 @@ function InternDashboard() {
         // Jika diterima, ambil semua data aktivitas
         if (userApplication?.status === "diterima") {
           const [attRes, taskRes, projRes, logRes] = await Promise.all([
-            fetchWithAuth(`${API_BASE_URL}/attendances`),
-            fetchWithAuth(`${API_BASE_URL}/tasks/my-tasks`),
-            fetchWithAuth(`${API_BASE_URL}/final-projects`),
-            fetchWithAuth(`${API_BASE_URL}/logbooks`),
+            fetchWithAuth(`${baseUrl}/attendances`),
+            fetchWithAuth(`${baseUrl}/tasks/my-tasks`),
+            fetchWithAuth(`${baseUrl}/final-projects`),
+            fetchWithAuth(`${baseUrl}/logbooks`),
           ]);
 
           setAttendances(attRes.data || []);

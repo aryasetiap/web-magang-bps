@@ -1,6 +1,7 @@
 // Fungsi fetch registrasi pengguna baru
+const baseUrl = process.env.REACT_APP_BASE_URL;
 export async function registerUser({ email, name, password }) {
-  const res = await fetch("http://localhost:3000/auth/register", {
+  const res = await fetch(`${baseUrl}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -17,12 +18,12 @@ export async function registerUser({ email, name, password }) {
 }
 
 export function redirectToGoogleOAuth() {
-  window.location.href = "http://localhost:3000/auth/google";
+  window.location.href = `${baseUrl}/auth/google`;
 }
 
 // Fungsi untuk login
 export async function loginUser({ email, password }) {
-  const res = await fetch("http://localhost:3000/auth/login", {
+  const res = await fetch(`${baseUrl}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -74,7 +75,7 @@ export function handlGoogleLoginRedirect({
 // utils/auth.js
 
 export async function forgotPasswordRequest(email) {
-  const res = await fetch("http://localhost:3000/auth/forgot-password", {
+  const res = await fetch(`${baseUrl}/auth/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),

@@ -12,6 +12,7 @@ import DocumentPreview from "../../components/DocumentPreview";
 import AlertDialog from "../../components/AlertDialog";
 
 function AdminCertSettingsPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [certificates, setCertificates] = useState([]);
   const [selected, setSelected] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -49,17 +50,14 @@ function AdminCertSettingsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const certRes = await fetch("http://localhost:3000/certificates", {
+        const certRes = await fetch(`${baseUrl}/certificates`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const certData = await certRes.json();
 
-        const finalRes = await fetch(
-          "http://localhost:3000/final-projects/all",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const finalRes = await fetch(`${baseUrl}/final-projects/all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const finalData = await finalRes.json();
 
         const certificateUserIds = certData.map((c) => c.userId);
@@ -130,7 +128,7 @@ function AdminCertSettingsPage() {
     };
 
     try {
-      const res = await fetch("http://localhost:3000/certificates/generate", {
+      const res = await fetch(`${baseUrl}/certificates/generate`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -168,7 +166,7 @@ function AdminCertSettingsPage() {
   const handleDownload = async (certificateId) => {
     try {
       const res = await fetch(
-        `http://localhost:3000/certificates/${certificateId}/download`,
+        `${baseUrl}/certificates/${certificateId}/download`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -198,7 +196,7 @@ function AdminCertSettingsPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/certificates/${certificateId}/upload`,
+        `${baseUrl}/certificates/${certificateId}/upload`,
         {
           method: "PATCH",
           headers: {
@@ -385,7 +383,7 @@ function AdminCertSettingsPage() {
                     {/* <span>Ditandatangani</span> */}
                     {cert.signedFilePath && (
                       <a
-                        href={`http://localhost:3000/${cert.signedFilePath.replace(
+                        href={`${baseUrl}/${cert.signedFilePath.replace(
                           /\\/g,
                           "/"
                         )}`}

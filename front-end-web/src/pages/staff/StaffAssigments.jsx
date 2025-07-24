@@ -72,12 +72,9 @@ function StaffAssignmentsPage() {
 
     try {
       // 1. Ambil semua aplikasi magang yang diterima
-      const appsRes = await fetch(
-        "http://localhost:3000/internship-applications",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const appsRes = await fetch(`${baseUrl}/internship-applications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const appsRaw = await appsRes.json();
       const appsArray = Array.isArray(appsRaw.data) ? appsRaw.data : [];
       // Filter hanya yang statusnya diterima
@@ -95,7 +92,7 @@ function StaffAssignmentsPage() {
       setInterns(acceptedInterns);
 
       // 2. Ambil semua tugas
-      const tasksRes = await fetch("http://localhost:3000/tasks", {
+      const tasksRes = await fetch(`${baseUrl}/tasks`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const tasksRaw = await tasksRes.json();
@@ -105,10 +102,10 @@ function StaffAssignmentsPage() {
       const detailedTasks = await Promise.all(
         tasks.map(async (task) => {
           const [detailRes, submissionRes] = await Promise.all([
-            fetch(`http://localhost:3000/tasks/${task.id}`, {
+            fetch(`${baseUrl}/tasks/${task.id}`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
-            fetch(`http://localhost:3000/tasks/${task.id}/submissions`, {
+            fetch(`${baseUrl}/tasks/${task.id}/submissions`, {
               headers: { Authorization: `Bearer ${token}` },
             }),
           ]);
@@ -250,14 +247,14 @@ function StaffAssignmentsPage() {
     }
 
     let method = "POST";
-    let url = "http://localhost:3000/tasks";
+    let url = `${baseUrl}/tasks`;
     let taskId = null;
 
     try {
       // Simpan (buat atau edit) tugas
       if (editingAssignment) {
         method = "PATCH";
-        url = `http://localhost:3000/tasks/${editingAssignment.id}`;
+        url = `${baseUrl}/tasks/${editingAssignment.id}`;
       }
 
       const res = await fetch(url, {
@@ -278,19 +275,16 @@ function StaffAssignmentsPage() {
 
       // --- Langkah Assign atau Reassign Intern ---
       if (taskId) {
-        const assignRes = await fetch(
-          `http://localhost:3000/tasks/${taskId}/assign`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              internIds: formAssignedTo.map((id) => Number(id)),
-            }),
-          }
-        );
+        const assignRes = await fetch(`${baseUrl}/tasks/${taskId}/assign`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            internIds: formAssignedTo.map((id) => Number(id)),
+          }),
+        });
 
         const assignResult = await assignRes.json();
 
@@ -336,7 +330,7 @@ function StaffAssignmentsPage() {
       onConfirm: async () => {
         closeAlert();
         try {
-          const res = await fetch(`http://localhost:3000/tasks/${id}`, {
+          const res = await fetch(`${baseUrl}/tasks/${id}`, {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`,
@@ -420,7 +414,7 @@ function StaffAssignmentsPage() {
     try {
       // Endpoint: PATCH /tasks/submissions/:submissionId/grade
       const res = await fetch(
-        `http://localhost:3000/tasks/submissions/${reviewingSubmission.id}/grade`,
+        `${baseUrl}/tasks/submissions/${reviewingSubmission.id}/grade`,
         {
           method: "PATCH",
           headers: {
@@ -927,7 +921,7 @@ function StaffAssignmentsPage() {
                         File Pengumpulan:
                       </label>
                       <a
-                        href={`http://localhost:3000/${reviewingSubmission.filePath}`}
+                        href={`${baseUrl}/${reviewingSubmission.filePath}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-bps-blue hover:underline"

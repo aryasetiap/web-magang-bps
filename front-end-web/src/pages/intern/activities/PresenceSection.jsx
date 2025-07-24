@@ -13,6 +13,7 @@ import {
 import AlertDialog from "../../../components/AlertDialog";
 
 function PresenceSection() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const today = new Date();
   const todayDateOnly = new Date(
     today.getFullYear(),
@@ -484,7 +485,7 @@ function PresenceSection() {
 
                 const proof = item.proofFilePath ? (
                   <a
-                    href={`http://localhost:3000/${item.proofFilePath}`}
+                    href={`${baseUrl}/${item.proofFilePath}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-blue-600 underline"

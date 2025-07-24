@@ -7,6 +7,7 @@ import {
 } from "../../../utils/assignment";
 
 function AssignmentSection() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -113,7 +114,7 @@ function AssignmentSection() {
       // Deskripsi
       if (descIsValid) formData.append("description", submitDesc.trim());
       const res = await fetch(
-        `http://localhost:3000/tasks/${selectedAssignment.id}/submissions`,
+        `${baseUrl}/tasks/${selectedAssignment.id}/submissions`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -160,7 +161,7 @@ function AssignmentSection() {
       // Deskripsi
       if (descIsValid) formData.append("description", submitDesc.trim());
       const res = await fetch(
-        `http://localhost:3000/submissions/${selectedAssignment.submission.id}/resubmit`,
+        `${baseUrl}/submissions/${selectedAssignment.submission.id}/resubmit`,
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
@@ -315,7 +316,7 @@ function AssignmentSection() {
                   </div>
                   {assignment.submission.filePath && (
                     <a
-                      href={`http://localhost:3000/${assignment.submission.filePath.replace(
+                      href={`${baseUrl}/${assignment.submission.filePath.replace(
                         /\\/g,
                         "/"
                       )}`}

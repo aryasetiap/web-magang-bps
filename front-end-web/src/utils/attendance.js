@@ -1,9 +1,10 @@
 // src/utils/attendance.js
 
 // Utility functions for handling attendance data (admin side)
+const baseUrl = process.env.REACT_APP_BASE_URL;
 export const fetchPresensiData = async (token) => {
   try {
-    const res = await fetch("http://localhost:3000/attendances/all", {
+    const res = await fetch(`${baseUrl}/attendances/all`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const result = await res.json();
@@ -31,7 +32,7 @@ export const fetchPresensiData = async (token) => {
 // Fungsi untuk ambil presensi user tertentu pada tanggal tertentu
 export const fetchUserDailyAttendance = async (token, selectedDateObject) => {
   try {
-    const res = await fetch("http://localhost:3000/attendances", {
+    const res = await fetch(`${baseUrl}/attendances`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
@@ -54,7 +55,7 @@ export const fetchUserDailyAttendance = async (token, selectedDateObject) => {
 
 export const fetchUserAllAttendances = async (token) => {
   try {
-    const res = await fetch("http://localhost:3000/attendances", {
+    const res = await fetch(`${baseUrl}/attendances`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
@@ -67,7 +68,7 @@ export const fetchUserAllAttendances = async (token) => {
 
 // Kirim presensi masuk (intern)
 export const postCheckIn = async (token, location) => {
-  const res = await fetch("http://localhost:3000/attendances/clock-in", {
+  const res = await fetch(`${baseUrl}/attendances/clock-in`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -83,7 +84,7 @@ export const postCheckIn = async (token, location) => {
 
 // Kirim presensi keluar (intern)
 export const postCheckOut = async (token, location) => {
-  const res = await fetch("http://localhost:3000/attendances/clock-out", {
+  const res = await fetch(`${baseUrl}/attendances/clock-out`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -104,7 +105,7 @@ export async function requestLeave(token, { type, description, proof }) {
   formData.append("description", description);
   formData.append("proof", proof);
 
-  const res = await fetch("http://localhost:3000/attendances/request-leave", {
+  const res = await fetch(`${baseUrl}/attendances/request-leave`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

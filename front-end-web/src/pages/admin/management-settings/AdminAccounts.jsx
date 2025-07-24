@@ -10,6 +10,7 @@ import {
 import AlertDialog from "../../../components/AlertDialog";
 
 function AdminAccountsPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [accounts, setAccounts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,7 +57,7 @@ function AdminAccountsPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/users", {
+      const res = await fetch(`${baseUrl}/users`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -154,8 +155,8 @@ function AdminAccountsPage() {
 
     let method = editingAccount ? "PATCH" : "POST";
     let url = editingAccount
-      ? `http://localhost:3000/users/${editingAccount.id}`
-      : "http://localhost:3000/users";
+      ? `${baseUrl}/users/${editingAccount.id}`
+      : `${baseUrl}/users`;
 
     let bodyData = {
       name: formName,
@@ -234,7 +235,7 @@ function AdminAccountsPage() {
       onConfirm: async () => {
         closeAlert();
         try {
-          const res = await fetch(`http://localhost:3000/users/${id}`, {
+          const res = await fetch(`${baseUrl}/users/${id}`, {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`,

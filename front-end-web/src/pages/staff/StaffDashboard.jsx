@@ -10,7 +10,7 @@ function StaffDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = "http://localhost:3000";
+  const baseUrl = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +38,7 @@ function StaffDashboard() {
           return response.json();
         };
 
-        const tasksRes = await fetchWithAuth(`${API_BASE_URL}/tasks`);
+        const tasksRes = await fetchWithAuth(`${baseUrl}/tasks`);
         // Pastikan Anda mengakses properti 'data' jika respons API membungkusnya dalam { "data": [...] }
         setTasks(tasksRes.data);
 

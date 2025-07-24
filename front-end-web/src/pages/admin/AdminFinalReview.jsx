@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 function AdminFinalReviewsPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [finalReports, setFinalReports] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingReport, setReviewingReport] = useState(null);
@@ -23,7 +24,7 @@ function AdminFinalReviewsPage() {
   useEffect(() => {
     const fetchFinalReports = async () => {
       try {
-        const res = await fetch("http://localhost:3000/final-projects/all", {
+        const res = await fetch(`${baseUrl}/final-projects/all`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -88,7 +89,7 @@ function AdminFinalReviewsPage() {
     if (!reviewingReport) return;
     try {
       const res = await fetch(
-        `http://localhost:3000/final-projects/${reviewingReport.id}/review`,
+        `${baseUrl}/final-projects/${reviewingReport.id}/review`,
         {
           method: "PATCH",
           headers: {
@@ -314,7 +315,7 @@ function AdminFinalReviewsPage() {
                       <strong>File Laporan:</strong>{" "}
                       {reviewingReport?.filePath ? (
                         <a
-                          href={`http://localhost:3000/${reviewingReport.filePath.replace(
+                          href={`${baseUrl}/${reviewingReport.filePath.replace(
                             /\\/g,
                             "/"
                           )}`}

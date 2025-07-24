@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 function CertificatePage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [sertifikatInfo, setSertifikatInfo] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -10,7 +11,7 @@ function CertificatePage() {
     const fetchSertifikat = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("http://localhost:3000/certificates/me", {
+        const res = await fetch(`${baseUrl}/certificates/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -27,7 +28,7 @@ function CertificatePage() {
           setSertifikatInfo({
             idSertifikat: data.certificateNumber,
             fileName: `Sertifikat_${data.internName.replace(/\s/g, "_")}.pdf`,
-            downloadUrl: `http://localhost:3000/${data.signedFilePath.replace(
+            downloadUrl: `${baseUrl}/${data.signedFilePath.replace(
               /\\/g,
               "/"
             )}`,

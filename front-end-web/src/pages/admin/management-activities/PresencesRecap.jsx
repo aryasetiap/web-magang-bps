@@ -11,6 +11,7 @@ import {
 import { Dialog, Transition } from "@headlessui/react";
 
 function PresencesRecap() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [recapData, setRecapData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editModeId, setEditModeId] = useState(null);
@@ -52,7 +53,7 @@ function PresencesRecap() {
   const validateAttendance = async (attendanceId, newStatus) => {
     try {
       const res = await fetch(
-        `http://localhost:3000/attendances/${attendanceId}/validate`,
+        `${baseUrl}/attendances/${attendanceId}/validate`,
         {
           method: "PATCH",
           headers: {
@@ -96,7 +97,7 @@ function PresencesRecap() {
       }
 
       const res = await fetch(
-        `http://localhost:3000/attendances/report?${query.toString()}`,
+        `${baseUrl}/attendances/report?${query.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -135,7 +136,7 @@ function PresencesRecap() {
       });
 
       const res = await fetch(
-        `http://localhost:3000/attendances/${userId}/report?${query.toString()}`,
+        `${baseUrl}/attendances/${userId}/report?${query.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -456,7 +457,7 @@ function PresencesRecap() {
                       <p className="text-sm text-gray-700">File Bukti:</p>
                       {selectedAttendance?.proofFilePath ? (
                         <a
-                          href={`http://localhost:3000/${selectedAttendance.proofFilePath}`}
+                          href={`${baseUrl}/${selectedAttendance.proofFilePath}`}
                           target="_blank"
                           className="text-sm text-blue-600 underline"
                         >

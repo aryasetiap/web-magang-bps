@@ -16,12 +16,13 @@ import {
 import BrandLogo from "../BrandLogo";
 
 function Sidebar({ isCollapsed, userRole }) {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [internshipAccepted, setInternshipAccepted] = useState(false);
 
   useEffect(() => {
     if (userRole === "Intern" || userRole === "Mahasiswa") {
       const token = localStorage.getItem("authToken");
-      fetch("http://localhost:3000/internship-applications/me", {
+      fetch(`${baseUrl}/internship-applications/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())

@@ -2,12 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useProfile } from "../../../contexts/ProfileContext";
 import AlertDialog from "../../../components/AlertDialog";
 import { formatDateInputSafe } from "../../../utils/formatDateTime";
-import {
-  ChevronDownIcon,
-  ChevronUpDownIcon,
-} from "@heroicons/react/24/outline";
 
 function BiodataSection() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const { profile, fetchProfile } = useProfile();
   const token = localStorage.getItem("authToken");
 
@@ -76,7 +73,7 @@ function BiodataSection() {
     try {
       const { email, ...dataToSend } = formData;
 
-      const res = await fetch("http://localhost:3000/auth/profile", {
+      const res = await fetch(`${baseUrl}/auth/profile`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,

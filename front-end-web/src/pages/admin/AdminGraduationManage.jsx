@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/outline"; // Menambahkan ikon
 
 function AdminGraduationManage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [isGraduationModalOpen, setIsGraduationModalOpen] = useState(false);
   const [reviewingIntern, setReviewingIntern] = useState(null); // Peserta yang sedang di-review
   const [newGraduationStatus, setNewGraduationStatus] = useState("");
@@ -25,10 +26,10 @@ function AdminGraduationManage() {
     const fetchData = async () => {
       try {
         const [finalProjectsRes, certificatesRes] = await Promise.all([
-          fetch("http://localhost:3000/final-projects/all", {
+          fetch(`${baseUrl}/final-projects/all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("http://localhost:3000/certificates", {
+          fetch(`${baseUrl}/certificates`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -71,7 +72,7 @@ function AdminGraduationManage() {
 
   const toggleGraduationStatus = async (userId, isGraduated) => {
     try {
-      const res = await fetch(`http://localhost:3000/users/${userId}`, {
+      const res = await fetch(`${baseUrl}/users/${userId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -218,7 +219,7 @@ function AdminGraduationManage() {
                     {intern.laporan_status === "accepted" &&
                       intern.laporan_path && (
                         <a
-                          href={`http://localhost:3000/${intern.laporan_path}`}
+                          href={`${baseUrl}/${intern.laporan_path}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-bps-blue hover:text-bps-dark"

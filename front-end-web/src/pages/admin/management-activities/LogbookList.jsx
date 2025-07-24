@@ -9,6 +9,8 @@ import {
 import { formatTime } from "../../../utils/formatDateTime";
 
 function LogbookList() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
+
   const [logbooks, setLogbooks] = useState([]);
   const [modalData, setModalData] = useState(null);
   const [searchName, setSearchName] = useState("");
@@ -22,7 +24,7 @@ function LogbookList() {
   useEffect(() => {
     const fetchLogbooks = async () => {
       try {
-        const res = await fetch("http://localhost:3000/logbooks/all", {
+        const res = await fetch(`${baseUrl}/logbooks/all`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -76,7 +78,7 @@ function LogbookList() {
       const query = new URLSearchParams({ startDate, endDate });
 
       const res = await fetch(
-        `http://localhost:3000/logbooks/${userId}/report?${query.toString()}`,
+        `${baseUrl}/logbooks/${userId}/report?${query.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
