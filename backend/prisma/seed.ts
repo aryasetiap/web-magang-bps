@@ -326,21 +326,24 @@ async function seedInternAccounts(
  */
 async function seedInternshipApplications(): Promise<void> {
   for (const intern of interns) {
-    await prisma.internshipApplication.upsert({
+    const existing = await prisma.internshipApplication.findFirst({
       where: { userId: intern.id },
-      update: {},
-      create: {
-        userId: intern.id,
-        status: 'pending',
-        transcriptPath: 'uploads/transcript/dummy.pdf',
-        requestLetterPath: 'uploads/requestLetter/dummy.pdf',
-        startDate: intern.activityStart,
-        endDate: intern.activityEnd,
-      },
     });
-    console.log(
-      `Internship Application untuk '${intern.name}' berhasil dibuat/ditemukan.`,
-    );
+    if (!existing) {
+      await prisma.internshipApplication.create({
+        data: {
+          userId: intern.id,
+          status: 'pending',
+          transcriptPath: 'uploads/transcript/dummy.pdf',
+          requestLetterPath: 'uploads/requestLetter/dummy.pdf',
+          startDate: intern.activityStart,
+          endDate: intern.activityEnd,
+        },
+      });
+      console.log(
+        `Internship Application untuk '${intern.name}' berhasil dibuat/ditemukan.`,
+      );
+    }
   }
 }
 

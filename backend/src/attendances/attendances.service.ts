@@ -362,11 +362,13 @@ export class AttendancesService {
     const interns = await this.prisma.user.findMany({
       where: {
         role: { name: 'intern' },
-        internshipApplication: {
+        internshipApplications: {
           // Sudah diverifikasi dan periode magang aktif hari ini
-          startDate: { lte: today },
-          endDate: { gte: today },
-          status: 'diterima',
+          some: {
+            startDate: { lte: today },
+            endDate: { gte: today },
+            status: 'diterima',
+          },
         },
       },
       select: { id: true },

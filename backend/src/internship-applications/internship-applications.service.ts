@@ -61,8 +61,9 @@ export class InternshipApplicationsService {
     }
 
     const existingApplication =
-      await this.prisma.internshipApplication.findUnique({
+      await this.prisma.internshipApplication.findFirst({
         where: { userId: userId },
+        orderBy: { createdAt: 'desc' },
       });
 
     // Hanya blokir jika status masih 'pending' atau 'diterima'
