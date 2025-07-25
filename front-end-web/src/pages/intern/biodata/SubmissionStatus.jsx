@@ -121,10 +121,10 @@ function SubmissionStatusPage() {
       formData.append("endDate", biodata.activityEnd);
     }
 
-    if (submissionStatus === "ditolak" && applicationId) {
-      formData.append("applicationId", applicationId);
-      formData.append("isResubmission", "true");
-    }
+    // if (submissionStatus === "ditolak" && applicationId) {
+    //   formData.append("applicationId", applicationId);
+    //   formData.append("isResubmission", "true");
+    // }
 
     const fileMap = [
       { key: "cv", field: "cv", defaultName: "cv.pdf" },
