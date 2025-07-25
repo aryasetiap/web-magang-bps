@@ -6,6 +6,7 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import DocumentPreview from "../../../components/DocumentPreview";
 
 function SubmissionStatusPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const navigate = useNavigate();
   const [submissionStatus, setSubmissionStatus] = useState("initial");
   const [biodata, setBiodata] = useState(null);
@@ -30,7 +31,7 @@ function SubmissionStatusPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch("http://localhost:3000/auth/profile", {
+        const res = await fetch(`${baseUrl}/auth/profile`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -55,15 +56,12 @@ function SubmissionStatusPage() {
 
     const fetchSubmissionStatus = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:3000/internship-applications/me",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${baseUrl}/internship-applications/me`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (res.ok) {
           const result = await res.json();
           if (result.data && result.data.length > 0) {
@@ -155,7 +153,7 @@ function SubmissionStatusPage() {
     });
 
     try {
-      const res = await fetch("http://localhost:3000/internship-applications", {
+      const res = await fetch(`${baseUrl}/internship-applications`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

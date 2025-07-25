@@ -10,6 +10,7 @@ import {
 import { formatDate } from "../../utils/formatDateTime"; // Assuming you have a utility for formatting dates
 
 function AdminApplicantsPage() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [applicants, setApplicants] = useState([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewingApplicant, setReviewingApplicant] = useState(null);
@@ -24,14 +25,11 @@ function AdminApplicantsPage() {
   useEffect(() => {
     const fetchApplicants = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:3000/internship-applications",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await fetch(`${baseUrl}/internship-applications`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
         if (res.ok && Array.isArray(data.data)) {
           const transformedApplicants = data.data.map((item) => ({
@@ -57,16 +55,13 @@ function AdminApplicantsPage() {
               cv: item.cvPath
                 ? {
                     name: "CV.pdf",
-                    url: `http://localhost:3000/${item.cvPath.replace(
-                      /\\/g,
-                      "/"
-                    )}`,
+                    url: `${baseUrl}/${item.cvPath.replace(/\\/g, "/")}`,
                   }
                 : null,
               transkrip: item.transcriptPath
                 ? {
                     name: "Transkrip.pdf",
-                    url: `http://localhost:3000/${item.transcriptPath.replace(
+                    url: `${baseUrl}/${item.transcriptPath.replace(
                       /\\/g,
                       "/"
                     )}`,
@@ -75,7 +70,7 @@ function AdminApplicantsPage() {
               suratPermohonan: item.requestLetterPath
                 ? {
                     name: "Surat Permohonan.pdf",
-                    url: `http://localhost:3000/${item.requestLetterPath.replace(
+                    url: `${baseUrl}/${item.requestLetterPath.replace(
                       /\\/g,
                       "/"
                     )}`,
@@ -143,7 +138,7 @@ function AdminApplicantsPage() {
 
     try {
       const res = await fetch(
-        `http://localhost:3000/internship-applications/${reviewingApplicant.id}/status`,
+        `${baseUrl}/internship-applications/${reviewingApplicant.id}/status`,
         {
           method: "PATCH",
           headers: {

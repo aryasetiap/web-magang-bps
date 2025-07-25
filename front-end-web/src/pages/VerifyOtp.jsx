@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import kantorBPSBg from "../assets/kantor-bps-3.jpg";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.REACT_APP_BASE_URL;
 
 function VerifyOtpPage({ onVerified }) {
   const [otp, setOtp] = useState("");

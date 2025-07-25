@@ -9,14 +9,13 @@ import {
 } from "@heroicons/react/24/outline"; // Mengimpor ikon dari Heroicons
 
 function AdminDashboard() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [internshipApplications, setInternshipApplications] = useState([]);
   const [finalProjects, setFinalProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [attendances, setAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const API_BASE_URL = "http://localhost:3000"; // URL dasar API Anda
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,16 +28,14 @@ function AdminDashboard() {
 
         const [applicationsRes, projectsRes, tasksRes, attendancesRes] =
           await Promise.all([
-            fetch(`${API_BASE_URL}/internship-applications`, { headers }).then(
+            fetch(`${baseUrl}/internship-applications`, { headers }).then(
               (res) => res.json()
             ),
-            fetch(`${API_BASE_URL}/final-projects/all`, { headers }).then(
-              (res) => res.json()
-            ),
-            fetch(`${API_BASE_URL}/tasks`, { headers }).then((res) =>
+            fetch(`${baseUrl}/final-projects/all`, { headers }).then((res) =>
               res.json()
             ),
-            fetch(`${API_BASE_URL}/attendances/all`, { headers }).then((res) =>
+            fetch(`${baseUrl}/tasks`, { headers }).then((res) => res.json()),
+            fetch(`${baseUrl}/attendances/all`, { headers }).then((res) =>
               res.json()
             ),
           ]);

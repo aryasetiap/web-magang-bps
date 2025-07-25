@@ -11,8 +11,10 @@ import {
   fetchUserAllAttendances,
 } from "../../../utils/attendance";
 import AlertDialog from "../../../components/AlertDialog";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 function PresenceSection() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const today = new Date();
   const todayDateOnly = new Date(
     today.getFullYear(),
@@ -45,6 +47,17 @@ function PresenceSection() {
     type: "",
     autoCloseDelay: 0,
   });
+
+  // pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(attendanceHistory.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAttendanceHistory = attendanceHistory.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   const allowedLat = -5.371143050410507;
   const allowedLng = 105.04952785299278;
@@ -484,7 +497,7 @@ function PresenceSection() {
 
                 const proof = item.proofFilePath ? (
                   <a
-                    href={`http://localhost:3000/${item.proofFilePath}`}
+                    href={`${baseUrl}/${item.proofFilePath}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-blue-600 underline"
@@ -523,6 +536,28 @@ function PresenceSection() {
             )}
           </tbody>
         </table>
+        {/* Kontrol Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="h-5 w-5 inline-block" />
+          </button>
+          <span className="text-sm text-gray-600">
+            Halaman {currentPage} dari {totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-bps-blue text-white rounded disabled:opacity-50"
+          >
+            <ChevronRightIcon className="h-5 w-5 inline-block" />
+          </button>
+        </div>
       </div>
 
       <Transition appear show={isLeaveModalOpen} as={Fragment}>

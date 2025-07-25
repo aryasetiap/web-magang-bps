@@ -6,6 +6,7 @@ import kantorBPSBg from "../assets/kantor-bps-3.jpg";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 function VerifyOtpPw() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -70,22 +71,19 @@ function VerifyOtpPw() {
       // --- Panggilan API ke Backend untuk Verifikasi OTP dan Reset Password ---
       // Asumsi backend memiliki endpoint seperti PATCH /auth/reset-password
       // yang menerima email (atau token), OTP, dan password baru.
-      const apiResponse = await fetch(
-        "http://localhost:3000/auth/verify-reset-password",
-        {
-          method: "POST", // Atau POST, sesuai implementasi backend Anda
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: emailFromLocation, // Kirim email yang didapat dari halaman sebelumnya
-            otp: otp,
-            newPassword: newPassword,
-            // Jika backend menggunakan resetToken dari URL, kirim juga:
-            // resetToken: resetTokenFromParams
-          }),
-        }
-      );
+      const apiResponse = await fetch(`${baseUrl}/auth/verify-reset-password`, {
+        method: "POST", // Atau POST, sesuai implementasi backend Anda
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailFromLocation, // Kirim email yang didapat dari halaman sebelumnya
+          otp: otp,
+          newPassword: newPassword,
+          // Jika backend menggunakan resetToken dari URL, kirim juga:
+          // resetToken: resetTokenFromParams
+        }),
+      });
 
       const data = await apiResponse.json();
 

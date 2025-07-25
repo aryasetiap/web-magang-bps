@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import AlertDialog from "../../components/AlertDialog";
 
 function InternReports() {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const [finalReport, setFinalReport] = useState(null); // Data dari backend
   const [finalReportFile, setFinalReportFile] = useState(null);
   const [reportTitle, setReportTitle] = useState("");
@@ -20,7 +21,7 @@ function InternReports() {
   useEffect(() => {
     const fetchFinalReport = async () => {
       try {
-        const res = await fetch("http://localhost:3000/final-projects", {
+        const res = await fetch(`${baseUrl}/final-projects`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -108,8 +109,8 @@ function InternReports() {
 
     try {
       const url = finalReport
-        ? `http://localhost:3000/final-projects/${finalReport.id}`
-        : "http://localhost:3000/final-projects";
+        ? `${baseUrl}/final-projects/${finalReport.id}`
+        : "${baseUrl}/final-projects";
 
       const method = finalReport ? "PATCH" : "POST";
 
@@ -257,7 +258,7 @@ function InternReports() {
               <div className="mt-2 text-gray-700">
                 <p>File Laporan Terakhir Diunggah:</p>
                 <a
-                  href={`http://localhost:3000/${finalReport.filePath.replace(
+                  href={`${baseUrl}/${finalReport.filePath.replace(
                     /\\/g,
                     "/"
                   )}`}

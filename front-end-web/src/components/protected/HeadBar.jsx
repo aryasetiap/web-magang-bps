@@ -11,6 +11,7 @@ import AlertDialog from "../AlertDialog";
 import { useProfile } from "../../contexts/ProfileContext";
 
 function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
+  const baseUrl = process.env.REACT_APP_BASE_URL;
   const navigate = useNavigate();
   const location = useLocation();
   const { profile, fetchProfile } = useProfile();
@@ -39,7 +40,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     setCurrentUserName(profile?.namaLengkap || profile?.name || "Pengguna");
     setProfilePhoto(
       profile?.profilePhoto
-        ? `http://localhost:3000/${profile.profilePhoto.replace(/\\/g, "/")}`
+        ? `${baseUrl}/${profile.profilePhoto.replace(/\\/g, "/")}`
         : "https://www.placeholderimage.online/images/generic/user-profile-images.jpg"
     );
   }, [profile]);
@@ -78,7 +79,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
         formData.append("profilePhoto", file);
       }
 
-      const res = await fetch("http://localhost:3000/auth/profile", {
+      const res = await fetch(`${baseUrl}/auth/profile`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -132,7 +133,7 @@ function HeadBar({ toggleSidebar, isCollapsed, userRole }) {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:3000/auth/change-password", {
+      const res = await fetch(`${baseUrl}/auth/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
