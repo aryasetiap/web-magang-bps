@@ -65,8 +65,7 @@ function AdminCertSettingsPage() {
         const internsFromFinalProjects = finalData.data
           .filter(
             (fp) =>
-              fp.status === "accepted" &&
-              !certificateUserIds.includes(fp.userId)
+              fp.status !== "draft" && !certificateUserIds.includes(fp.userId)
           )
           .map((fp) => ({
             id: `pending-${fp.userId}`,
