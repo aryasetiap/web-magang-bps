@@ -147,12 +147,6 @@ export class FinalProjectsService {
   ) {
     const finalProject = await this.findOne(id, userId);
 
-    if (['accepted'].includes(finalProject.status)) {
-      throw new ForbiddenException(
-        'Final project yang sudah diterima tidak dapat diubah',
-      );
-    }
-
     const updateData: any = {
       ...updateFinalProjectDto,
     };
