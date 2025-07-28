@@ -110,7 +110,7 @@ function InternReports() {
     try {
       const url = finalReport
         ? `${baseUrl}/final-projects/${finalReport.id}`
-        : "${baseUrl}/final-projects";
+        : `${baseUrl}/final-projects`;
 
       const method = finalReport ? "PATCH" : "POST";
 
@@ -258,10 +258,7 @@ function InternReports() {
               <div className="mt-2 text-gray-700">
                 <p>File Laporan Terakhir Diunggah:</p>
                 <a
-                  href={`${baseUrl}/${finalReport.filePath.replace(
-                    /\\/g,
-                    "/"
-                  )}`}
+                  href={`${baseUrl}/${finalReport.filePath}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline font-medium"
@@ -272,25 +269,23 @@ function InternReports() {
             </div>
           )}
 
-          {!finalReport || finalReport.status !== "accepted" ? (
-            <button
-              type="submit"
-              disabled={
-                !reportTitle.trim() || (!finalReportFile && !finalReport)
-              }
-              className={`mt-4 bg-bps-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
-                ${
-                  !reportTitle.trim() || (!finalReportFile && !finalReport)
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-            >
-              {finalReport ? "Unggah Ulang Laporan" : "Unggah Laporan Akhir"}
-            </button>
-          ) : (
+          <button
+            type="submit"
+            disabled={!reportTitle.trim() || (!finalReportFile && !finalReport)}
+            className={`mt-4 bg-bps-green hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200
+    ${
+      !reportTitle.trim() || (!finalReportFile && !finalReport)
+        ? "opacity-50 cursor-not-allowed"
+        : ""
+    }`}
+          >
+            {finalReport ? "Unggah Ulang Laporan" : "Unggah Laporan Akhir"}
+          </button>
+
+          {finalReport?.status === "accepted" && (
             <p className="text-green-700 mt-4 font-semibold">
-              Selamat! Laporan akhir Anda sudah diperiksa dan dinyatakan
-              Disetujui.
+              Laporan akhir Anda telah disetujui. Anda dapat menggantinya jika
+              diperlukan.
             </p>
           )}
         </form>
