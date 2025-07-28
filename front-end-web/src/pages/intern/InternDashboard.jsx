@@ -26,6 +26,7 @@ function InternDashboard() {
 
   const baseUrl = process.env.REACT_APP_BASE_URL;
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("authToken");
@@ -186,12 +187,12 @@ function InternDashboard() {
                       {internshipApplication.feedback ||
                         "Selamat! Pengajuan kamu telah disetujui."}
                     </p>
-                    {internshipApplication.activityStart &&
-                    internshipApplication.activityEnd ? (
-                      <p className="text-sm mt-1">
+                    {internshipApplication.startDate &&
+                    internshipApplication.endDate ? (
+                      <p className="text-sm mt-1 font-bold">
                         Periode Magang:{" "}
                         {new Date(
-                          internshipApplication.activityStart
+                          internshipApplication.startDate
                         ).toLocaleDateString("id-ID", {
                           day: "2-digit",
                           month: "long",
@@ -199,7 +200,7 @@ function InternDashboard() {
                         })}{" "}
                         –{" "}
                         {new Date(
-                          internshipApplication.activityEnd
+                          internshipApplication.endDate
                         ).toLocaleDateString("id-ID", {
                           day: "2-digit",
                           month: "long",
