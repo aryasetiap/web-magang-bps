@@ -1,23 +1,47 @@
+/**
+ * Modul DTO untuk pembuatan sertifikat baru.
+ * Berisi definisi struktur data dan validasi input.
+ */
+
 import { IsString, IsInt } from 'class-validator';
 
 /**
- * DTO untuk membuat sertifikat baru.
- * Berisi informasi nomor sertifikat, ID pengguna, predikat,
- * nama kepala BPS, dan NIP kepala BPS.
+ * Data Transfer Object (DTO) untuk membuat sertifikat baru.
+ *
+ * @property {string} certificateNumber - Nomor unik sertifikat.
+ * @property {number} userId - ID pengguna yang menerima sertifikat.
+ * @property {string} predicate - Predikat yang diberikan pada sertifikat.
+ * @property {string} namaKepalaBPS - Nama kepala BPS yang menandatangani sertifikat.
+ * @property {string} nipKepalaBPS - NIP kepala BPS yang menandatangani sertifikat.
  */
 export class CreateCertificateDto {
-    @IsString()
-    certificateNumber: string;
+  /**
+   * Nomor unik sertifikat.
+   */
+  @IsString()
+  certificateNumber: string;
 
-    @IsInt()
-    userId: number;
+  /**
+   * ID pengguna yang menerima sertifikat.
+   */
+  @IsInt()
+  userId: number;
 
-    @IsString()
-    predicate: string;
+  /**
+   * Predikat yang diberikan pada sertifikat.
+   */
+  @IsString()
+  predicate: string;
 
-    @IsString()
-    namaKepalaBPS: string;
+  /**
+   * Nama kepala BPS yang menandatangani sertifikat.
+   */
+  @IsString()
+  namaKepalaBPS: string;
 
-    @IsString()
-    nipKepalaBPS: string;
+  /**
+   * NIP kepala BPS yang menandatangani sertifikat.
+   */
+  @IsString()
+  nipKepalaBPS: string;
 }
