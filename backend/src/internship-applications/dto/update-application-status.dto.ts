@@ -1,3 +1,8 @@
+/**
+ * Modul DTO untuk memperbarui status aplikasi magang.
+ * Berisi definisi kelas dan validasi properti yang diperlukan saat memperbarui status aplikasi magang.
+ */
+
 import {
   IsEnum,
   IsOptional,
@@ -8,13 +13,13 @@ import {
 import { StatusInternship } from '@prisma/client';
 
 /**
- * DTO untuk memperbarui status aplikasi magang.
- * 
+ * Data Transfer Object (DTO) untuk memperbarui status aplikasi magang.
+ *
  * Properti:
- * - status: Status aplikasi magang (wajib diisi, harus sesuai enum StatusInternship).
- * - feedback: Umpan balik terkait aplikasi magang (opsional).
- * - startDate: Tanggal mulai magang (opsional, format ISO string).
- * - endDate: Tanggal selesai magang (opsional, format ISO string, hanya divalidasi jika startDate diisi).
+ * - status: Status aplikasi magang (wajib, enum StatusInternship).
+ * - feedback: Umpan balik aplikasi magang (opsional, string).
+ * - startDate: Tanggal mulai magang (opsional, string tanggal ISO).
+ * - endDate: Tanggal selesai magang (opsional, string tanggal ISO, divalidasi jika startDate diisi).
  */
 export class UpdateApplicationStatusDto {
   /**
@@ -28,7 +33,7 @@ export class UpdateApplicationStatusDto {
 
   /**
    * Umpan balik terkait aplikasi magang.
-   * Opsional dan harus berupa teks jika diisi.
+   * Opsional dan harus berupa string jika diisi.
    */
   @IsOptional()
   @IsString({ message: 'Feedback harus berupa teks.' })
@@ -36,7 +41,7 @@ export class UpdateApplicationStatusDto {
 
   /**
    * Tanggal mulai magang.
-   * Opsional dan harus berupa string tanggal yang valid jika diisi.
+   * Opsional dan harus berupa string tanggal ISO yang valid jika diisi.
    */
   @IsOptional()
   @IsDateString({}, { message: 'Format tanggal mulai magang tidak valid' })
@@ -44,10 +49,10 @@ export class UpdateApplicationStatusDto {
 
   /**
    * Tanggal selesai magang.
-   * Opsional, hanya divalidasi jika startDate diisi, dan harus berupa string tanggal yang valid.
+   * Opsional, hanya divalidasi jika startDate diisi, dan harus berupa string tanggal ISO yang valid.
    */
+  @ValidateIf((o: UpdateApplicationStatusDto) => o.startDate !== undefined)
   @IsOptional()
   @IsDateString({}, { message: 'Format tanggal selesai magang tidak valid' })
-  @ValidateIf((o) => o.startDate !== undefined)
   endDate?: string;
 }
