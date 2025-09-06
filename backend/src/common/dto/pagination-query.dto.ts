@@ -1,10 +1,19 @@
+/**
+ * Modul DTO untuk parameter query paginasi.
+ *
+ * Berisi definisi kelas PaginationQueryDto yang digunakan untuk
+ * mengambil data dengan paginasi pada endpoint API.
+ *
+ * @module PaginationQueryDto
+ */
+
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Min } from 'class-validator';
 
 /**
- * DTO untuk query parameter paginasi.
- * 
- * Digunakan untuk mengambil data dengan paginasi pada endpoint API.
+ * Data Transfer Object (DTO) untuk parameter query paginasi.
+ *
+ * Digunakan pada endpoint API yang mendukung paginasi.
  * Properti `page` dan `limit` bersifat opsional, dengan nilai default
  * masing-masing 1 dan 10 jika tidak diberikan pada query.
  */
@@ -12,25 +21,33 @@ export class PaginationQueryDto {
   /**
    * Nomor halaman yang ingin diambil.
    * Default: 1
+   *
+   * @type {number}
    */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page?: number;
+  page: number = 1;
 
   /**
    * Jumlah data per halaman.
    * Default: 10
+   *
+   * @type {number}
    */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number;
+  limit: number = 10;
 
+  /**
+   * Membuat instance PaginationQueryDto dengan nilai default.
+   *
+   * @constructor
+   */
   constructor() {
-    this.page = 1;
-    this.limit = 10;
+    // Nilai default sudah diinisialisasi pada deklarasi properti.
   }
 }
