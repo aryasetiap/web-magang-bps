@@ -1,3 +1,11 @@
+/**
+ * Modul Controller Logbooks
+ * -----------------------------------------------
+ * Modul ini berisi controller untuk mengelola entri logbook.
+ * Seluruh endpoint dilindungi oleh JWT AuthGuard.
+ * Terdapat endpoint khusus admin untuk melihat seluruh logbook dan ekspor PDF.
+ */
+
 import {
   Controller,
   Get,
@@ -18,7 +26,7 @@ import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Response } from 'express'; // Tambahkan import ini
+import { Response } from 'express';
 
 /**
  * Controller untuk mengelola entri logbook.
@@ -27,6 +35,10 @@ import { Response } from 'express'; // Tambahkan import ini
 @Controller('logbooks')
 @UseGuards(AuthGuard('jwt'))
 export class LogbooksController {
+  /**
+   * Konstruktor LogbooksController
+   * @param logbooksService Service untuk logbook
+   */
   constructor(private readonly logbooksService: LogbooksService) {}
 
   /**
@@ -36,7 +48,10 @@ export class LogbooksController {
    * @returns Logbook yang berhasil dibuat.
    */
   @Post()
-  create(@Request() req, @Body() createLogbookDto: CreateLogbookDto) {
+  create(
+    @Request() req: { user: { userId: number } },
+    @Body() createLogbookDto: CreateLogbookDto,
+  ) {
     const userId = req.user.userId;
     return this.logbooksService.create(userId, createLogbookDto);
   }
@@ -47,7 +62,7 @@ export class LogbooksController {
    * @returns Daftar logbook milik user.
    */
   @Get()
-  findAll(@Request() req) {
+  findAll(@Request() req: { user: { userId: number } }) {
     const userId = req.user.userId;
     return this.logbooksService.findAll(userId);
   }
@@ -76,7 +91,10 @@ export class LogbooksController {
    * @returns Data logbook yang ditemukan.
    */
   @Get(':id')
-  findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
+  findOne(
+    @Request() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const userId = req.user.userId;
     return this.logbooksService.findOne(userId, id);
   }
@@ -90,7 +108,7 @@ export class LogbooksController {
    */
   @Patch(':id')
   update(
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Param('id', ParseIntPipe) id: number,
     @Body() updateLogbookDto: UpdateLogbookDto,
   ) {
@@ -105,18 +123,22 @@ export class LogbooksController {
    * @returns Hasil penghapusan logbook.
    */
   @Delete(':id')
-  remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
+  remove(
+    @Request() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const userId = req.user.userId;
     return this.logbooksService.remove(userId, id);
   }
 
   /**
-   * Export logbook satu intern ke PDF (admin only).
-   * @param userId ID intern
-   * @param startDate Tanggal awal
-   * @param endDate Tanggal akhir
-   * @param res Response object
-   * @param req Request object
+   * Mengekspor logbook satu intern ke PDF (khusus admin).
+   * @param userId ID intern yang logbook-nya akan diekspor.
+   * @param startDate Tanggal awal periode logbook.
+   * @param endDate Tanggal akhir periode logbook.
+   * @param req Request yang berisi data admin.
+   * @param res Response object untuk mengirim file PDF.
+   * @returns File PDF logbook.
    */
   @Get(':userId/report')
   @UseGuards(RolesGuard)
@@ -125,8 +147,8 @@ export class LogbooksController {
     @Param('userId', ParseIntPipe) userId: number,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
-    @Request() req,
-    @Res() res: Response, // Ganti jadi @Res()
+    @Request() req: { user: { name?: string } },
+    @Res() res: Response,
   ) {
     const adminName = req.user?.name || 'Admin';
     const pdfBuffer = await this.logbooksService.exportUserLogbookReport(
