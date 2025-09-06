@@ -1,15 +1,26 @@
+/**
+ * Modul strategi autentikasi Google OAuth 2.0 untuk aplikasi NestJS.
+ * Mengambil kredensial dari environment variable dan memvalidasi profil pengguna Google.
+ */
+
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
+import { Profile as GoogleProfile } from 'passport-google-oauth20';
 
 /**
- * GoogleStrategy handles authentication using Google OAuth 2.0.
- * It retrieves credentials from environment variables and validates user profiles.
+ * Kelas GoogleStrategy mengatur autentikasi menggunakan Google OAuth 2.0.
+ * Mendapatkan konfigurasi dari environment variable dan membangun objek pengguna dari profil Google.
  */
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(private configService: ConfigService) {
+  /**
+   * Konstruktor GoogleStrategy.
+   * @param configService - Service untuk mengambil konfigurasi aplikasi.
+   * @throws Error jika kredensial Google OAuth tidak ditemukan di environment variable.
+   */
+  constructor(private readonly configService: ConfigService) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
     const callbackURL =
@@ -18,7 +29,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     if (!clientID || !clientSecret) {
       throw new Error(
-        'Google OAuth credentials are not properly configured in environment variables',
+        'Kredensial Google OAuth belum dikonfigurasi dengan benar pada environment variable.',
       );
     }
 
@@ -31,24 +42,29 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   }
 
   /**
-   * Validates the Google user profile and constructs a user object.
-   * @param accessToken - OAuth access token
-   * @param refreshToken - OAuth refresh token
-   * @param profile - Google user profile
-   * @param done - Callback to pass the user object
+   * Fungsi validasi profil pengguna Google.
+   * @param accessToken - Token akses OAuth.
+   * @param refreshToken - Token refresh OAuth.
+   * @param profile - Profil pengguna Google.
+   * @param done - Callback untuk meneruskan objek pengguna.
+   * @returns void
    */
-  async validate(
+  validate(
     accessToken: string,
     refreshToken: string,
-    profile: any,
+    profile: GoogleProfile,
     done: VerifyCallback,
-  ): Promise<any> {
-    const { name, emails, photos } = profile;
+  ): void {
+    const email = profile.emails?.[0]?.value;
+    const firstName = profile.name?.givenName ?? '';
+    const lastName = profile.name?.familyName ?? '';
+    const picture = profile.photos?.[0]?.value;
+
     const user = {
-      email: emails[0].value,
-      firstName: name.givenName,
-      lastName: name.familyName,
-      picture: photos[0]?.value,
+      email,
+      firstName,
+      lastName,
+      picture,
       accessToken,
     };
 
