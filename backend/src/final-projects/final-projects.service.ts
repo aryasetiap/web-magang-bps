@@ -1,3 +1,8 @@
+/**
+ * Modul service untuk mengelola data Final Project.
+ * Berisi operasi CRUD, upload file, dan proses review final project.
+ */
+
 import {
   Injectable,
   NotFoundException,
@@ -7,40 +12,39 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateFinalProjectDto } from './dto/create-final-project.dto';
 import { UpdateFinalProjectDto } from './dto/update-final-project.dto';
 import { ReviewFinalProjectDto } from './dto/review-final-project.dto';
+import { FinalProject, Prisma } from '@prisma/client';
 import * as fs from 'fs';
 
 /**
  * Service untuk mengelola data Final Project.
+ * Menyediakan operasi pembuatan, pembacaan, pembaruan, penghapusan, dan review final project.
  */
 @Injectable()
 export class FinalProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Membuat final project baru untuk user tertentu.
    * @param userId ID user yang membuat final project
    * @param createFinalProjectDto Data final project yang akan dibuat
-   * @param file File yang diupload (jika ada)
+   * @param file File yang diupload (opsional)
    * @returns Data final project yang telah dibuat
    */
   async create(
     userId: number,
     createFinalProjectDto: CreateFinalProjectDto,
     file?: Express.Multer.File,
-  ) {
-    const data: any = {
+  ): Promise<FinalProject> {
+    const data: Prisma.FinalProjectUncheckedCreateInput = {
       title: createFinalProjectDto.title,
       description: createFinalProjectDto.description,
       userId,
+      status: file ? 'submitted' : 'draft',
+      ...(file && {
+        filePath: file.path,
+        submittedAt: new Date(),
+      }),
     };
-
-    if (file) {
-      data.filePath = file.path;
-      data.status = 'submitted';
-      data.submittedAt = new Date();
-    } else {
-      data.status = 'draft';
-    }
 
     return this.prisma.finalProject.create({ data });
   }
@@ -50,7 +54,7 @@ export class FinalProjectsService {
    * @param userId ID user
    * @returns Daftar final project milik user
    */
-  async findAllForUser(userId: number) {
+  async findAllForUser(userId: number): Promise<FinalProject[]> {
     return this.prisma.finalProject.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -59,11 +63,19 @@ export class FinalProjectsService {
 
   /**
    * Mengambil seluruh final project untuk admin dengan paginasi.
-   * @param page Halaman yang diambil
-   * @param limit Jumlah data per halaman
+   * @param page Halaman yang diambil (default: 1)
+   * @param limit Jumlah data per halaman (default: 20)
    * @returns Data final project beserta informasi paginasi
    */
-  async findAllForAdmin(page: number = 1, limit: number = 20) {
+  async findAllForAdmin(
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
+    data: FinalProject[];
+    total: number;
+    page: number;
+    lastPage: number;
+  }> {
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.prisma.finalProject.findMany({
@@ -103,8 +115,16 @@ export class FinalProjectsService {
    * @throws NotFoundException jika final project tidak ditemukan
    * @throws ForbiddenException jika user tidak berhak mengakses data
    */
-  async findOne(id: number, userId?: number) {
-    const finalProject = await this.prisma.finalProject.findUnique({
+  async findOne(
+    id: number,
+    userId?: number,
+  ): Promise<
+    FinalProject & {
+      user: { id: number; name: string; email: string };
+      reviewedBy: { id: number; name: string } | null;
+    }
+  > {
+    const project = await this.prisma.finalProject.findUnique({
       where: { id },
       include: {
         user: {
@@ -116,17 +136,17 @@ export class FinalProjectsService {
       },
     });
 
-    if (!finalProject) {
+    if (!project) {
       throw new NotFoundException('Final project tidak ditemukan');
     }
 
-    if (userId && finalProject.userId !== userId) {
+    if (userId && project.userId !== userId) {
       throw new ForbiddenException(
         'Anda tidak memiliki akses ke final project ini',
       );
     }
 
-    return finalProject;
+    return project;
   }
 
   /**
@@ -135,7 +155,7 @@ export class FinalProjectsService {
    * @param id ID final project
    * @param userId ID user pemilik final project
    * @param updateFinalProjectDto Data yang akan diperbarui
-   * @param file File baru yang diupload (jika ada)
+   * @param file File baru yang diupload (opsional)
    * @returns Data final project yang telah diperbarui
    * @throws ForbiddenException jika status sudah 'accepted'
    */
@@ -144,17 +164,16 @@ export class FinalProjectsService {
     userId: number,
     updateFinalProjectDto: UpdateFinalProjectDto,
     file?: Express.Multer.File,
-  ) {
-    const finalProject = await this.findOne(id, userId);
+  ): Promise<FinalProject> {
+    const project = await this.findOne(id, userId);
 
-    const updateData: any = {
+    const updateData: Prisma.FinalProjectUncheckedUpdateInput = {
       ...updateFinalProjectDto,
     };
 
-    // Jika ada file baru, hapus file lama dan update path file
     if (file) {
-      if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {
-        fs.unlinkSync(finalProject.filePath);
+      if (project.filePath && fs.existsSync(project.filePath)) {
+        fs.unlinkSync(project.filePath);
       }
       updateData.filePath = file.path;
       updateData.status = 'submitted';
@@ -180,7 +199,7 @@ export class FinalProjectsService {
     id: number,
     reviewerId: number,
     reviewDto: ReviewFinalProjectDto,
-  ) {
+  ): Promise<FinalProject> {
     const finalProject = await this.findOne(id);
 
     if (finalProject.status !== 'submitted') {
@@ -208,7 +227,7 @@ export class FinalProjectsService {
    * @returns Data final project yang telah dihapus
    * @throws NotFoundException atau ForbiddenException jika tidak ditemukan atau tidak berhak
    */
-  async remove(id: number, userId: number) {
+  async remove(id: number, userId: number): Promise<FinalProject> {
     const finalProject = await this.findOne(id, userId);
 
     if (finalProject.filePath && fs.existsSync(finalProject.filePath)) {

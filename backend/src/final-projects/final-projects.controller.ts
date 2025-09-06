@@ -30,7 +30,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 @Controller('final-projects')
 @UseGuards(AuthGuard('jwt'))
 export class FinalProjectsController {
-  constructor(private readonly finalProjectsService: FinalProjectsService) { }
+  constructor(private readonly finalProjectsService: FinalProjectsService) {}
 
   /**
    * Membuat Final Project baru oleh pengguna dengan peran Intern.
@@ -44,12 +44,16 @@ export class FinalProjectsController {
   @UseGuards(RolesGuard)
   @UseInterceptors(FileInterceptor('file'))
   create(
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() createFinalProjectDto: CreateFinalProjectDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const userId = req.user.userId;
-    return this.finalProjectsService.create(userId, createFinalProjectDto, file);
+    const userId = Number(req.user.userId);
+    return this.finalProjectsService.create(
+      userId,
+      createFinalProjectDto,
+      file,
+    );
   }
 
   /**
@@ -60,8 +64,8 @@ export class FinalProjectsController {
   @Get()
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  findAllForUser(@Request() req) {
-    const userId = req.user.userId;
+  findAllForUser(@Request() req: { user: { userId: number } }) {
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.findAllForUser(userId);
   }
 
@@ -85,12 +89,15 @@ export class FinalProjectsController {
    * @returns Detail Final Project.
    */
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+  ) {
+    const userId = Number(req.user.userId);
     const userRole = req.user.role;
     return this.finalProjectsService.findOne(
       id,
-      userRole === 'admin' ? undefined : userId,
+      userRole?.toLowerCase() === 'admin' ? undefined : userId,
     );
   }
 
@@ -108,11 +115,11 @@ export class FinalProjectsController {
   @UseInterceptors(FileInterceptor('file'))
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() updateFinalProjectDto: UpdateFinalProjectDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const userId = req.user.userId;
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.update(
       id,
       userId,
@@ -133,10 +140,10 @@ export class FinalProjectsController {
   @Roles('Admin', 'Staff BPS')
   review(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() reviewDto: ReviewFinalProjectDto,
   ) {
-    const reviewerId = req.user.userId;
+    const reviewerId = Number(req.user.userId);
     return this.finalProjectsService.review(id, reviewerId, reviewDto);
   }
 
@@ -149,8 +156,11 @@ export class FinalProjectsController {
   @Delete(':id')
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number } },
+  ) {
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.remove(id, userId);
   }
 }
