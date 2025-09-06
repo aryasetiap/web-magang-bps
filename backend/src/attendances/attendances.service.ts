@@ -14,9 +14,12 @@ import { ClockOutDto } from './dto/clock-out.dto';
 import { RequestLeaveDto } from './dto/request-leave.dto';
 import { Cron } from '@nestjs/schedule';
 import { Prisma, AttendanceStatus } from '@prisma/client';
-const PdfPrinter = require('pdfmake');
-// Import tipe yang dibutuhkan dari pdfmake
-import { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+import PdfPrinter from 'pdfmake';
+import type {
+  TDocumentDefinitions,
+  Content,
+  TFontDictionary,
+} from 'pdfmake/interfaces';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -139,7 +142,10 @@ export class AttendancesService {
    * @param clockOutDto Data clock-out (latitude, longitude)
    * @param ipAddress Alamat IP user
    */
-  async clockOut(userId: number, clockOutDto: ClockOutDto, ipAddress: string) {
+  async clockOut(
+    userId: number,
+    clockOutDto: ClockOutDto /*, ipAddress: string */,
+  ) {
     this.validateLocation(clockOutDto.latitude, clockOutDto.longitude);
 
     const today = new Date();
@@ -539,7 +545,7 @@ export class AttendancesService {
       defaultStyle: { font: 'Helvetica' },
     };
 
-    const fonts = {
+    const fonts: TFontDictionary = {
       Helvetica: {
         normal: 'src/assets/fonts/Helvetica-Regular.ttf',
         bold: 'src/assets/fonts/Helvetica-Bold.ttf',
@@ -551,7 +557,7 @@ export class AttendancesService {
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     const chunks: Buffer[] = [];
     return new Promise<Buffer>((resolve, reject) => {
-      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
       pdfDoc.on('error', reject);
       pdfDoc.end();
@@ -689,7 +695,7 @@ export class AttendancesService {
       defaultStyle: { font: 'Helvetica' },
     };
 
-    const fonts = {
+    const fonts: TFontDictionary = {
       Helvetica: {
         normal: 'src/assets/fonts/Helvetica-Regular.ttf',
         bold: 'src/assets/fonts/Helvetica-Bold.ttf',
@@ -701,7 +707,7 @@ export class AttendancesService {
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     const chunks: Buffer[] = [];
     return new Promise<Buffer>((resolve, reject) => {
-      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
       pdfDoc.on('error', reject);
       pdfDoc.end();

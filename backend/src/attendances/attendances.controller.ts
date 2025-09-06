@@ -1,3 +1,12 @@
+/**
+ * AttendancesController Module
+ * ---------------------------
+ * Mengelola endpoint terkait presensi (clock-in, clock-out, riwayat, cuti/izin, dan ekspor laporan).
+ * Setiap endpoint diamankan dengan JWT dan validasi peran (role) jika diperlukan.
+ *
+ * @module AttendancesController
+ */
+
 import {
   Controller,
   Post,
@@ -13,6 +22,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { AttendancesService } from './attendances.service';
 import { ClockInDto } from './dto/clock-in.dto';
@@ -20,7 +30,6 @@ import { ClockOutDto } from './dto/clock-out.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -34,30 +43,61 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Response } from 'express';
 
+/**
+ * Interface JwtRequest
+ * --------------------
+ * Mendefinisikan struktur request yang membawa data user dari JWT.
+ */
+interface JwtRequest extends Request {
+  user?: { userId: number; name?: string };
+  ip?: string;
+  connection?: { remoteAddress?: string };
+}
+
 @ApiTags('attendances')
 @Controller('attendances')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
+/**
+ * Kelas AttendancesController
+ * --------------------------
+ * Controller utama untuk mengelola presensi, cuti/izin, dan laporan.
+ */
 export class AttendancesController {
+  /**
+   * Konstruktor AttendancesController
+   * @param attendancesService Service untuk mengelola logika presensi.
+   */
   constructor(private readonly attendancesService: AttendancesService) {}
 
   /**
-   * Melakukan presensi masuk (clock-in).
+   * Endpoint presensi masuk (clock-in).
+   *
    * @param req Request object yang berisi user.
    * @param clockInDto Data presensi masuk.
    * @param ip Alamat IP pengguna.
+   * @returns Data presensi masuk yang berhasil dicatat.
    */
   @Post('clock-in')
   @ApiOperation({ summary: 'Melakukan presensi masuk (clock-in)' })
-  clockIn(@Request() req, @Body() clockInDto: ClockInDto, @Ip() ip: string) {
-    const userId = req.user.userId;
+  clockIn(
+    @Request() req: JwtRequest,
+    @Body() clockInDto: ClockInDto,
+    @Ip() ip: string,
+  ) {
+    const userId = req.user?.userId;
+    if (typeof userId !== 'number') {
+      throw new BadRequestException('User ID tidak ditemukan');
+    }
     return this.attendancesService.clockIn(userId, clockInDto, ip);
   }
 
   /**
-   * Melakukan presensi pulang (clock-out) dengan validasi lokasi.
+   * Endpoint presensi pulang (clock-out) dengan validasi lokasi.
+   *
    * @param clockOutDto Data presensi pulang.
-   * @param req Request object yang berisi user dan IP.
+   * @param req Request object yang berisi user.
+   * @returns Data presensi pulang yang berhasil dicatat.
    */
   @Patch('clock-out')
   @ApiOperation({ summary: 'Melakukan presensi pulang dengan validasi lokasi' })
@@ -101,16 +141,15 @@ export class AttendancesController {
       },
     },
   })
-  async clockOut(@Body() clockOutDto: ClockOutDto, @Req() req: any) {
-    const userId = req.user.userId;
-    const ipAddress = req.ip || req.connection.remoteAddress;
-
+  async clockOut(@Body() clockOutDto: ClockOutDto, @Req() req: JwtRequest) {
+    const userId = req.user?.userId;
+    if (typeof userId !== 'number') {
+      throw new BadRequestException('User ID tidak ditemukan');
+    }
     const attendance = await this.attendancesService.clockOut(
       userId,
       clockOutDto,
-      ipAddress,
     );
-
     return {
       message: 'Presensi pulang berhasil',
       attendance: {
@@ -124,20 +163,27 @@ export class AttendancesController {
   }
 
   /**
-   * Mendapatkan riwayat presensi pengguna saat ini.
+   * Endpoint mendapatkan riwayat presensi pengguna saat ini.
+   *
    * @param req Request object yang berisi user.
+   * @returns Daftar riwayat presensi pengguna.
    */
   @Get()
   @ApiOperation({ summary: 'Melihat riwayat presensi sendiri' })
-  findAll(@Request() req) {
-    const userId = req.user.userId;
+  findAll(@Request() req: JwtRequest) {
+    const userId = req.user?.userId;
+    if (typeof userId !== 'number') {
+      throw new BadRequestException('User ID tidak ditemukan');
+    }
     return this.attendancesService.findAll(userId);
   }
 
   /**
-   * Mendapatkan seluruh data presensi (khusus admin).
+   * Endpoint mendapatkan seluruh data presensi (khusus admin).
+   *
    * @param page Halaman data.
    * @param limit Jumlah data per halaman.
+   * @returns Daftar seluruh data presensi.
    */
   @Get('all')
   @UseGuards(RolesGuard)
@@ -151,10 +197,15 @@ export class AttendancesController {
   }
 
   /**
-   * Mendapatkan detail presensi berdasarkan ID.
-   * @param id ID presensi.
+   * Endpoint ekspor rekap presensi semua intern ke PDF (khusus admin).
+   *
+   * @param startDate Tanggal mulai.
+   * @param endDate Tanggal akhir.
+   * @param institution Nama instansi.
+   * @param res Response object untuk mengirim file PDF.
+   * @param req Request object yang berisi user.
+   * @returns File PDF rekap presensi.
    */
-
   @Get('report')
   @UseGuards(RolesGuard)
   @Roles('admin')
@@ -164,7 +215,7 @@ export class AttendancesController {
     @Query('endDate') endDate: string,
     @Query('institution') institution: string,
     @Res() res: Response,
-    @Request() req,
+    @Request() req: JwtRequest,
   ) {
     const adminName = req.user?.name || 'Admin';
     const pdfBuffer = await this.attendancesService.exportAllAttendancesPdf(
@@ -178,6 +229,12 @@ export class AttendancesController {
     res.end(pdfBuffer);
   }
 
+  /**
+   * Endpoint mendapatkan detail presensi berdasarkan ID.
+   *
+   * @param id ID presensi.
+   * @returns Detail data presensi.
+   */
   @Get(':id')
   @ApiOperation({ summary: 'Melihat detail presensi berdasarkan ID' })
   findOne(@Param('id') id: string) {
@@ -185,10 +242,12 @@ export class AttendancesController {
   }
 
   /**
-   * Mengajukan permohonan cuti/izin dengan upload bukti.
+   * Endpoint mengajukan permohonan cuti/izin dengan upload bukti.
+   *
    * @param req Request object yang berisi user.
    * @param dto Data permohonan cuti/izin.
    * @param file File bukti (opsional).
+   * @returns Data permohonan cuti/izin yang diajukan.
    */
   @Post('request-leave')
   @UseInterceptors(
@@ -214,19 +273,24 @@ export class AttendancesController {
   )
   @ApiOperation({ summary: 'Mengajukan permohonan cuti/izin' })
   async requestLeave(
-    @Request() req,
+    @Request() req: JwtRequest,
     @Body() dto: RequestLeaveDto,
     @UploadedFile() file: Express.Multer.File | null,
   ) {
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+    if (typeof userId !== 'number') {
+      throw new BadRequestException('User ID tidak ditemukan');
+    }
     return this.attendancesService.requestLeave(userId, dto, file);
   }
 
   /**
-   * Memvalidasi permohonan cuti/izin (admin/staff).
+   * Endpoint validasi permohonan cuti/izin (admin/staff).
+   *
    * @param id ID permohonan.
    * @param status Status validasi.
    * @param req Request object yang berisi user.
+   * @returns Data permohonan cuti/izin yang telah divalidasi.
    */
   @Patch(':id/validate')
   @UseGuards(RolesGuard)
@@ -235,12 +299,25 @@ export class AttendancesController {
   async validateLeave(
     @Param('id') id: string,
     @Body('status') status: 'hadir' | 'sakit' | 'izin' | 'tanpa_keterangan',
-    @Request() req,
+    @Request() req: JwtRequest,
   ) {
-    const adminId = req.user.userId;
+    const adminId = req.user?.userId;
+    if (typeof adminId !== 'number') {
+      throw new BadRequestException('Admin ID tidak ditemukan');
+    }
     return this.attendancesService.validateLeave(+id, status, adminId);
   }
 
+  /**
+   * Endpoint ekspor presensi satu intern ke PDF (khusus admin).
+   *
+   * @param userId ID user intern.
+   * @param startDate Tanggal mulai.
+   * @param endDate Tanggal akhir.
+   * @param res Response object untuk mengirim file PDF.
+   * @param req Request object yang berisi user.
+   * @returns File PDF presensi intern.
+   */
   @Get(':userId/report')
   @UseGuards(RolesGuard)
   @Roles('admin')
@@ -250,7 +327,7 @@ export class AttendancesController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
     @Res() res: Response,
-    @Request() req,
+    @Request() req: JwtRequest,
   ) {
     const adminName = req.user?.name || 'Admin';
     const pdfBuffer = await this.attendancesService.exportUserAttendancePdf(

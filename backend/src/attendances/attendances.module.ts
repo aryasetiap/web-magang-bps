@@ -3,8 +3,9 @@ import { AttendancesService } from './attendances.service';
 import { AttendancesController } from './attendances.controller';
 
 /**
- * AttendancesModule is responsible for managing attendance-related features,
- * including providing the AttendancesService and registering the AttendancesController.
+ * Modul AttendancesModule bertanggung jawab untuk mengelola fitur terkait absensi.
+ * Modul ini mendaftarkan AttendancesController dan menyediakan AttendancesService
+ * sebagai dependency injection untuk kebutuhan pengelolaan absensi.
  */
 @Module({
   controllers: [AttendancesController],
