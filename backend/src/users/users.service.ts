@@ -8,7 +8,8 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+// Hapus import Prisma yang tidak digunakan secara langsung sebagai tipe di sini
+// import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -194,9 +195,13 @@ export class UsersService {
         select: this.profileSelect(),
       });
     } catch (error) {
+      // FIX: Mengubah cara pengecekan error agar lebih robust dan tidak
+      // bergantung pada 'instanceof' yang bermasalah di Jest.
       if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2025'
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
       ) {
         throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
       }
