@@ -24,8 +24,6 @@ import {
 import { CertificatesService } from './certificates.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { AuthGuard } from '@nestjs/passport';
 import { createReadStream, existsSync } from 'fs';
 import { Response as ExpressResponse } from 'express';
@@ -110,24 +108,7 @@ export class CertificatesController {
    * @returns Status upload template.
    */
   @Patch('template/upload')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/certificate-templates',
-        filename: (_req, _file, cb) => {
-          cb(null, 'certificate-template.pdf');
-        },
-      }),
-      limits: { fileSize: 5 * 1024 * 1024 },
-      fileFilter: (_req, file, cb) => {
-        if (extname(file.originalname).toLowerCase() === '.pdf') {
-          cb(null, true);
-        } else {
-          cb(new Error('File harus PDF'), false);
-        }
-      },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file')) // <-- Ganti: tidak perlu config storage di sini
   uploadTemplate(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File PDF wajib diunggah');
