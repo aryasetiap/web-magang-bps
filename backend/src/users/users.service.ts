@@ -1,3 +1,8 @@
+/**
+ * Modul service untuk manajemen data user pada aplikasi.
+ * Berisi operasi CRUD, pengelolaan profil, dan paginasi user.
+ */
+
 import {
   Injectable,
   NotFoundException,
@@ -15,10 +20,11 @@ import * as path from 'path';
 
 /**
  * Service untuk manajemen data user.
+ * Menyediakan fitur pembuatan, pembaruan, penghapusan, dan pengambilan data user.
  */
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Membuat user baru.
@@ -58,7 +64,8 @@ export class UsersService {
     });
 
     // Menghilangkan password dari hasil response
-    const { password: _, ...result } = newUser;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, ...result } = newUser;
     return result;
   }
 
@@ -71,27 +78,7 @@ export class UsersService {
   async getProfile(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        profilePhoto: true,
-        namaLengkap: true,
-        nimNisn: true,
-        asalInstitusi: true,
-        jurusanProdi: true,
-        nomorTelepon: true,
-        alamat: true,
-        educationStatus: true,
-        activityType: true,
-        activityStart: true,
-        activityEnd: true,
-        createdAt: true,
-        isGraduated: true,
-        role: {
-          select: { name: true },
-        },
-      },
+      select: this.profileSelect(),
     });
 
     if (!user) {
@@ -123,67 +110,17 @@ export class UsersService {
       throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
     }
 
-    const updateData: any = {
-      ...updateProfileDto,
-    };
+    const updateData = this.buildUpdateProfileData(updateProfileDto);
 
-    // Penanganan field baru secara eksplisit
-    if (typeof updateProfileDto.educationStatus !== 'undefined') {
-      updateData.educationStatus = updateProfileDto.educationStatus;
-    }
-    if (typeof updateProfileDto.activityType !== 'undefined') {
-      updateData.activityType = updateProfileDto.activityType;
-    }
-    if (typeof updateProfileDto.activityStart !== 'undefined') {
-      updateData.activityStart = updateProfileDto.activityStart
-        ? new Date(updateProfileDto.activityStart)
-        : null;
-    }
-    if (typeof updateProfileDto.activityEnd !== 'undefined') {
-      updateData.activityEnd = updateProfileDto.activityEnd
-        ? new Date(updateProfileDto.activityEnd)
-        : null;
-    }
-
-    // Jika ada file foto baru, hapus foto lama dan simpan path baru
     if (profilePhoto) {
-      if (user.profilePhoto) {
-        const oldPhotoPath = path.resolve(user.profilePhoto);
-        if (fs.existsSync(oldPhotoPath)) {
-          try {
-            fs.unlinkSync(oldPhotoPath);
-          } catch (error) {
-            console.error('Gagal menghapus foto profil lama:', error);
-          }
-        }
-      }
+      this.deleteOldProfilePhoto(user.profilePhoto ?? undefined);
       updateData.profilePhoto = profilePhoto.path.replace(/\\/g, '/');
     }
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
       data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        profilePhoto: true,
-        namaLengkap: true,
-        nimNisn: true,
-        asalInstitusi: true,
-        jurusanProdi: true,
-        nomorTelepon: true,
-        alamat: true,
-        educationStatus: true,
-        activityType: true,
-        activityStart: true,
-        activityEnd: true,
-        role: {
-          select: {
-            name: true,
-          },
-        },
-      },
+      select: this.profileSelect(),
     });
 
     return updatedUser;
@@ -204,33 +141,11 @@ export class UsersService {
     const [users, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         where: { deletedAt: null },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          profilePhoto: true,
-          namaLengkap: true,
-          nimNisn: true,
-          asalInstitusi: true,
-          jurusanProdi: true,
-          nomorTelepon: true,
-          alamat: true,
-          educationStatus: true,
-          activityType: true,
-          activityStart: true,
-          activityEnd: true,
-          role: {
-            select: {
-              name: true,
-            },
-          },
-        },
+        select: this.profileSelect(),
         skip,
         take: limit,
       }),
-      this.prisma.user.count({
-        where: { deletedAt: null },
-      }),
+      this.prisma.user.count({ where: { deletedAt: null } }),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -255,31 +170,8 @@ export class UsersService {
    */
   async findOne(id: number) {
     const user = await this.prisma.user.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        profilePhoto: true,
-        namaLengkap: true,
-        nimNisn: true,
-        asalInstitusi: true,
-        jurusanProdi: true,
-        nomorTelepon: true,
-        alamat: true,
-        educationStatus: true,
-        activityType: true,
-        activityStart: true,
-        activityEnd: true,
-        role: {
-          select: {
-            name: true,
-          },
-        },
-      },
+      where: { id, deletedAt: null },
+      select: this.profileSelect(),
     });
     if (!user) {
       throw new NotFoundException(`User dengan ID ${id} tidak ditemukan`);
@@ -299,33 +191,14 @@ export class UsersService {
       return await this.prisma.user.update({
         where: { id },
         data: updateUserDto,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          profilePhoto: true,
-          namaLengkap: true,
-          nimNisn: true,
-          asalInstitusi: true,
-          jurusanProdi: true,
-          nomorTelepon: true,
-          alamat: true,
-          educationStatus: true,
-          activityType: true,
-          activityStart: true,
-          activityEnd: true,
-          role: {
-            select: {
-              name: true,
-            },
-          },
-        },
+        select: this.profileSelect(),
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
-        }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
       }
       throw error;
     }
@@ -339,9 +212,84 @@ export class UsersService {
   async remove(id: number) {
     return this.prisma.user.update({
       where: { id },
-      data: {
-        deletedAt: new Date(),
-      },
+      data: { deletedAt: new Date() },
     });
+  }
+
+  /**
+   * Membantu membangun objek data untuk update profil user.
+   * @param dto Data profil yang akan diperbarui.
+   * @returns Objek data update untuk Prisma.
+   */
+  private buildUpdateProfileData(dto: UpdateProfileDto) {
+    const updateData: Partial<UpdateProfileDto> & {
+      educationStatus?: string;
+      activityType?: string;
+      activityStart?: Date | null;
+      activityEnd?: Date | null;
+      profilePhoto?: string;
+    } = { ...dto };
+
+    if (typeof dto.educationStatus !== 'undefined') {
+      updateData.educationStatus = dto.educationStatus;
+    }
+    if (typeof dto.activityType !== 'undefined') {
+      updateData.activityType = dto.activityType;
+    }
+    if (typeof dto.activityStart !== 'undefined') {
+      updateData.activityStart = dto.activityStart
+        ? new Date(dto.activityStart)
+        : undefined;
+    }
+    if (typeof dto.activityEnd !== 'undefined') {
+      updateData.activityEnd = dto.activityEnd
+        ? new Date(dto.activityEnd)
+        : undefined;
+    }
+
+    return updateData;
+  }
+
+  /**
+   * Menghapus foto profil lama dari sistem file jika ada.
+   * @param oldPhotoPath Path foto profil lama.
+   */
+  private deleteOldProfilePhoto(oldPhotoPath?: string) {
+    if (oldPhotoPath) {
+      const resolvedPath = path.resolve(oldPhotoPath);
+      if (fs.existsSync(resolvedPath)) {
+        try {
+          fs.unlinkSync(resolvedPath);
+        } catch (error) {
+          console.error('Gagal menghapus foto profil lama:', error);
+        }
+      }
+    }
+  }
+
+  /**
+   * Mendefinisikan field yang diambil pada operasi select user.
+   * @returns Objek select untuk Prisma.
+   */
+  private profileSelect() {
+    return {
+      id: true,
+      name: true,
+      email: true,
+      profilePhoto: true,
+      namaLengkap: true,
+      nimNisn: true,
+      asalInstitusi: true,
+      jurusanProdi: true,
+      nomorTelepon: true,
+      alamat: true,
+      educationStatus: true,
+      activityType: true,
+      activityStart: true,
+      activityEnd: true,
+      createdAt: true,
+      isGraduated: true,
+      role: { select: { name: true } },
+    };
   }
 }

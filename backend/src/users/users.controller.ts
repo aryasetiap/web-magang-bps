@@ -1,3 +1,10 @@
+/**
+ * Modul Controller User
+ * -----------------------------------------------
+ * Mengelola endpoint terkait user, termasuk pembuatan, pembacaan,
+ * pembaruan, penghapusan user, serta pembaruan profil user.
+ */
+
 import {
   Controller,
   Get,
@@ -30,13 +37,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UsersController {
+  /**
+   * Membuat instance UsersController.
+   * @param usersService Service untuk operasi user.
+   */
   constructor(private readonly usersService: UsersService) {}
 
   /**
    * Membuat user baru.
    * Hanya dapat diakses oleh Admin.
-   * @param createUserDto Data user yang akan dibuat
-   * @returns Data user yang berhasil dibuat
+   * @param createUserDto Data user yang akan dibuat.
+   * @returns Data user yang berhasil dibuat.
    */
   @Post()
   @Roles('Admin')
@@ -47,8 +58,8 @@ export class UsersController {
   /**
    * Mengambil daftar seluruh user dengan opsi paginasi.
    * Hanya dapat diakses oleh Admin.
-   * @param paginationQuery Parameter paginasi (opsional)
-   * @returns Daftar user
+   * @param paginationQuery Parameter paginasi (opsional).
+   * @returns Daftar user.
    */
   @Get()
   @Roles('Admin')
@@ -59,54 +70,58 @@ export class UsersController {
   /**
    * Mengambil detail user berdasarkan ID.
    * Hanya dapat diakses oleh Admin.
-   * @param id ID user
-   * @returns Data user
+   * @param id ID user.
+   * @returns Data user.
    */
   @Get(':id')
   @Roles('Admin')
   findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+    return this.usersService.findOne(Number(id));
   }
 
   /**
    * Memperbarui data user berdasarkan ID.
    * Hanya dapat diakses oleh Admin.
-   * @param id ID user
-   * @param updateUserDto Data yang akan diperbarui
-   * @returns Data user yang telah diperbarui
+   * @param id ID user.
+   * @param updateUserDto Data yang akan diperbarui.
+   * @returns Data user yang telah diperbarui.
    */
   @Patch(':id')
   @Roles('Admin')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    return this.usersService.update(Number(id), updateUserDto);
   }
 
   /**
    * Menghapus user berdasarkan ID.
    * Hanya dapat diakses oleh Admin.
-   * @param id ID user
-   * @returns Hasil penghapusan user
+   * @param id ID user.
+   * @returns Hasil penghapusan user.
    */
   @Delete(':id')
   @Roles('Admin')
   remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+    return this.usersService.remove(Number(id));
   }
 
   /**
    * Memperbarui profil user yang sedang login, termasuk foto profil.
-   * @param req Request yang berisi data user dari JWT
-   * @param updateProfileDto Data profil yang akan diperbarui
-   * @param profilePhoto File foto profil (opsional)
-   * @returns Data user yang telah diperbarui
+   * @param req Request yang berisi data user dari JWT.
+   * @param updateProfileDto Data profil yang akan diperbarui.
+   * @param profilePhoto File foto profil (opsional).
+   * @returns Data user yang telah diperbarui.
    */
   @Patch('profile')
   @UseInterceptors(FileInterceptor('profilePhoto'))
   updateProfile(
-    @Req() req,
+    @Req() req: { user: { id: number } },
     @Body() updateProfileDto: UpdateProfileDto,
     @UploadedFile() profilePhoto?: Express.Multer.File,
   ) {
-    return this.usersService.updateProfile(req.user.id, updateProfileDto, profilePhoto);
+    return this.usersService.updateProfile(
+      req.user.id,
+      updateProfileDto,
+      profilePhoto,
+    );
   }
 }

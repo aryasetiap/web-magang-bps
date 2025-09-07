@@ -1,3 +1,10 @@
+/**
+ * Modul DTO untuk pembuatan user baru.
+ * Berisi definisi enum peran yang dapat dibuat dan kelas DTO untuk validasi input user.
+ *
+ * @module CreateUserDto
+ */
+
 import {
   IsEmail,
   IsEnum,
@@ -7,7 +14,10 @@ import {
 } from 'class-validator';
 
 /**
- * Enum untuk mendefinisikan peran yang dapat dibuat oleh sistem.
+ * Enum CreatableRoles
+ * Mendefinisikan peran yang dapat dibuat oleh sistem.
+ *
+ * @enum {string}
  */
 export enum CreatableRoles {
   STAFF_BPS = 'Staff BPS',
@@ -15,8 +25,14 @@ export enum CreatableRoles {
 }
 
 /**
- * DTO untuk membuat user baru.
- * Digunakan untuk validasi data input saat pembuatan user.
+ * Kelas CreateUserDto
+ * DTO (Data Transfer Object) untuk validasi data input saat pembuatan user baru.
+ *
+ * @class
+ * @property {string} name - Nama lengkap user, wajib diisi.
+ * @property {string} email - Alamat email user, wajib format email yang valid.
+ * @property {string} password - Password user, minimal 8 karakter.
+ * @property {CreatableRoles} roleName - Peran user, hanya dapat diisi dengan nilai dari enum CreatableRoles.
  */
 export class CreateUserDto {
   /**
