@@ -46,7 +46,7 @@ export class FinalProjectsController {
   create(
     @Request() req: { user: { userId: number } },
     @Body() createFinalProjectDto: CreateFinalProjectDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     const userId = Number(req.user.userId);
     return this.finalProjectsService.create(
