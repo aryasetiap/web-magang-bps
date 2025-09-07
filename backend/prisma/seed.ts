@@ -1,8 +1,17 @@
+/**
+ * Modul seeding database untuk aplikasi web magang BPS.
+ * Berisi fungsi-fungsi untuk mengisi data awal seperti role, user, magang, tugas, logbook, submission, final project, dan sertifikat.
+ * Setiap fungsi sudah dilengkapi docstring dalam bahasa Indonesia.
+ */
+
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+/**
+ * Daftar akun Staff BPS yang akan di-seed ke database.
+ */
 const staffBpsAccounts = [
   {
     nip: '197309131994031004',
@@ -136,6 +145,9 @@ const staffBpsAccounts = [
   },
 ];
 
+/**
+ * Daftar akun Admin yang akan di-seed ke database.
+ */
 const adminAccounts = [
   {
     id: 0,
@@ -157,6 +169,9 @@ const adminAccounts = [
   },
 ];
 
+/**
+ * Daftar akun Intern yang akan di-seed ke database.
+ */
 const interns = [
   {
     id: 1001,
@@ -200,10 +215,13 @@ const interns = [
 ];
 
 /**
- * Fungsi untuk membuat role jika belum ada di database.
+ * Membuat role jika belum ada di database.
  * @returns {Promise<void>}
  */
 async function seedRoles(): Promise<void> {
+  /**
+   * Membuat role 'Intern', 'Staff BPS', dan 'Admin' jika belum ada.
+   */
   const rolesToCreate = [
     { name: 'Intern' },
     { name: 'Staff BPS' },
@@ -221,7 +239,7 @@ async function seedRoles(): Promise<void> {
 }
 
 /**
- * Fungsi untuk melakukan seeding akun Staff BPS.
+ * Melakukan seeding akun Staff BPS.
  * Password di-hash dari NIP.
  * @param staffRoleId ID role Staff BPS
  * @returns {Promise<void>}
@@ -242,7 +260,7 @@ async function seedStaffBpsAccounts(
         name: staff.name,
         email,
         password: passwordHash,
-        roleId: staffRoleId, // sudah pasti number
+        roleId: staffRoleId,
         isEmailVerified: true,
       },
     });
@@ -253,7 +271,7 @@ async function seedStaffBpsAccounts(
 }
 
 /**
- * Fungsi untuk melakukan seeding akun Admin.
+ * Melakukan seeding akun Admin.
  * Password di-hash dari password default.
  * @param adminRoleId ID role Admin
  * @returns {Promise<void>}
@@ -284,7 +302,7 @@ async function seedAdminAccounts(
 }
 
 /**
- * Fungsi untuk melakukan seeding akun Intern.
+ * Melakukan seeding akun Intern.
  * Password di-hash dari password default.
  * @param internRoleId ID role Intern
  * @returns {Promise<void>}
@@ -303,7 +321,7 @@ async function seedInternAccounts(
         name: intern.name,
         email: intern.email,
         password: await bcrypt.hash(intern.password, 10),
-        roleId: internRoleId, // sudah pasti number
+        roleId: internRoleId,
         isEmailVerified: true,
         namaLengkap: intern.namaLengkap,
         asalInstitusi: intern.asalInstitusi,
@@ -321,10 +339,13 @@ async function seedInternAccounts(
 }
 
 /**
- * Fungsi untuk melakukan seeding data aplikasi magang untuk setiap intern.
+ * Melakukan seeding data aplikasi magang untuk setiap intern.
  * @returns {Promise<void>}
  */
 async function seedInternshipApplications(): Promise<void> {
+  /**
+   * Membuat aplikasi magang dummy untuk setiap intern jika belum ada.
+   */
   for (const intern of interns) {
     const existing = await prisma.internshipApplication.findFirst({
       where: { userId: intern.id },
@@ -348,10 +369,13 @@ async function seedInternshipApplications(): Promise<void> {
 }
 
 /**
- * Fungsi untuk melakukan seeding logbook dummy untuk setiap intern.
+ * Melakukan seeding logbook dummy untuk setiap intern.
  * @returns {Promise<void>}
  */
 async function seedLogbooks(): Promise<void> {
+  /**
+   * Membuat 3 logbook dummy untuk setiap intern.
+   */
   for (const intern of interns) {
     for (let i = 0; i < 3; i++) {
       await prisma.logbook.create({
@@ -368,18 +392,23 @@ async function seedLogbooks(): Promise<void> {
 }
 
 /**
- * Fungsi untuk melakukan seeding tugas dan assignment ke intern.
+ * Melakukan seeding tugas dan assignment ke intern.
  * @param staffRoleId ID role Staff BPS
- * @returns {Promise<any[]>} Daftar tugas yang telah dibuat
+ * @returns {Promise<{id: number; title: string;}[]>} Daftar tugas yang telah dibuat
  */
 async function seedTasksAndAssignments(
   staffRoleId: number | undefined,
-): Promise<any[]> {
+): Promise<{ id: number; title: string }[]> {
+  /**
+   * Membuat 3 tugas dan meng-assign ke semua intern.
+   */
+  if (typeof staffRoleId !== 'number')
+    throw new Error('Staff roleId is undefined');
   const staffList = await prisma.user.findMany({
     where: { roleId: staffRoleId },
     take: 3,
   });
-  const tasks: any[] = [];
+  const tasks: { id: number; title: string }[] = [];
   for (let i = 0; i < 3; i++) {
     const task = await prisma.task.create({
       data: {
@@ -388,6 +417,7 @@ async function seedTasksAndAssignments(
         deadline: new Date(`2025-08-0${i + 1}`),
         createdBy: staffList[i % staffList.length].id,
       },
+      select: { id: true, title: true },
     });
     tasks.push(task);
     await prisma.taskAssignment.createMany({
@@ -403,11 +433,16 @@ async function seedTasksAndAssignments(
 }
 
 /**
- * Fungsi untuk melakukan seeding submission tugas oleh intern.
+ * Melakukan seeding submission tugas oleh intern.
  * @param tasks Daftar tugas yang telah dibuat
  * @returns {Promise<void>}
  */
-async function seedSubmissions(tasks: any[]): Promise<void> {
+async function seedSubmissions(
+  tasks: { id: number; title: string }[],
+): Promise<void> {
+  /**
+   * Membuat submission dummy untuk setiap tugas dan intern.
+   */
   for (const task of tasks) {
     for (const intern of interns) {
       await prisma.submission.create({
@@ -425,11 +460,16 @@ async function seedSubmissions(tasks: any[]): Promise<void> {
 }
 
 /**
- * Fungsi untuk melakukan seeding final project untuk setiap intern.
+ * Melakukan seeding final project untuk setiap intern.
  * @param staffList Daftar staff yang akan menjadi reviewer
  * @returns {Promise<void>}
  */
-async function seedFinalProjects(staffList: any[]): Promise<void> {
+async function seedFinalProjects(
+  staffList: Array<{ id: number }>,
+): Promise<void> {
+  /**
+   * Membuat final project dummy untuk setiap intern.
+   */
   for (const intern of interns) {
     await prisma.finalProject.create({
       data: {
@@ -442,7 +482,7 @@ async function seedFinalProjects(staffList: any[]): Promise<void> {
         feedback: 'Good job!',
         submittedAt: new Date('2025-08-10'),
         reviewedAt: new Date('2025-08-15'),
-        reviewedById: staffList[0].id,
+        reviewedById: staffList[0]?.id,
       },
     });
   }
@@ -450,11 +490,14 @@ async function seedFinalProjects(staffList: any[]): Promise<void> {
 }
 
 /**
- * Fungsi untuk melakukan seeding sertifikat untuk setiap intern.
+ * Melakukan seeding sertifikat untuk setiap intern.
  * @param adminId ID admin yang membuat dan mengupdate sertifikat
  * @returns {Promise<void>}
  */
 async function seedCertificates(adminId: number): Promise<void> {
+  /**
+   * Membuat sertifikat dummy untuk setiap intern.
+   */
   for (const intern of interns) {
     await prisma.certificate.create({
       data: {
@@ -488,6 +531,9 @@ async function seedCertificates(adminId: number): Promise<void> {
  * @returns {Promise<void>}
  */
 async function main(): Promise<void> {
+  /**
+   * Menjalankan seluruh proses seeding database secara berurutan.
+   */
   console.log('Memulai proses seeding...');
 
   await seedRoles();
@@ -521,11 +567,11 @@ async function main(): Promise<void> {
 }
 
 // Menjalankan fungsi utama dan menangani error serta menutup koneksi Prisma
-main()
+void main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
   })
-  .finally(async () => {
-    await prisma.$disconnect();
+  .finally(() => {
+    void prisma.$disconnect();
   });
