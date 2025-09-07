@@ -10,7 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StatusLogbook, Logbook, User } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
-import PdfPrinter from 'pdfmake';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import PdfPrinter = require('pdfmake');
 import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 /**
@@ -153,7 +154,7 @@ export class LogbooksService {
    */
   async findAllForAdmin(page: number = 1, limit: number = 20) {
     const skip = (page - 1) * limit;
-    const [data, total]: [{ user: User }[], number] = await Promise.all([
+    const [data, total] = await Promise.all([
       this.prisma.logbook.findMany({
         skip,
         take: limit,
@@ -163,13 +164,14 @@ export class LogbooksService {
       this.prisma.logbook.count(),
     ]);
     // Menghilangkan field password pada data user
-    const filteredData = data.map((item) => ({
-      ...item,
-      user: {
-        ...item.user,
-        password: undefined,
-      },
-    }));
+    const filteredData = data.map((item) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = item.user;
+      return {
+        ...item,
+        user: userWithoutPassword,
+      };
+    });
     return {
       data: filteredData,
       total,
