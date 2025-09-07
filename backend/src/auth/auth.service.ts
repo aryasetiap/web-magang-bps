@@ -387,11 +387,14 @@ export class AuthService {
    * @param otp Kode OTP
    * @returns Pesan status
    * @throws UnauthorizedException jika user/OTP tidak ditemukan, salah, atau kadaluarsa
+   * @throws ConflictException jika email sudah diverifikasi
    */
   async verifyOtp(email: string, otp: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
-    if (user.isEmailVerified) return { message: 'Email sudah diverifikasi' };
+    // FIX: Melemparkan ConflictException jika email sudah diverifikasi
+    if (user.isEmailVerified)
+      throw new ConflictException('Email sudah diverifikasi');
     if (!user.emailOtp || !user.emailOtpExpires)
       throw new UnauthorizedException('OTP tidak ditemukan');
     if (user.emailOtp !== otp) throw new UnauthorizedException('OTP salah');
@@ -415,11 +418,14 @@ export class AuthService {
    * @param email Email user
    * @returns Pesan status
    * @throws UnauthorizedException jika user tidak ditemukan, email sudah diverifikasi, atau rate limit
+   * @throws ConflictException jika email sudah diverifikasi
    */
   async resendOtp(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('User tidak ditemukan');
-    if (user.isEmailVerified) return { message: 'Email sudah diverifikasi' };
+    // FIX: Melemparkan ConflictException jika email sudah diverifikasi
+    if (user.isEmailVerified)
+      throw new ConflictException('Email sudah diverifikasi');
 
     if (
       user.emailOtp &&
@@ -433,12 +439,11 @@ export class AuthService {
 
     const now = new Date();
     if (user.lastOtpSentAt) {
-      const diff =
-        (now.getTime() - new Date(user.lastOtpSentAt).getTime()) /
-        (1000 * 60 * 60);
-      if (diff < 1) {
+      const diff = now.getTime() - new Date(user.lastOtpSentAt).getTime();
+      // Rate limit 1 menit
+      if (diff < 60 * 1000) {
         throw new UnauthorizedException(
-          'Anda hanya dapat meminta OTP sekali per jam.',
+          'Anda hanya dapat meminta OTP sekali per menit.',
         );
       }
     }
