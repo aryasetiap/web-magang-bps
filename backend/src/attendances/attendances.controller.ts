@@ -80,7 +80,8 @@ export class AttendancesController {
    */
   @Post('clock-in')
   @ApiOperation({ summary: 'Melakukan presensi masuk (clock-in)' })
-  clockIn(
+  // FIX: Menambahkan `async` untuk memastikan error di-handle sebagai promise rejection.
+  async clockIn(
     @Request() req: JwtRequest,
     @Body() clockInDto: ClockInDto,
     @Ip() ip: string,
@@ -170,7 +171,8 @@ export class AttendancesController {
    */
   @Get()
   @ApiOperation({ summary: 'Melihat riwayat presensi sendiri' })
-  findAll(@Request() req: JwtRequest) {
+  // FIX: Menambahkan `async` untuk memastikan error di-handle sebagai promise rejection.
+  async findAll(@Request() req: JwtRequest) {
     const userId = req.user?.userId;
     if (typeof userId !== 'number') {
       throw new BadRequestException('User ID tidak ditemukan');
@@ -237,7 +239,8 @@ export class AttendancesController {
    */
   @Get(':id')
   @ApiOperation({ summary: 'Melihat detail presensi berdasarkan ID' })
-  findOne(@Param('id') id: string) {
+  // FIX: Menambahkan `async` untuk memastikan error di-handle sebagai promise rejection.
+  async findOne(@Param('id') id: string) {
     return this.attendancesService.findOne(+id);
   }
 
