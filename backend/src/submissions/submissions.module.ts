@@ -5,13 +5,25 @@ import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Modul Submissions
- * 
+ *
  * Modul ini bertanggung jawab untuk mengelola fitur terkait submissions,
  * termasuk controller dan service yang dibutuhkan.
+ *
+ * @module SubmissionsModule
  */
 @Module({
   controllers: [SubmissionsController],
   providers: [SubmissionsService, PrismaService],
   exports: [SubmissionsService],
 })
-export class SubmissionsModule {}
+export class SubmissionsModule {
+  /**
+   * Kelas SubmissionsModule
+   *
+   * Menyediakan konfigurasi modul untuk fitur submissions.
+   * Tidak menerima parameter dan tidak mengembalikan nilai.
+   */
+  constructor() {
+    // Konstruktor default tanpa logika tambahan.
+  }
+}
