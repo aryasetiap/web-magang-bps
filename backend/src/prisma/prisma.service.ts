@@ -1,23 +1,37 @@
+/**
+ * @module PrismaService
+ * Modul ini menyediakan service untuk mengelola koneksi Prisma dengan database
+ * pada aplikasi berbasis NestJS. Service ini memastikan koneksi database
+ * terinisialisasi dan ditutup dengan benar sesuai siklus hidup modul.
+ */
+
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 /**
- * PrismaService bertanggung jawab untuk mengelola koneksi Prisma dengan database.
- * Service ini menginisialisasi koneksi saat modul diinisialisasi dan menutup koneksi saat modul dihancurkan.
+ * Kelas PrismaService bertanggung jawab untuk mengelola koneksi Prisma dengan database.
+ * Kelas ini menginisialisasi koneksi saat modul diinisialisasi dan menutup koneksi saat modul dihancurkan.
  */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   /**
-   * Fungsi ini dipanggil secara otomatis saat modul diinisialisasi.
-   * Digunakan untuk memastikan koneksi ke database berhasil dibuat.
+   * Fungsi lifecycle yang dipanggil secara otomatis saat modul diinisialisasi.
+   * Fungsi ini memastikan koneksi ke database berhasil dibuat.
+   *
+   * @returns {Promise<void>} Tidak mengembalikan nilai, hanya memastikan koneksi database aktif.
    */
   async onModuleInit(): Promise<void> {
     await this.$connect();
   }
 
   /**
-   * Fungsi ini dipanggil secara otomatis saat modul dihancurkan.
-   * Digunakan untuk menutup koneksi Prisma ke database.
+   * Fungsi lifecycle yang dipanggil secara otomatis saat modul dihancurkan.
+   * Fungsi ini digunakan untuk menutup koneksi Prisma ke database.
+   *
+   * @returns {Promise<void>} Tidak mengembalikan nilai, hanya memastikan koneksi database ditutup.
    */
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
