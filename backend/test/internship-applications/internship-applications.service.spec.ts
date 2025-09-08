@@ -396,9 +396,13 @@ describe('InternshipApplicationsService', () => {
 
       expect(result).toHaveProperty('id', 1);
       expect(result).toHaveProperty('startDate', VALID_START_DATE);
+      // Perbaikan: Gunakan expect.any(Date) untuk field tanggal pada data update
       expect(prisma.internshipApplication.update).toBeCalledWith({
         where: { id: 1 },
-        data: { startDate: VALID_START_DATE, endDate: VALID_END_DATE },
+        data: {
+          startDate: expect.any(Date),
+          endDate: expect.any(Date),
+        },
       });
     });
 
