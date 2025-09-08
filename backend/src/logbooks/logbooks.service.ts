@@ -192,6 +192,15 @@ export class LogbooksService {
     filter: { startDate?: string; endDate?: string },
     adminName: string,
   ): Promise<Buffer> {
+    // Perbaikan: Validasi apakah user ada sebelum export PDF
+    const user: User | null = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${userId} tidak ditemukan.`);
+    }
+
     const where: Record<string, unknown> = { userId };
     if (filter.startDate && filter.endDate) {
       where.logDate = {
@@ -202,9 +211,6 @@ export class LogbooksService {
     const logbooks: Logbook[] = await this.prisma.logbook.findMany({
       where,
       orderBy: { logDate: 'asc' },
-    });
-    const user: User | null = await this.prisma.user.findUnique({
-      where: { id: userId },
     });
 
     const headerImagePath = path.resolve(
