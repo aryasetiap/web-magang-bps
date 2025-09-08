@@ -78,7 +78,8 @@ export class UsersController {
    */
   @Patch('profile')
   @UseInterceptors(FileInterceptor('profilePhoto'))
-  updateProfile(
+  // FIX: Menambahkan `async` untuk memastikan error di-handle sebagai promise rejection.
+  async updateProfile(
     @Req() req: { user: { userId: number } },
     @Body() updateProfileDto: UpdateProfileDto,
     @UploadedFile() profilePhoto?: Express.Multer.File,
