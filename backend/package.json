@@ -99,7 +99,22 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      ".module.ts$",
+      ".d.ts$",
+      ".dto.ts$",
+      ".spec.ts$",
+      "/test/",
+      "/__tests__/",
+      "main.ts$",
+      "/src/assets/",
+      "/uploads/",
+      "/api-docs/",
+      "/prisma/"
+    ]
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

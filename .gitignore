@@ -3,6 +3,8 @@ backend/node_modules/
 backend/dist/
 backend/build/
 
+coverage/
+
 # Logs
 backend/logs/
 backend/*.log
