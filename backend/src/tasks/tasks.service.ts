@@ -18,6 +18,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto';
 import * as fs from 'fs';
+import { Prisma } from '@prisma/client';
 
 /**
  * Service utama untuk pengelolaan tugas, penugasan, pengumpulan, dan penilaian.
@@ -93,10 +94,23 @@ export class TasksService {
       userId: internId,
     }));
 
-    return this.prisma.taskAssignment.createMany({
-      data: assignmentsData,
-      skipDuplicates: true,
-    });
+    try {
+      return await this.prisma.taskAssignment.createMany({
+        data: assignmentsData,
+        skipDuplicates: true,
+      });
+    } catch (err) {
+      // Perbaikan: Tangani error Prisma P2003 (foreign key violation)
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          'Salah satu ID intern tidak valid atau tidak ditemukan.',
+        );
+      }
+      throw err;
+    }
   }
 
   /**
@@ -428,22 +442,33 @@ export class TasksService {
    * @returns Data tugas yang sudah dihapus
    */
   async remove(id: number) {
-    const deleted = await this.prisma.task.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    try {
+      const deleted = await this.prisma.task.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
 
-    await this.prisma.auditLog.create({
-      data: {
-        action: 'delete',
-        entity: 'task',
-        entityId: id,
-        userId: deleted.createdBy,
-        description: `Soft delete tugas "${deleted.title}"`,
-      },
-    });
+      await this.prisma.auditLog.create({
+        data: {
+          action: 'delete',
+          entity: 'task',
+          entityId: id,
+          userId: deleted.createdBy,
+          description: `Soft delete tugas "${deleted.title}"`,
+        },
+      });
 
-    return deleted;
+      return deleted;
+    } catch (err) {
+      // Perbaikan: Tangani error Prisma P2025 (task tidak ditemukan)
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new NotFoundException('Task tidak ditemukan');
+      }
+      throw err;
+    }
   }
 
   /**
