@@ -20,6 +20,8 @@ import { CreateCertificateDto } from '../../src/certificates/dto/create-certific
 jest.mock('fs', () => ({
   existsSync: jest.fn(),
   createReadStream: jest.fn(() => ({ pipe: jest.fn() })),
+  mkdirSync: jest.fn(), // Perbaikan: Tambahkan mock mkdirSync
+  writeFileSync: jest.fn(), // Perbaikan: Tambahkan mock writeFileSync
 }));
 
 // Konstanta untuk data dummy yang sering digunakan
@@ -77,7 +79,8 @@ describe('CertificatesController', () => {
         namaKepalaBPS: 'Kepala',
         nipKepalaBPS: '1234567890',
       };
-      const req = { user: { userId: DUMMY_USER_ID } };
+      // Perbaikan: Tambahkan role Admin pada mock request
+      const req = { user: { userId: DUMMY_USER_ID, role: 'Admin' } };
       service.generateCertificate.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
       });
@@ -102,11 +105,33 @@ describe('CertificatesController', () => {
         namaKepalaBPS: 'Kepala',
         nipKepalaBPS: '1234567890',
       };
-      const req = { user: { userId: DUMMY_USER_ID } };
+      // Perbaikan: Tambahkan role Admin pada mock request
+      const req = { user: { userId: DUMMY_USER_ID, role: 'Admin' } };
       service.generateCertificate.mockRejectedValue(new Error('error'));
 
       await expect(controller.generate(dto, req as any)).rejects.toThrow(
         'error',
+      );
+    });
+
+    /**
+     * Menguji kasus gagal generate jika bukan admin.
+     */
+    it('gagal generate jika bukan admin', async () => {
+      /**
+       * Tujuan: Memastikan ForbiddenException dilempar jika user bukan admin.
+       */
+      const dto: CreateCertificateDto = {
+        certificateNumber: DUMMY_CERTIFICATE_NUMBER,
+        userId: 1,
+        predicate: 'Sangat Baik',
+        namaKepalaBPS: 'Kepala',
+        nipKepalaBPS: '1234567890',
+      };
+      const req = { user: { userId: DUMMY_USER_ID, role: 'Intern' } };
+
+      await expect(controller.generate(dto, req as any)).rejects.toThrow(
+        ForbiddenException,
       );
     });
   });
@@ -270,7 +295,8 @@ describe('CertificatesController', () => {
       /**
        * Tujuan: Memastikan template PDF dapat diupload dengan benar.
        */
-      const file = { path: DUMMY_TEMPLATE_PATH };
+      // Perbaikan: Mock file dengan buffer property untuk memory storage
+      const file = { buffer: Buffer.from('dummy pdf content') };
       const result = controller.uploadTemplate(file as any);
       expect(result).toEqual({
         success: true,

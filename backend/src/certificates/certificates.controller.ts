@@ -27,6 +27,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { createReadStream, existsSync } from 'fs';
 import { Response as ExpressResponse } from 'express';
+import { UpdateCertificateStatusDto } from './dto/update-certificate-status.dto';
+import * as fs from 'fs';
+import * as path from 'path';
+import { extname } from 'path';
 
 /**
  * Controller untuk manajemen sertifikat, termasuk generate, upload, issue, download, dan pengecekan template.
@@ -47,10 +51,15 @@ export class CertificatesController {
    * @returns Hasil generate sertifikat.
    */
   @Post('generate')
+  @UseGuards(AuthGuard('jwt'))
   async generate(
     @Body() dto: CreateCertificateDto,
-    @Request() req: { user: { userId: number } },
+    @Request() req: { user: { userId: number; role: string } },
   ) {
+    // Validasi hanya admin
+    if (req.user.role !== 'Admin') {
+      throw new ForbiddenException('Hanya admin');
+    }
     return this.service.generateCertificate(dto, Number(req.user.userId));
   }
 
@@ -108,12 +117,47 @@ export class CertificatesController {
    * @returns Status upload template.
    */
   @Patch('template/upload')
-  @UseInterceptors(FileInterceptor('file')) // <-- Ganti: tidak perlu config storage di sini
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: undefined, // Gunakan memory storage untuk template
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+      fileFilter: (req, file, cb) => {
+        if (extname(file.originalname).toLowerCase() === '.pdf') {
+          cb(null, true);
+        } else {
+          cb(new Error('File harus PDF'), false);
+        }
+      },
+    }),
+  )
   uploadTemplate(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('File PDF wajib diunggah');
     }
-    return { success: true, message: 'Template sertifikat berhasil diunggah.' };
+
+    try {
+      // Perbaikan: Simpan file menggunakan buffer ke lokasi template
+      const templateDir = path.join('uploads', 'certificate-templates');
+      const templatePath = path.join(templateDir, 'certificate-template.pdf');
+
+      if (!fs.existsSync(templateDir)) {
+        fs.mkdirSync(templateDir, { recursive: true });
+      }
+
+      // Gunakan buffer karena menggunakan memory storage
+      fs.writeFileSync(templatePath, file.buffer);
+
+      return {
+        success: true,
+        message: 'Template sertifikat berhasil diunggah.',
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new BadRequestException(
+        'Gagal mengupload template: ' + errorMessage,
+      );
+    }
   }
 
   /**
@@ -182,5 +226,49 @@ export class CertificatesController {
       throw new ForbiddenException('Hanya admin');
     }
     return this.service.getAllCertificates();
+  }
+
+  /**
+   * Endpoint untuk admin mengubah status sertifikat secara manual.
+   * @param id ID sertifikat.
+   * @param dto DTO status baru.
+   * @param req Request user.
+   */
+  @Patch(':id/status')
+  @UseGuards(AuthGuard('jwt'))
+  async updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCertificateStatusDto,
+    @Request() req: { user: { role: string } },
+  ) {
+    // Validasi hanya admin
+    if (req.user.role !== 'Admin') {
+      throw new ForbiddenException('Hanya admin');
+    }
+    // Cari sertifikat
+    const cert = await this.service.getCertificateById(id);
+    if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan');
+    // Update status
+    cert.status = dto.status;
+    // Simpan ke database
+    await this.service['prisma'].certificate.update({
+      where: { id },
+      data: { status: dto.status },
+    });
+    return { id, status: dto.status };
+  }
+
+  /**
+   * Endpoint untuk mengambil data sertifikat berdasarkan ID.
+   * @param id ID sertifikat.
+   * @param req Request yang berisi data user.
+   * @returns Data sertifikat.
+   */
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt')) // Tambahkan guard agar hanya user login yang bisa akses
+  async getById(@Param('id', ParseIntPipe) id: number) {
+    const cert = await this.service.getCertificateById(id);
+    if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan');
+    return cert;
   }
 }
