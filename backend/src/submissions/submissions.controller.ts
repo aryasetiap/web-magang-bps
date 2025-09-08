@@ -15,6 +15,7 @@ import {
   Request,
   ParseIntPipe,
   Body,
+  Get,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SubmissionsService } from './submissions.service';
@@ -94,6 +95,42 @@ export class SubmissionsController {
       id,
       gradeSubmissionDto,
       req.user.userId,
+    );
+  }
+
+  /**
+   * Endpoint untuk mengambil submissions milik user
+   */
+  @Get()
+  async findMySubmissions(
+    @Request() req: { user: { userId: number } },
+  ): Promise<any> {
+    return this.submissionsService.findMySubmissions(req.user.userId);
+  }
+
+  /**
+   * Endpoint untuk mengambil detail submission berdasarkan ID
+   */
+  @Get(':id')
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role?: string } },
+  ): Promise<any> {
+    return this.submissionsService.findOne(id, req.user.userId, req.user.role);
+  }
+
+  /**
+   * Endpoint untuk mengambil submissions untuk task tertentu (admin only)
+   */
+  @Get('task/:taskId')
+  async findSubmissionsForTask(
+    @Param('taskId', ParseIntPipe) taskId: number,
+    @Request() req: { user: { userId: number; role?: string } },
+  ): Promise<any> {
+    return this.submissionsService.findSubmissionsForTask(
+      taskId,
+      req.user.userId,
+      req.user.role,
     );
   }
 }
