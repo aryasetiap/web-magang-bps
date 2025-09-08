@@ -262,7 +262,8 @@ describe('UsersController', () => {
      * Memastikan parameter dan hasil sesuai.
      */
     it('berhasil update profil user', async () => {
-      const req = { user: { id: DUMMY_USER_ID } };
+      // Perbaikan: Gunakan userId, bukan id
+      const req = { user: { userId: DUMMY_USER_ID } };
       const file = { path: DUMMY_PROFILE_PHOTO };
       service.updateProfile.mockResolvedValue({
         id: DUMMY_USER_ID,
@@ -293,7 +294,8 @@ describe('UsersController', () => {
      * Memastikan error NotFoundException dilempar.
      */
     it('gagal jika user tidak ditemukan', async () => {
-      const req = { user: { id: DUMMY_USER_ID } };
+      // Perbaikan: Gunakan userId, bukan id
+      const req = { user: { userId: DUMMY_USER_ID } };
       service.updateProfile.mockRejectedValue(
         new NotFoundException('User tidak ditemukan'),
       );

@@ -18,6 +18,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -68,6 +69,35 @@ export class UsersController {
   }
 
   /**
+   * Memperbarui profil user yang sedang login, termasuk foto profil.
+   * PERBAIKAN: Route ini dipindah ke atas sebelum route :id untuk menghindari konflik routing
+   * @param req Request yang berisi data user dari JWT.
+   * @param updateProfileDto Data profil yang akan diperbarui.
+   * @param profilePhoto File foto profil (opsional).
+   * @returns Data user yang telah diperbarui.
+   */
+  @Patch('profile')
+  @UseInterceptors(FileInterceptor('profilePhoto'))
+  updateProfile(
+    @Req() req: { user: { userId: number } },
+    @Body() updateProfileDto: UpdateProfileDto,
+    @UploadedFile() profilePhoto?: Express.Multer.File,
+  ) {
+    // Perbaikan: Validasi userId dari JWT payload sebelum mengirim ke service
+    const userId = req.user?.userId;
+
+    if (!userId || isNaN(Number(userId))) {
+      throw new NotFoundException('User ID tidak ditemukan dalam token.');
+    }
+
+    return this.usersService.updateProfile(
+      Number(userId),
+      updateProfileDto,
+      profilePhoto,
+    );
+  }
+
+  /**
    * Mengambil detail user berdasarkan ID.
    * Hanya dapat diakses oleh Admin.
    * @param id ID user.
@@ -102,26 +132,5 @@ export class UsersController {
   @Roles('Admin')
   remove(@Param('id') id: string) {
     return this.usersService.remove(Number(id));
-  }
-
-  /**
-   * Memperbarui profil user yang sedang login, termasuk foto profil.
-   * @param req Request yang berisi data user dari JWT.
-   * @param updateProfileDto Data profil yang akan diperbarui.
-   * @param profilePhoto File foto profil (opsional).
-   * @returns Data user yang telah diperbarui.
-   */
-  @Patch('profile')
-  @UseInterceptors(FileInterceptor('profilePhoto'))
-  updateProfile(
-    @Req() req: { user: { id: number } },
-    @Body() updateProfileDto: UpdateProfileDto,
-    @UploadedFile() profilePhoto?: Express.Multer.File,
-  ) {
-    return this.usersService.updateProfile(
-      req.user.id,
-      updateProfileDto,
-      profilePhoto,
-    );
   }
 }

@@ -102,29 +102,74 @@ export class UsersService {
     updateProfileDto: UpdateProfileDto,
     profilePhoto?: Express.Multer.File,
   ) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: { profilePhoto: true },
-    });
+    try {
+      if (!id || isNaN(Number(id))) {
+        throw new NotFoundException(`ID user tidak valid.`);
+      }
 
-    if (!user) {
-      throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+      const userId = Number(id);
+
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId, deletedAt: null },
+        select: { profilePhoto: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException(
+          `User dengan ID ${userId} tidak ditemukan.`,
+        );
+      }
+
+      const updateData = this.buildUpdateProfileData(updateProfileDto);
+
+      if (profilePhoto && profilePhoto.path) {
+        this.deleteOldProfilePhoto(user.profilePhoto ?? undefined);
+        updateData.profilePhoto = profilePhoto.path.replace(/\\/g, '/');
+      }
+
+      const updatedUser = await this.prisma.user.update({
+        where: {
+          id: userId,
+          deletedAt: null, // Perbaikan: hanya update user yang belum dihapus
+        },
+        data: updateData,
+        select: { ...this.profileSelect(), deletedAt: true }, // Ambil deletedAt juga
+      });
+
+      // Perbaikan: Jika user sudah di-soft delete, anggap tidak ditemukan
+      if (updatedUser.deletedAt) {
+        throw new NotFoundException(
+          `User dengan ID ${userId} tidak ditemukan.`,
+        );
+      }
+
+      // Hilangkan deletedAt dari response ke client
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { deletedAt, ...result } = updatedUser;
+      return result;
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
+      ) {
+        throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+      }
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        (error as { message: string }).message.includes(
+          'Argument `id` is missing',
+        )
+      ) {
+        throw new NotFoundException(
+          `ID user tidak valid atau tidak ditemukan.`,
+        );
+      }
+      throw error;
     }
-
-    const updateData = this.buildUpdateProfileData(updateProfileDto);
-
-    if (profilePhoto) {
-      this.deleteOldProfilePhoto(user.profilePhoto ?? undefined);
-      updateData.profilePhoto = profilePhoto.path.replace(/\\/g, '/');
-    }
-
-    const updatedUser = await this.prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: this.profileSelect(),
-    });
-
-    return updatedUser;
   }
 
   /**
@@ -189,14 +234,18 @@ export class UsersService {
    */
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
+      // Perbaikan: Pastikan parameter id dikirim dengan benar dan validasi input
+      if (!id || isNaN(id)) {
+        throw new NotFoundException(`ID user tidak valid.`);
+      }
+
       return await this.prisma.user.update({
-        where: { id },
+        where: { id: Number(id) }, // Perbaikan: Pastikan id adalah number yang valid
         data: updateUserDto,
         select: this.profileSelect(),
       });
     } catch (error) {
-      // FIX: Mengubah cara pengecekan error agar lebih robust dan tidak
-      // bergantung pada 'instanceof' yang bermasalah di Jest.
+      // Perbaikan: Tangani error Prisma dengan lebih baik
       if (
         typeof error === 'object' &&
         error !== null &&
@@ -205,6 +254,21 @@ export class UsersService {
       ) {
         throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
       }
+
+      // Perbaikan: Tangani error validasi Prisma
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        (error as { message: string }).message.includes(
+          'Argument `id` is missing',
+        )
+      ) {
+        throw new NotFoundException(
+          `ID user tidak valid atau tidak ditemukan.`,
+        );
+      }
+
       throw error;
     }
   }
@@ -215,10 +279,23 @@ export class UsersService {
    * @returns Data user yang telah dihapus (soft delete).
    */
   async remove(id: number) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+    } catch (error) {
+      // Perbaikan: Tangani error Prisma P2025 agar mengembalikan NotFoundException
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
+      ) {
+        throw new NotFoundException(`User dengan ID ${id} tidak ditemukan.`);
+      }
+      throw error;
+    }
   }
 
   /**

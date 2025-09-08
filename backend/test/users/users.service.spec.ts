@@ -201,7 +201,7 @@ describe('UsersService', () => {
       /**
        * Test ini memastikan bahwa user dapat mengupdate profil tanpa mengganti foto.
        */
-      prisma.user.findUnique.mockResolvedValue({
+      prisma.user.findFirst.mockResolvedValue({
         id: DUMMY_USER_ID,
         profilePhoto: null,
       });
@@ -211,6 +211,10 @@ describe('UsersService', () => {
       const result = await service.updateProfile(DUMMY_USER_ID, dto as any);
 
       expect(result).toHaveProperty('id', DUMMY_USER_ID);
+      expect(prisma.user.findFirst).toBeCalledWith({
+        where: { id: DUMMY_USER_ID, deletedAt: null },
+        select: { profilePhoto: true },
+      });
       expect(prisma.user.update).toBeCalled();
     });
 
@@ -222,7 +226,7 @@ describe('UsersService', () => {
        * Test ini memastikan bahwa user dapat mengganti foto profil,
        * dan file foto lama dihapus jika ada.
        */
-      prisma.user.findUnique.mockResolvedValue({
+      prisma.user.findFirst.mockResolvedValue({
         id: DUMMY_USER_ID,
         profilePhoto: DUMMY_PROFILE_PHOTO_OLD,
       });
@@ -245,6 +249,10 @@ describe('UsersService', () => {
       expect(fsMock.unlinkSync).toBeCalledWith(
         expect.stringContaining(DUMMY_PROFILE_PHOTO_OLD),
       );
+      expect(prisma.user.findFirst).toBeCalledWith({
+        where: { id: DUMMY_USER_ID, deletedAt: null },
+        select: { profilePhoto: true },
+      });
       expect(prisma.user.update).toBeCalled();
     });
 
