@@ -113,7 +113,8 @@
       "/src/assets/",
       "/uploads/",
       "/api-docs/",
-      "/prisma/"
+      "/prisma/",
+      "/src/auth/strategies/"
     ]
   },
   "prisma": {
