@@ -16,6 +16,8 @@ import {
   UploadedFiles,
   Request,
   Query,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
@@ -60,6 +62,9 @@ export class InternshipApplicationsController {
       { name: 'requestLetter', maxCount: 1 },
     ]),
   )
+  @UsePipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false }),
+  ) // Perbaikan: Aktifkan validasi DTO
   create(
     @UploadedFiles()
     files: {

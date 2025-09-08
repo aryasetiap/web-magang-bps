@@ -156,8 +156,12 @@ export class InternshipApplicationsService {
    * @throws NotFoundException jika aplikasi tidak ditemukan
    */
   async findOne(id: number) {
+    // Perbaikan: Validasi id agar tidak undefined/null/NaN
+    if (!id || isNaN(Number(id))) {
+      throw new BadRequestException('ID aplikasi magang tidak valid.');
+    }
     const application = await this.prisma.internshipApplication.findUnique({
-      where: { id },
+      where: { id: Number(id) },
       include: {
         applicant: {
           select: {
@@ -214,6 +218,10 @@ export class InternshipApplicationsService {
     adminId: number,
     updateApplicationStatusDto: UpdateApplicationStatusDto,
   ) {
+    // Perbaikan: Validasi id agar tidak undefined/null/NaN
+    if (!id || isNaN(Number(id))) {
+      throw new BadRequestException('ID aplikasi magang tidak valid.');
+    }
     const { startDate, endDate, status, feedback } = updateApplicationStatusDto;
 
     if (startDate && endDate) {
@@ -238,7 +246,7 @@ export class InternshipApplicationsService {
     if (endDate) updateData.endDate = new Date(endDate);
 
     return this.prisma.internshipApplication.update({
-      where: { id },
+      where: { id: Number(id) },
       data: updateData,
     });
   }
@@ -257,8 +265,12 @@ export class InternshipApplicationsService {
     userId: number,
     updateInternshipApplicationDto: UpdateInternshipApplicationDto,
   ) {
+    // Perbaikan: Validasi id agar tidak undefined/null/NaN
+    if (!id || isNaN(Number(id))) {
+      throw new BadRequestException('ID aplikasi magang tidak valid.');
+    }
     const application = await this.prisma.internshipApplication.findUnique({
-      where: { id },
+      where: { id: Number(id) },
     });
     if (!application) {
       throw new NotFoundException('Aplikasi magang tidak ditemukan.');
@@ -266,9 +278,35 @@ export class InternshipApplicationsService {
     if (application.userId !== userId) {
       throw new ForbiddenException('Anda tidak berhak mengubah aplikasi ini.');
     }
+
+    // Perbaikan: Gunakan Record<string, unknown> agar assignment Date tidak dianggap unsafe
+    const updateData: Record<string, unknown> = {
+      ...updateInternshipApplicationDto,
+    };
+
+    // Perbaikan: Cek properti sebelum akses dan konversi ke Date jika perlu
+    if (
+      Object.prototype.hasOwnProperty.call(
+        updateInternshipApplicationDto,
+        'startDate',
+      ) &&
+      typeof updateInternshipApplicationDto.startDate === 'string'
+    ) {
+      updateData.startDate = new Date(updateInternshipApplicationDto.startDate);
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(
+        updateInternshipApplicationDto,
+        'endDate',
+      ) &&
+      typeof updateInternshipApplicationDto.endDate === 'string'
+    ) {
+      updateData.endDate = new Date(updateInternshipApplicationDto.endDate);
+    }
+
     return this.prisma.internshipApplication.update({
-      where: { id },
-      data: updateInternshipApplicationDto,
+      where: { id: Number(id) },
+      data: updateData,
     });
   }
 
