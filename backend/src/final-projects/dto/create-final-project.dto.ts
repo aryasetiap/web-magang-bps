@@ -4,7 +4,7 @@
  * Berisi kelas dan tipe data yang digunakan untuk validasi input saat membuat final project.
  */
 
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 
 /**
  * Data Transfer Object (DTO) untuk membuat Final Project.
@@ -18,6 +18,7 @@ export class CreateFinalProjectDto {
    * Judul dari final project.
    */
   @IsString()
+  @IsNotEmpty() // Perbaikan: Judul tidak boleh kosong
   title: string;
 
   /**

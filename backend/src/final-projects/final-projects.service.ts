@@ -14,6 +14,7 @@ import { UpdateFinalProjectDto } from './dto/update-final-project.dto';
 import { ReviewFinalProjectDto } from './dto/review-final-project.dto';
 import { FinalProject, Prisma } from '@prisma/client';
 import * as fs from 'fs';
+import { Response } from 'express';
 
 /**
  * Service untuk mengelola data Final Project.
@@ -237,5 +238,34 @@ export class FinalProjectsService {
     return this.prisma.finalProject.delete({
       where: { id },
     });
+  }
+
+  /**
+   * Mengunduh file final project.
+   * Hanya dapat diakses oleh admin atau pemilik project.
+   * @param id ID final project
+   * @param userId ID user (undefined jika admin)
+   * @param res Response Express untuk mengirim file
+   */
+  async download(
+    id: number,
+    userId: number | undefined,
+    res: Response,
+  ): Promise<any> {
+    // Cari project dan cek hak akses
+    const project = await this.findOne(id, userId);
+
+    if (!project.filePath || !fs.existsSync(project.filePath)) {
+      throw new NotFoundException('File final project tidak ditemukan');
+    }
+
+    // Set header dan kirim file
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="final-project-${project.id}.pdf"`,
+    );
+    const stream = fs.createReadStream(project.filePath);
+    stream.pipe(res);
   }
 }

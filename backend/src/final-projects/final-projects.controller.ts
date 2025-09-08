@@ -12,6 +12,9 @@ import {
   UseInterceptors,
   UploadedFile,
   ParseIntPipe,
+  ValidationPipe,
+  UsePipes,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FinalProjectsService } from './final-projects.service';
@@ -22,6 +25,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { Response } from 'express';
 
 /**
  * Controller untuk mengelola endpoint terkait Final Project.
@@ -43,6 +47,7 @@ export class FinalProjectsController {
   @Roles('Intern')
   @UseGuards(RolesGuard)
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) // Perbaikan: Aktifkan validasi DTO
   create(
     @Request() req: { user: { userId: number } },
     @Body() createFinalProjectDto: CreateFinalProjectDto,
@@ -162,5 +167,28 @@ export class FinalProjectsController {
   ) {
     const userId = Number(req.user.userId);
     return this.finalProjectsService.remove(id, userId);
+  }
+
+  /**
+   * Mengunduh file Final Project berdasarkan ID.
+   * Hanya dapat diakses oleh Admin dan Intern yang memiliki proyek tersebut.
+   * @param id ID Final Project.
+   * @param req Request yang berisi data user.
+   * @param res Response untuk mengirim file.
+   */
+  @Get(':id/download')
+  @UseGuards(AuthGuard('jwt')) // Perbaikan: Lindungi endpoint download dengan AuthGuard
+  async download(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = Number(req.user.userId);
+    const userRole = req.user.role;
+    await this.finalProjectsService.download(
+      id,
+      userRole?.toLowerCase() === 'admin' ? undefined : userId,
+      res,
+    );
   }
 }
