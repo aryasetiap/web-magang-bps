@@ -255,14 +255,17 @@ export class AttendancesController {
   @Post('request-leave')
   @UseInterceptors(
     FileInterceptor('proof', {
-      storage: diskStorage({
-        destination: './uploads/proofs',
-        filename: (req, file, cb) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
-          cb(null, uniqueSuffix + extname(file.originalname));
-        },
-      }),
+      storage:
+        process.env.NODE_ENV === 'test'
+          ? undefined // Gunakan memory storage untuk test
+          : diskStorage({
+              destination: './uploads/proofs',
+              filename: (req, file, cb) => {
+                const uniqueSuffix =
+                  Date.now() + '-' + Math.round(Math.random() * 1e9);
+                cb(null, uniqueSuffix + extname(file.originalname));
+              },
+            }),
       limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
       fileFilter: (req, file, cb) => {
         const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];

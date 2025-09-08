@@ -279,6 +279,10 @@ describe('AttendancesService', () => {
      * Gagal jika pengajuan dilakukan setelah jam 11:00 WIB.
      */
     it('gagal jika pengajuan dilakukan setelah jam 11:00 WIB', async () => {
+      // Simpan nilai NODE_ENV asli
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production'; // Paksa validasi jam aktif
+
       MockDate.set('2025-07-18T04:30:00Z'); // 11:30 WIB
       await expect(
         service.requestLeave(
@@ -289,6 +293,9 @@ describe('AttendancesService', () => {
       ).rejects.toThrow(
         'Pengajuan hanya bisa dilakukan sebelum pukul 11.00 WIB',
       );
+
+      // Kembalikan nilai NODE_ENV
+      process.env.NODE_ENV = originalEnv;
     });
 
     /**
