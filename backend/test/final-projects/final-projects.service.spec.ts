@@ -432,4 +432,65 @@ describe('FinalProjectsService', () => {
       );
     });
   });
+
+  /**
+   * Pengujian fitur download pada FinalProjectsService.
+   * Menguji proses pengunduhan file final project.
+   */
+  describe('download', () => {
+    it('gagal jika file tidak ditemukan', async () => {
+      // Mock project ditemukan, tapi filePath null
+      jest.spyOn(service, 'findOne').mockResolvedValue({
+        id: PROJECT_ID,
+        filePath: null,
+        userId: USER_ID,
+        user: { id: USER_ID, name: 'Budi', email: 'budi@mail.com' },
+        reviewedBy: null,
+      } as any);
+
+      const res = { setHeader: jest.fn() } as any;
+      await expect(service.download(PROJECT_ID, USER_ID, res)).rejects.toThrow(
+        'File final project tidak ditemukan',
+      );
+    });
+
+    it('gagal jika filePath ada tapi file tidak ada di disk', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue({
+        id: PROJECT_ID,
+        filePath: FILE_PATH,
+        userId: USER_ID,
+        user: { id: USER_ID, name: 'Budi', email: 'budi@mail.com' },
+        reviewedBy: null,
+      } as any);
+      jest.spyOn(fsMock, 'existsSync').mockReturnValue(false);
+
+      const res = { setHeader: jest.fn() } as any;
+      await expect(service.download(PROJECT_ID, USER_ID, res)).rejects.toThrow(
+        'File final project tidak ditemukan',
+      );
+    });
+
+    it('berhasil download jika file ada', async () => {
+      jest.spyOn(service, 'findOne').mockResolvedValue({
+        id: PROJECT_ID,
+        filePath: FILE_PATH,
+        userId: USER_ID,
+        user: { id: USER_ID, name: 'Budi', email: 'budi@mail.com' },
+        reviewedBy: null,
+      } as any);
+      jest.spyOn(fsMock, 'existsSync').mockReturnValue(true);
+      const mockStream = { pipe: jest.fn() };
+      jest.spyOn(fsMock, 'createReadStream').mockReturnValue(mockStream as any);
+
+      const res = { setHeader: jest.fn() } as any;
+      await service.download(PROJECT_ID, USER_ID, res);
+
+      expect(res.setHeader).toBeCalledWith('Content-Type', 'application/pdf');
+      expect(res.setHeader).toBeCalledWith(
+        'Content-Disposition',
+        expect.stringContaining(`final-project-${PROJECT_ID}.pdf`),
+      );
+      expect(mockStream.pipe).toBeCalledWith(res);
+    });
+  });
 });

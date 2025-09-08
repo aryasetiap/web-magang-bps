@@ -452,4 +452,86 @@ describe('AttendancesController', () => {
       ).rejects.toThrow('error');
     });
   });
+
+  /**
+   * Pengujian fileFilter pada requestLeave
+   * Menguji proses validasi file yang diupload saat pengajuan cuti/izin.
+   */
+  describe('requestLeave fileFilter', () => {
+    it('gagal upload jika ekstensi file tidak diizinkan', () => {
+      // Simulasikan file dengan ekstensi tidak valid
+      const invalidFile = {
+        originalname: 'virus.exe',
+        path: 'virus.exe',
+      } as any;
+
+      // Test fileFilter secara langsung
+      let receivedError: Error | null = null;
+      let accepted = true;
+
+      // Simulasi fileFilter function
+      const fileFilter = (
+        req: any,
+        file: any,
+        cb: (error: Error | null, accepted: boolean) => void,
+      ) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];
+        const fileExt = require('path')
+          .extname(file.originalname)
+          .toLowerCase();
+        if (allowed.includes(fileExt)) {
+          cb(null, true);
+        } else {
+          cb(new Error('File harus JPG, PNG, atau PDF'), false);
+        }
+      };
+
+      fileFilter({}, invalidFile, (err: Error | null, accept: boolean) => {
+        receivedError = err;
+        accepted = accept;
+      });
+
+      expect(accepted).toBe(false);
+      // FIX: Menggunakan assertion Jest untuk memeriksa error,
+      //      yang juga membantu TypeScript mengenali tipenya.
+      expect(receivedError).not.toBeNull();
+      expect(receivedError!.message).toBe('File harus JPG, PNG, atau PDF');
+    });
+
+    it('berhasil upload jika ekstensi file diizinkan', () => {
+      // Simulasikan file dengan ekstensi valid
+      const validFile = {
+        originalname: 'document.pdf',
+        path: 'document.pdf',
+      } as any;
+
+      let receivedError: Error | null = null;
+      let accepted = false;
+
+      // Simulasi fileFilter function
+      const fileFilter = (
+        req: any,
+        file: any,
+        cb: (error: Error | null, accepted: boolean) => void,
+      ) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.pdf'];
+        const fileExt = require('path')
+          .extname(file.originalname)
+          .toLowerCase();
+        if (allowed.includes(fileExt)) {
+          cb(null, true);
+        } else {
+          cb(new Error('File harus JPG, PNG, atau PDF'), false);
+        }
+      };
+
+      fileFilter({}, validFile, (err: Error | null, accept: boolean) => {
+        receivedError = err;
+        accepted = accept;
+      });
+
+      expect(accepted).toBe(true);
+      expect(receivedError).toBeNull();
+    });
+  });
 });

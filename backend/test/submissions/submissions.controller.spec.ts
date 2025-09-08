@@ -228,4 +228,100 @@ describe('SubmissionsController', () => {
       ).rejects.toThrow('error');
     });
   });
+
+  /**
+   * Pengujian endpoint findMySubmissions
+   * -------------------------------------------
+   * Menguji proses pengambilan submissions milik user.
+   */
+  describe('findMySubmissions', () => {
+    it('berhasil mengambil submissions milik user', async () => {
+      const req = { user: { userId: MOCK_USER_ID_2 } };
+      const mockResult = [{ id: 1 }, { id: 2 }];
+      service.findMySubmissions = jest.fn().mockResolvedValue(mockResult);
+
+      const result = await controller.findMySubmissions(req as any);
+
+      expect(result).toEqual(mockResult);
+      expect(service.findMySubmissions).toBeCalledWith(MOCK_USER_ID_2);
+    });
+
+    it('gagal jika service error', async () => {
+      const req = { user: { userId: MOCK_USER_ID_2 } };
+      service.findMySubmissions = jest
+        .fn()
+        .mockRejectedValue(new Error('error'));
+
+      await expect(controller.findMySubmissions(req as any)).rejects.toThrow(
+        'error',
+      );
+    });
+  });
+
+  /**
+   * Pengujian endpoint findOne
+   * -------------------------------------------
+   * Menguji proses pengambilan detail submission.
+   */
+  describe('findOne', () => {
+    it('berhasil mengambil detail submission', async () => {
+      const req = { user: { userId: MOCK_USER_ID_2, role: 'Intern' } };
+      const mockResult = { id: 1, userId: MOCK_USER_ID_2 };
+      service.findOne = jest.fn().mockResolvedValue(mockResult);
+
+      const result = await controller.findOne(MOCK_SUBMISSION_ID_1, req as any);
+
+      expect(result).toEqual(mockResult);
+      expect(service.findOne).toBeCalledWith(
+        MOCK_SUBMISSION_ID_1,
+        MOCK_USER_ID_2,
+        'Intern',
+      );
+    });
+
+    it('gagal jika service error', async () => {
+      const req = { user: { userId: MOCK_USER_ID_2, role: 'Intern' } };
+      service.findOne = jest.fn().mockRejectedValue(new Error('error'));
+
+      await expect(
+        controller.findOne(MOCK_SUBMISSION_ID_1, req as any),
+      ).rejects.toThrow('error');
+    });
+  });
+
+  /**
+   * Pengujian endpoint findSubmissionsForTask
+   * -------------------------------------------
+   * Menguji proses pengambilan submissions untuk task tertentu (admin only).
+   */
+  describe('findSubmissionsForTask', () => {
+    it('berhasil mengambil submissions untuk task tertentu', async () => {
+      const req = { user: { userId: MOCK_USER_ID_99, role: 'Admin' } };
+      const mockResult = [{ id: 1 }, { id: 2 }];
+      service.findSubmissionsForTask = jest.fn().mockResolvedValue(mockResult);
+
+      const result = await controller.findSubmissionsForTask(
+        MOCK_TASK_ID_10,
+        req as any,
+      );
+
+      expect(result).toEqual(mockResult);
+      expect(service.findSubmissionsForTask).toBeCalledWith(
+        MOCK_TASK_ID_10,
+        MOCK_USER_ID_99,
+        'Admin',
+      );
+    });
+
+    it('gagal jika service error', async () => {
+      const req = { user: { userId: MOCK_USER_ID_99, role: 'Admin' } };
+      service.findSubmissionsForTask = jest
+        .fn()
+        .mockRejectedValue(new Error('error'));
+
+      await expect(
+        controller.findSubmissionsForTask(MOCK_TASK_ID_10, req as any),
+      ).rejects.toThrow('error');
+    });
+  });
 });

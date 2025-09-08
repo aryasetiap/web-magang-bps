@@ -51,6 +51,7 @@ describe('SubmissionsService', () => {
         findFirst: jest.fn(),
         update: jest.fn(),
         create: jest.fn(),
+        findMany: jest.fn(),
       },
       task: {
         findUnique: jest.fn(),
@@ -533,6 +534,129 @@ describe('SubmissionsService', () => {
       await expect(
         service.grade(SUBMISSION_ID, dto, CREATOR_ID),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('findMySubmissions', () => {
+    it('mengembalikan daftar submission milik user', async () => {
+      prisma.submission.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+      const result = await service.findMySubmissions(USER_ID);
+      expect(result).toEqual([{ id: 1 }, { id: 2 }]);
+      expect(prisma.submission.findMany).toBeCalledWith({
+        where: { userId: USER_ID },
+        include: {
+          task: {
+            select: {
+              id: true,
+              title: true,
+              deadline: true,
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+      });
+    });
+  });
+
+  describe('findOne', () => {
+    it('mengembalikan submission jika user adalah owner', async () => {
+      service.findSubmissionById = jest.fn().mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: USER_ID,
+        taskId: TASK_ID,
+        status: 'submitted',
+      });
+      const result = await service.findOne(SUBMISSION_ID, USER_ID, 'Intern');
+      expect(result).toEqual({ id: SUBMISSION_ID, userId: USER_ID });
+    });
+
+    it('mengembalikan submission jika user adalah admin', async () => {
+      service.findSubmissionById = jest.fn().mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: 123,
+        taskId: TASK_ID,
+        status: 'submitted',
+      });
+      const result = await service.findOne(SUBMISSION_ID, USER_ID, 'Admin');
+      expect(result).toEqual({ id: SUBMISSION_ID, userId: USER_ID });
+    });
+
+    it('gagal jika submission tidak ditemukan', async () => {
+      service.findSubmissionById = jest.fn().mockResolvedValue(null);
+      await expect(
+        service.findOne(SUBMISSION_ID, USER_ID, 'Intern'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('gagal jika user bukan owner dan bukan admin', async () => {
+      service.findSubmissionById = jest.fn().mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: 123,
+        taskId: TASK_ID,
+        status: 'submitted',
+      });
+      await expect(
+        service.findOne(SUBMISSION_ID, USER_ID, 'Intern'),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('findSubmissionsForTask', () => {
+    it('berhasil jika user admin', async () => {
+      const result = await service.findSubmissionsForTask(
+        TASK_ID,
+        USER_ID,
+        'Admin',
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('berhasil jika user staff', async () => {
+      const result = await service.findSubmissionsForTask(
+        TASK_ID,
+        USER_ID,
+        'Staff',
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('gagal jika user bukan admin/staff', async () => {
+      expect(() =>
+        service.findSubmissionsForTask(TASK_ID, USER_ID, 'Intern'),
+      ).toThrow(ForbiddenException);
+    });
+  });
+
+  describe('findSubmissionById', () => {
+    it('mengembalikan submission jika ditemukan', async () => {
+      prisma.submission.findUnique.mockResolvedValue({
+        id: SUBMISSION_ID,
+        userId: USER_ID,
+        taskId: TASK_ID,
+        status: 'submitted',
+      });
+      const result = await service.findSubmissionById(SUBMISSION_ID);
+      expect(result).toEqual({
+        id: SUBMISSION_ID,
+        userId: USER_ID,
+        taskId: TASK_ID,
+        status: 'submitted',
+      });
+      expect(prisma.submission.findUnique).toBeCalledWith({
+        where: { id: SUBMISSION_ID },
+        select: {
+          id: true,
+          userId: true,
+          taskId: true,
+          status: true,
+        },
+      });
+    });
+
+    it('mengembalikan null jika tidak ditemukan', async () => {
+      prisma.submission.findUnique.mockResolvedValue(null);
+      const result = await service.findSubmissionById(SUBMISSION_ID);
+      expect(result).toBeNull();
     });
   });
 });

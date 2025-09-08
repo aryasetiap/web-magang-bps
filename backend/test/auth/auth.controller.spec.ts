@@ -582,6 +582,30 @@ describe('AuthController', () => {
         ),
       );
     });
+
+    /**
+     * Menguji skenario gagal jika terjadi error unknown pada googleCallback.
+     */
+    it('gagal jika terjadi error unknown pada googleCallback', async () => {
+      const req = { user: { email: TEST_EMAIL, name: 'Test User' } };
+      const res = { redirect: jest.fn() };
+      // Paksa error unknown (bukan object)
+      controller['authService'].googleLogin = jest
+        .fn()
+        .mockImplementation(() => {
+          throw 'SOME_STRING_ERROR';
+        });
+
+      process.env.FRONTEND_URL = TEST_FRONTEND_URL;
+
+      await controller.googleCallback(req as any, res as any);
+
+      expect(res.redirect).toBeCalledWith(
+        expect.stringContaining(
+          `${TEST_FRONTEND_URL}/auth/callback?error=Unknown%20error`,
+        ),
+      );
+    });
   });
 
   /**

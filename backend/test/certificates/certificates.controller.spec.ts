@@ -16,12 +16,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateCertificateDto } from '../../src/certificates/dto/create-certificate.dto';
+import { UpdateCertificateStatusDto } from '../../src/certificates/dto/update-certificate-status.dto';
+import { PrismaService } from '../../src/prisma/prisma.service';
+import { CertificateStatusDto } from '../../src/certificates/dto/update-certificate-status.dto';
+import { CertificateStatus } from '@prisma/client';
 
 jest.mock('fs', () => ({
   existsSync: jest.fn(),
   createReadStream: jest.fn(() => ({ pipe: jest.fn() })),
-  mkdirSync: jest.fn(), // Perbaikan: Tambahkan mock mkdirSync
-  writeFileSync: jest.fn(), // Perbaikan: Tambahkan mock writeFileSync
+  mkdirSync: jest.fn(),
+  writeFileSync: jest.fn(),
 }));
 
 // Konstanta untuk data dummy yang sering digunakan
@@ -30,7 +34,6 @@ const DUMMY_CERTIFICATE_ID = 1;
 const DUMMY_CERTIFICATE_NUMBER = '123/ABC';
 const DUMMY_CERTIFICATE_NUMBER_SIMPLE = '123';
 const DUMMY_FILE_PATH = 'signed.pdf';
-const DUMMY_TEMPLATE_PATH = 'certificate-template.pdf';
 const DUMMY_ADMIN_ROLE = 'Admin';
 const DUMMY_INTERN_ROLE = 'Intern';
 
@@ -40,6 +43,8 @@ describe('CertificatesController', () => {
    */
   let controller: CertificatesController;
   let service: Record<string, jest.Mock>;
+  // Definisikan prismaMock di sini agar bisa diakses di dalam test case
+  let prismaMock: any;
 
   beforeEach(async () => {
     service = {
@@ -49,11 +54,39 @@ describe('CertificatesController', () => {
       getCertificateByUser: jest.fn(),
       getCertificateById: jest.fn(),
       getAllCertificates: jest.fn(),
+      updateCertificateStatus: jest.fn(),
+    };
+
+    // FIX: Membuat mock PrismaService yang lebih lengkap
+    prismaMock = {
+      certificate: {
+        update: jest.fn(),
+        // Tambahkan properti lain yang mungkin diperlukan oleh tipe Prisma
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findMany: jest.fn(),
+        create: jest.fn(),
+        delete: jest.fn(),
+        count: jest.fn(),
+        aggregate: jest.fn(),
+        groupBy: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        findFirstOrThrow: jest.fn(),
+        createMany: jest.fn(),
+        deleteMany: jest.fn(),
+        updateMany: jest.fn(),
+        upsert: jest.fn(),
+        fields: {}, // Tambahkan properti 'fields' yang kosong
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CertificatesController],
-      providers: [{ provide: CertificatesService, useValue: service }],
+      providers: [
+        { provide: CertificatesService, useValue: service },
+        // Sediakan mock PrismaService juga jika dibutuhkan oleh controller/service
+        { provide: PrismaService, useValue: prismaMock },
+      ],
     }).compile();
 
     controller = module.get<CertificatesController>(CertificatesController);
@@ -69,9 +102,6 @@ describe('CertificatesController', () => {
      * Pastikan service dipanggil dengan parameter yang benar.
      */
     it('berhasil generate sertifikat', async () => {
-      /**
-       * Tujuan: Memastikan endpoint generate dapat membuat sertifikat baru dengan benar.
-       */
       const dto: CreateCertificateDto = {
         certificateNumber: DUMMY_CERTIFICATE_NUMBER,
         userId: 1,
@@ -79,7 +109,6 @@ describe('CertificatesController', () => {
         namaKepalaBPS: 'Kepala',
         nipKepalaBPS: '1234567890',
       };
-      // Perbaikan: Tambahkan role Admin pada mock request
       const req = { user: { userId: DUMMY_USER_ID, role: 'Admin' } };
       service.generateCertificate.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
@@ -95,9 +124,6 @@ describe('CertificatesController', () => {
      * Menguji kasus gagal generate jika terjadi error pada service.
      */
     it('gagal generate jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const dto: CreateCertificateDto = {
         certificateNumber: DUMMY_CERTIFICATE_NUMBER,
         userId: 1,
@@ -105,7 +131,6 @@ describe('CertificatesController', () => {
         namaKepalaBPS: 'Kepala',
         nipKepalaBPS: '1234567890',
       };
-      // Perbaikan: Tambahkan role Admin pada mock request
       const req = { user: { userId: DUMMY_USER_ID, role: 'Admin' } };
       service.generateCertificate.mockRejectedValue(new Error('error'));
 
@@ -118,9 +143,6 @@ describe('CertificatesController', () => {
      * Menguji kasus gagal generate jika bukan admin.
      */
     it('gagal generate jika bukan admin', async () => {
-      /**
-       * Tujuan: Memastikan ForbiddenException dilempar jika user bukan admin.
-       */
       const dto: CreateCertificateDto = {
         certificateNumber: DUMMY_CERTIFICATE_NUMBER,
         userId: 1,
@@ -141,13 +163,7 @@ describe('CertificatesController', () => {
    * Menguji proses upload file sertifikat yang sudah ditandatangani.
    */
   describe('uploadSigned', () => {
-    /**
-     * Menguji kasus sukses upload file signed.
-     */
     it('berhasil upload file signed', async () => {
-      /**
-       * Tujuan: Memastikan file signed dapat diupload dan service dipanggil dengan benar.
-       */
       const req = { user: { userId: DUMMY_USER_ID } };
       const file = { path: DUMMY_FILE_PATH };
       service.uploadSignedCertificate.mockResolvedValue({
@@ -169,13 +185,7 @@ describe('CertificatesController', () => {
       );
     });
 
-    /**
-     * Menguji kasus gagal upload jika file tidak diupload.
-     */
     it('gagal jika file tidak diupload', async () => {
-      /**
-       * Tujuan: Memastikan error dilempar jika file tidak ada.
-       */
       const req = { user: { userId: DUMMY_USER_ID } };
       await expect(
         controller.uploadSigned(
@@ -186,13 +196,7 @@ describe('CertificatesController', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    /**
-     * Menguji kasus gagal upload jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { userId: DUMMY_USER_ID } };
       const file = { path: DUMMY_FILE_PATH };
       service.uploadSignedCertificate.mockRejectedValue(new Error('error'));
@@ -205,16 +209,9 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint issue sertifikat.
-   * Menguji proses penerbitan sertifikat.
    */
   describe('issue', () => {
-    /**
-     * Menguji kasus sukses issue sertifikat.
-     */
     it('berhasil issue sertifikat', async () => {
-      /**
-       * Tujuan: Memastikan sertifikat dapat diterbitkan dengan benar.
-       */
       const req = { user: { id: DUMMY_USER_ID } };
       service.issueCertificate.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
@@ -230,13 +227,7 @@ describe('CertificatesController', () => {
       );
     });
 
-    /**
-     * Menguji kasus gagal issue jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { id: DUMMY_USER_ID } };
       service.issueCertificate.mockRejectedValue(new Error('error'));
 
@@ -248,16 +239,9 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint getOwn.
-   * Menguji proses pengambilan sertifikat milik sendiri oleh intern.
    */
   describe('getOwn', () => {
-    /**
-     * Menguji kasus sukses mengambil sertifikat sendiri.
-     */
     it('berhasil mengambil sertifikat sendiri', async () => {
-      /**
-       * Tujuan: Memastikan intern dapat mengambil sertifikat miliknya sendiri.
-       */
       const req = { user: { userId: 1 } };
       service.getCertificateByUser.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
@@ -269,13 +253,7 @@ describe('CertificatesController', () => {
       expect(service.getCertificateByUser).toBeCalledWith(1);
     });
 
-    /**
-     * Menguji kasus gagal jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { userId: 1 } };
       service.getCertificateByUser.mockRejectedValue(new Error('error'));
 
@@ -285,17 +263,9 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint uploadTemplate.
-   * Menguji proses upload template PDF sertifikat.
    */
   describe('uploadTemplate', () => {
-    /**
-     * Menguji kasus sukses upload template PDF.
-     */
     it('berhasil upload template PDF', () => {
-      /**
-       * Tujuan: Memastikan template PDF dapat diupload dengan benar.
-       */
-      // Perbaikan: Mock file dengan buffer property untuk memory storage
       const file = { buffer: Buffer.from('dummy pdf content') };
       const result = controller.uploadTemplate(file as any);
       expect(result).toEqual({
@@ -304,13 +274,7 @@ describe('CertificatesController', () => {
       });
     });
 
-    /**
-     * Menguji kasus gagal upload jika file tidak diupload.
-     */
     it('gagal jika file tidak diupload', () => {
-      /**
-       * Tujuan: Memastikan error dilempar jika file template tidak ada.
-       */
       expect(() => controller.uploadTemplate(undefined as any)).toThrow(
         BadRequestException,
       );
@@ -319,16 +283,12 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint download sertifikat.
-   * Menguji proses download file sertifikat (issued maupun generated).
    */
   describe('download', () => {
     const fs = require('fs');
     let res: any;
 
     beforeEach(() => {
-      /**
-       * Reset mock response dan mock fs sebelum setiap pengujian.
-       */
       res = {
         setHeader: jest.fn(),
         end: jest.fn(),
@@ -336,13 +296,7 @@ describe('CertificatesController', () => {
       jest.clearAllMocks();
     });
 
-    /**
-     * Menguji kasus sukses download file issued.
-     */
     it('berhasil download file issued', async () => {
-      /**
-       * Tujuan: Memastikan file sertifikat yang sudah issued dapat diunduh.
-       */
       service.getCertificateById.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
         status: 'issued',
@@ -362,13 +316,7 @@ describe('CertificatesController', () => {
       );
     });
 
-    /**
-     * Menguji kasus sukses download file generated (belum signed).
-     */
     it('berhasil download file generated', async () => {
-      /**
-       * Tujuan: Memastikan file sertifikat yang masih generated dapat diunduh.
-       */
       service.getCertificateById.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
         status: 'generated',
@@ -386,13 +334,7 @@ describe('CertificatesController', () => {
       );
     });
 
-    /**
-     * Menguji kasus gagal jika sertifikat tidak ditemukan.
-     */
     it('gagal jika sertifikat tidak ditemukan', async () => {
-      /**
-       * Tujuan: Memastikan error NotFoundException dilempar jika sertifikat tidak ada.
-       */
       service.getCertificateById.mockResolvedValue(null);
 
       await expect(
@@ -400,13 +342,7 @@ describe('CertificatesController', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    /**
-     * Menguji kasus gagal jika status sertifikat tidak valid.
-     */
     it('gagal jika status sertifikat tidak valid', async () => {
-      /**
-       * Tujuan: Memastikan error BadRequestException dilempar jika status tidak sesuai.
-       */
       service.getCertificateById.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
         status: 'other',
@@ -417,13 +353,7 @@ describe('CertificatesController', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    /**
-     * Menguji kasus gagal jika file tidak ditemukan di server.
-     */
     it('gagal jika file tidak ditemukan di server', async () => {
-      /**
-       * Tujuan: Memastikan error NotFoundException dilempar jika file tidak ada di server.
-       */
       service.getCertificateById.mockResolvedValue({
         id: DUMMY_CERTIFICATE_ID,
         status: 'issued',
@@ -440,18 +370,11 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint checkTemplate.
-   * Menguji pengecekan ketersediaan template sertifikat.
    */
   describe('checkTemplate', () => {
     const fs = require('fs');
 
-    /**
-     * Menguji kasus template tersedia.
-     */
     it('mengembalikan status template tersedia', () => {
-      /**
-       * Tujuan: Memastikan status template tersedia dikembalikan dengan benar.
-       */
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       const result = controller.checkTemplate();
       expect(result).toEqual({
@@ -461,13 +384,7 @@ describe('CertificatesController', () => {
       });
     });
 
-    /**
-     * Menguji kasus template tidak tersedia.
-     */
     it('mengembalikan status template tidak tersedia', () => {
-      /**
-       * Tujuan: Memastikan status template tidak tersedia dikembalikan dengan benar.
-       */
       (fs.existsSync as jest.Mock).mockReturnValue(false);
       const result = controller.checkTemplate();
       expect(result).toEqual({
@@ -479,16 +396,9 @@ describe('CertificatesController', () => {
 
   /**
    * Pengujian endpoint getAllCertificates.
-   * Menguji proses pengambilan seluruh data sertifikat (khusus admin).
    */
   describe('getAllCertificates', () => {
-    /**
-     * Menguji kasus sukses mengambil seluruh data sertifikat jika user admin.
-     */
     it('berhasil mengambil seluruh data sertifikat jika user admin', async () => {
-      /**
-       * Tujuan: Memastikan admin dapat mengambil seluruh data sertifikat.
-       */
       const req = { user: { role: DUMMY_ADMIN_ROLE } };
       service.getAllCertificates.mockResolvedValue([
         { id: DUMMY_CERTIFICATE_ID },
@@ -500,32 +410,101 @@ describe('CertificatesController', () => {
       expect(service.getAllCertificates).toBeCalled();
     });
 
-    /**
-     * Menguji kasus gagal jika user bukan admin.
-     */
     it('gagal jika user bukan admin', async () => {
-      /**
-       * Tujuan: Memastikan ForbiddenException dilempar jika user bukan admin.
-       */
       const req = { user: { role: DUMMY_INTERN_ROLE } };
       await expect(controller.getAllCertificates(req as any)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
-    /**
-     * Menguji kasus gagal jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { role: DUMMY_ADMIN_ROLE } };
       service.getAllCertificates.mockRejectedValue(new Error('error'));
 
       await expect(controller.getAllCertificates(req as any)).rejects.toThrow(
         'error',
       );
+    });
+  });
+
+  /**
+   * Pengujian endpoint updateStatus.
+   */
+  describe('updateStatus', () => {
+    it('gagal jika user bukan admin', async () => {
+      const req = { user: { role: DUMMY_INTERN_ROLE } };
+      const dto: UpdateCertificateStatusDto = {
+        status: CertificateStatus.issued,
+      } as any;
+      await expect(
+        controller.updateStatus(DUMMY_CERTIFICATE_ID, dto, req as any),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('gagal jika sertifikat tidak ditemukan', async () => {
+      const req = { user: { role: DUMMY_ADMIN_ROLE } };
+      const dto: UpdateCertificateStatusDto = {
+        status: CertificateStatus.issued,
+      } as any;
+      service.getCertificateById.mockResolvedValue(null);
+      await expect(
+        controller.updateStatus(DUMMY_CERTIFICATE_ID, dto, req as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('berhasil update status sertifikat', async () => {
+      const req = { user: { role: DUMMY_ADMIN_ROLE } };
+      const dto: UpdateCertificateStatusDto = {
+        status: CertificateStatusDto.issued,
+      } as any;
+      service.getCertificateById.mockResolvedValue({
+        id: DUMMY_CERTIFICATE_ID,
+        status: CertificateStatusDto.generated,
+      });
+
+      // Tambahkan properti prisma pada objek service (bukan pada mock function)
+      (service as any).prisma = {
+        certificate: {
+          update: jest.fn().mockResolvedValue({
+            id: DUMMY_CERTIFICATE_ID,
+            status: CertificateStatusDto.issued,
+          }),
+        },
+      };
+
+      const result = await controller.updateStatus(
+        DUMMY_CERTIFICATE_ID,
+        dto,
+        req as any,
+      );
+      expect(result).toEqual({
+        id: DUMMY_CERTIFICATE_ID,
+        status: CertificateStatusDto.issued,
+      });
+      expect((service as any).prisma.certificate.update).toBeCalledWith({
+        where: { id: DUMMY_CERTIFICATE_ID },
+        data: { status: CertificateStatusDto.issued },
+      });
+    });
+  });
+
+  /**
+   * Pengujian endpoint getById.
+   */
+  describe('getById', () => {
+    it('gagal jika sertifikat tidak ditemukan', async () => {
+      service.getCertificateById.mockResolvedValue(null);
+      await expect(controller.getById(DUMMY_CERTIFICATE_ID)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('berhasil jika sertifikat ditemukan', async () => {
+      service.getCertificateById.mockResolvedValue({
+        id: DUMMY_CERTIFICATE_ID,
+      });
+      const result = await controller.getById(DUMMY_CERTIFICATE_ID);
+      expect(result).toEqual({ id: DUMMY_CERTIFICATE_ID });
     });
   });
 });

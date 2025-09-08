@@ -18,6 +18,7 @@ import { CreateTaskDto } from '../../src/tasks/dto/create-task.dto';
 import { UpdateTaskDto } from '../../src/tasks/dto/update-task.dto';
 import { AssignTaskDto } from '../../src/tasks/dto/assign-task.dto';
 import { GradeSubmissionDto } from '../../src/submissions/dto/grade-submission.dto';
+import { Prisma } from '@prisma/client';
 
 jest.mock('fs');
 
@@ -128,6 +129,25 @@ describe('TasksService', () => {
         NotFoundException,
       );
     });
+
+    it('gagal assign jika ID intern tidak valid (foreign key violation)', async () => {
+      prisma.task.findUnique.mockResolvedValue({ id: 1 });
+
+      // Buat error dengan prototype PrismaClientKnownRequestError
+      const mockError = Object.create(
+        Prisma.PrismaClientKnownRequestError.prototype,
+      );
+      mockError.code = 'P2003';
+      mockError.message =
+        'Salah satu ID intern tidak valid atau tidak ditemukan.';
+
+      prisma.taskAssignment.createMany.mockRejectedValue(mockError);
+
+      const dto: AssignTaskDto = { internIds: [999] };
+      await expect(service.assignTask(1, dto)).rejects.toThrow(
+        'Salah satu ID intern tidak valid atau tidak ditemukan.',
+      );
+    });
   });
 
   /**
@@ -208,6 +228,18 @@ describe('TasksService', () => {
         service.submitTask(2, 1, file2 as any, 'desc'),
       ).rejects.toThrow(ConflictException);
       expect(fsMock.unlinkSync).toBeCalledWith(file2.path);
+    });
+
+    it('gagal jika ukuran file melebihi 5MB', async () => {
+      const largeFile = {
+        path: 'large.pdf',
+        mimetype: 'application/pdf',
+        size: 6 * 1024 * 1024, // 6MB > 5MB
+      };
+      await expect(
+        service.submitTask(2, 1, largeFile as any, 'desc'),
+      ).rejects.toThrow('Ukuran file melebihi 5MB.');
+      expect(fsMock.unlinkSync).toBeCalledWith(largeFile.path);
     });
   });
 
@@ -374,6 +406,20 @@ describe('TasksService', () => {
       expect(result[0]).toHaveProperty('submission');
       expect(prisma.task.findMany).toBeCalled();
     });
+
+    it('mengembalikan submission null jika tidak ada submission', async () => {
+      prisma.task.findMany.mockResolvedValue([
+        {
+          id: 1,
+          filePath: 'uploads/tasks/file.pdf',
+          submissions: [], // Tidak ada submission
+        },
+      ]);
+      const result = await service.findTasksForUser(2, 1, 10);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result[0]).toHaveProperty('submission', null);
+      expect(prisma.task.findMany).toBeCalled();
+    });
   });
 
   /**
@@ -494,6 +540,19 @@ describe('TasksService', () => {
         data: { deletedAt: expect.any(Date) },
       });
       expect(prisma.auditLog.create).toBeCalled();
+    });
+
+    it('gagal jika task tidak ditemukan (P2025)', async () => {
+      // Buat error dengan prototype PrismaClientKnownRequestError
+      const mockError = Object.create(
+        Prisma.PrismaClientKnownRequestError.prototype,
+      );
+      mockError.code = 'P2025';
+      mockError.message = 'Task tidak ditemukan';
+
+      prisma.task.update.mockRejectedValue(mockError);
+
+      await expect(service.remove(999)).rejects.toThrow('Task tidak ditemukan');
     });
   });
 

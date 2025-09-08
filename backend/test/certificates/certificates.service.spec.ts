@@ -40,6 +40,7 @@ import * as path from 'path';
 describe('CertificatesService', () => {
   let service: CertificatesService;
   let prisma: any;
+  let prismaMock: any;
 
   beforeEach(() => {
     prisma = {
@@ -58,6 +59,7 @@ describe('CertificatesService', () => {
       },
       $transaction: jest.fn(),
     };
+    prismaMock = prisma;
 
     // Mock fs
     (fs.existsSync as jest.Mock).mockReturnValue(true);
@@ -142,24 +144,26 @@ describe('CertificatesService', () => {
     });
 
     it('gagal jika final project belum accepted', async () => {
-      prisma.certificate.findUnique.mockResolvedValue(null);
-      prisma.user.findUnique.mockResolvedValue({
+      prismaMock.certificate.findUnique.mockResolvedValue(null);
+      prismaMock.user.findUnique.mockResolvedValue({
         id: 1,
-        name: 'Budi',
-        activityStart: new Date('2025-07-01'),
-        activityEnd: new Date('2025-08-01'),
+        activityStart: new Date(),
+        activityEnd: new Date(),
       });
-      prisma.finalProject.findFirst.mockResolvedValue(null);
-      const dto: CreateCertificateDto = {
-        certificateNumber: '123/ABC',
-        userId: 1,
-        predicate: 'Sangat Baik',
-        namaKepalaBPS: 'Kepala',
-        nipKepalaBPS: '1234567890',
-      };
-      await expect(service.generateCertificate(dto, 99)).rejects.toThrow(
-        BadRequestException,
-      );
+      prismaMock.finalProject.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.generateCertificate(
+          {
+            certificateNumber: '123',
+            userId: 1,
+            predicate: 'Sangat Baik',
+            namaKepalaBPS: 'Kepala',
+            nipKepalaBPS: '1234567890',
+          },
+          99,
+        ),
+      ).rejects.toThrow('Final project belum accepted.');
     });
 
     it('gagal jika template sertifikat tidak ditemukan', async () => {
@@ -226,13 +230,14 @@ describe('CertificatesService', () => {
     });
 
     it('gagal jika status sertifikat bukan generated', async () => {
-      prisma.certificate.findUnique.mockResolvedValue({
+      prismaMock.certificate.findUnique.mockResolvedValue({
         id: 1,
-        status: CertificateStatus.signed,
+        status: 'issued',
       });
+
       await expect(
         service.uploadSignedCertificate(1, 'signed.pdf', 99),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow('Sertifikat harus status generated.');
     });
   });
 
@@ -265,12 +270,14 @@ describe('CertificatesService', () => {
     });
 
     it('gagal jika status sertifikat bukan signed', async () => {
-      prisma.certificate.findUnique.mockResolvedValue({
+      prismaMock.certificate.findUnique.mockResolvedValue({
         id: 1,
-        status: CertificateStatus.generated,
+        status: 'generated',
+        userId: 2,
       });
+
       await expect(service.issueCertificate(1, 99)).rejects.toThrow(
-        BadRequestException,
+        'Sertifikat harus status signed.',
       );
     });
   });

@@ -14,6 +14,7 @@ import { FinalProjectsService } from '../../src/final-projects/final-projects.se
 import { CreateFinalProjectDto } from '../../src/final-projects/dto/create-final-project.dto';
 import { UpdateFinalProjectDto } from '../../src/final-projects/dto/update-final-project.dto';
 import { ReviewFinalProjectDto } from '../../src/final-projects/dto/review-final-project.dto';
+import { Response } from 'express';
 
 const MOCK_USER_ID = 1;
 const MOCK_ADMIN_ID = 99;
@@ -403,6 +404,67 @@ describe('FinalProjectsController', () => {
 
       await expect(
         controller.remove(MOCK_PROJECT_ID, req as any),
+      ).rejects.toThrow('error');
+    });
+  });
+
+  /**
+   * Pengujian endpoint download
+   * -----------------------------------------------
+   * Menguji proses pengunduhan file final project.
+   */
+  describe('download', () => {
+    it('berhasil download file final project sebagai admin', async () => {
+      const req = { user: { userId: MOCK_ADMIN_ID, role: 'Admin' } };
+      const res = {
+        setHeader: jest.fn(),
+        end: jest.fn(),
+        pipe: jest.fn(),
+      } as any;
+      service.download = jest.fn().mockResolvedValue(undefined);
+
+      await expect(
+        controller.download(MOCK_PROJECT_ID, req as any, res),
+      ).resolves.toBeUndefined();
+
+      expect(service.download).toBeCalledWith(
+        MOCK_PROJECT_ID,
+        undefined, // admin
+        res,
+      );
+    });
+
+    it('berhasil download file final project sebagai intern', async () => {
+      const req = { user: { userId: MOCK_USER_ID, role: 'Intern' } };
+      const res = {
+        setHeader: jest.fn(),
+        end: jest.fn(),
+        pipe: jest.fn(),
+      } as any;
+      service.download = jest.fn().mockResolvedValue(undefined);
+
+      await expect(
+        controller.download(MOCK_PROJECT_ID, req as any, res),
+      ).resolves.toBeUndefined();
+
+      expect(service.download).toBeCalledWith(
+        MOCK_PROJECT_ID,
+        MOCK_USER_ID,
+        res,
+      );
+    });
+
+    it('gagal download jika service error', async () => {
+      const req = { user: { userId: MOCK_USER_ID, role: 'Intern' } };
+      const res = {
+        setHeader: jest.fn(),
+        end: jest.fn(),
+        pipe: jest.fn(),
+      } as any;
+      service.download = jest.fn().mockRejectedValue(new Error('error'));
+
+      await expect(
+        controller.download(MOCK_PROJECT_ID, req as any, res),
       ).rejects.toThrow('error');
     });
   });

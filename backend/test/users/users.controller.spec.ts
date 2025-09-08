@@ -304,5 +304,27 @@ describe('UsersController', () => {
         controller.updateProfile(req as any, DUMMY_UPDATE_PROFILE_DTO),
       ).rejects.toThrow(NotFoundException);
     });
+
+    /**
+     * Pengujian gagal update profil user jika userId tidak ada pada request.
+     * Memastikan error yang tepat dilempar.
+     */
+    it('gagal update profil user jika userId tidak ada pada request', async () => {
+      const req = { user: {} };
+      await expect(
+        controller.updateProfile(req as any, DUMMY_UPDATE_PROFILE_DTO),
+      ).rejects.toThrow('User ID tidak ditemukan dalam token.');
+    });
+
+    /**
+     * Pengujian gagal update profil user jika userId bukan angka.
+     * Memastikan error yang tepat dilempar.
+     */
+    it('gagal update profil user jika userId bukan angka', async () => {
+      const req = { user: { userId: 'abc' } };
+      await expect(
+        controller.updateProfile(req as any, DUMMY_UPDATE_PROFILE_DTO),
+      ).rejects.toThrow('User ID tidak ditemukan dalam token.');
+    });
   });
 });

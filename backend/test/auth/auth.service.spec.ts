@@ -283,6 +283,15 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
     });
+
+    /**
+     * Menguji gagal login Google jika data user tidak valid.
+     */
+    it('gagal jika data user Google undefined', async () => {
+      await expect(service.googleLogin(undefined as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
   });
 
   /**

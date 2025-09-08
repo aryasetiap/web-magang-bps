@@ -13,6 +13,7 @@ import { InternshipApplicationsService } from '../../src/internship-applications
 import { CreateInternshipApplicationDto } from '../../src/internship-applications/dto/create-internship-application.dto';
 import { UpdateInternshipApplicationDto } from '../../src/internship-applications/dto/update-internship-application.dto';
 import { UpdateApplicationStatusDto } from '../../src/internship-applications/dto/update-application-status.dto';
+import { BadRequestException } from '@nestjs/common';
 
 // Konstanta untuk data dummy yang sering digunakan
 const MOCK_USER_ID = 1;
@@ -296,6 +297,90 @@ describe('InternshipApplicationsController', () => {
           req as any,
         ),
       ).rejects.toThrow('error');
+    });
+  });
+
+  /**
+   * Pengujian tambahan untuk InternshipApplicationsService
+   * -------------------------------------------------
+   * Bagian ini menguji validasi tambahan dan perilaku service.
+   */
+  describe('InternshipApplicationsService', () => {
+    let service: InternshipApplicationsService;
+    let prisma: any;
+
+    beforeEach(() => {
+      prisma = {
+        internshipApplication: {
+          findUnique: jest.fn(),
+          findFirst: jest.fn(),
+          findMany: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          count: jest.fn(),
+        },
+        $transaction: jest.fn(),
+      };
+      service = new InternshipApplicationsService(prisma);
+    });
+
+    /**
+     * Pengujian untuk findOne
+     * -----------------------------------------------
+     * Menguji validasi input pada saat mengambil detail aplikasi magang.
+     */
+    describe('findOne', () => {
+      it('melempar BadRequestException jika id tidak valid', async () => {
+        await expect(service.findOne(undefined as any)).rejects.toThrow(
+          BadRequestException,
+        );
+        await expect(service.findOne(null as any)).rejects.toThrow(
+          BadRequestException,
+        );
+        await expect(service.findOne(NaN as any)).rejects.toThrow(
+          BadRequestException,
+        );
+      });
+    });
+
+    /**
+     * Pengujian untuk updateStatus
+     * -----------------------------------------------
+     * Menguji validasi input pada saat update status aplikasi magang.
+     */
+    describe('updateStatus', () => {
+      it('melempar BadRequestException jika id tidak valid', async () => {
+        await expect(
+          service.updateStatus(undefined as any, 1, {
+            status: 'diterima',
+          } as any),
+        ).rejects.toThrow(BadRequestException);
+        await expect(
+          service.updateStatus(null as any, 1, { status: 'diterima' } as any),
+        ).rejects.toThrow(BadRequestException);
+        await expect(
+          service.updateStatus(NaN as any, 1, { status: 'diterima' } as any),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    /**
+     * Pengujian untuk update
+     * -----------------------------------------------
+     * Menguji validasi input pada saat update data aplikasi magang.
+     */
+    describe('update', () => {
+      it('melempar BadRequestException jika id tidak valid', async () => {
+        await expect(service.update(undefined as any, 1, {})).rejects.toThrow(
+          BadRequestException,
+        );
+        await expect(service.update(null as any, 1, {})).rejects.toThrow(
+          BadRequestException,
+        );
+        await expect(service.update(NaN as any, 1, {})).rejects.toThrow(
+          BadRequestException,
+        );
+      });
     });
   });
 });

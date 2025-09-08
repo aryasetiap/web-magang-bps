@@ -138,6 +138,40 @@ describe('AttendancesService', () => {
       );
     });
 
+    it('gagal clock-in jika longitude kantor tidak dikonfigurasi', async () => {
+      configMock.get = jest.fn((key: string) => {
+        if (key === 'OFFICE_LATITUDE') return OFFICE_LATITUDE;
+        if (key === 'OFFICE_LONGITUDE') return undefined;
+        if (key === 'OFFICE_RADIUS_METERS') return OFFICE_RADIUS_METERS;
+        return undefined;
+      });
+      prismaMock.attendance.findFirst.mockResolvedValue(null);
+      const dto: ClockInDto = {
+        latitude: VALID_LATITUDE,
+        longitude: VALID_LONGITUDE,
+      };
+      await expect(service.clockIn(USER_ID, dto, '127.0.0.1')).rejects.toThrow(
+        'OFFICE_LONGITUDE not configured in environment variables',
+      );
+    });
+
+    it('gagal clock-in jika radius kantor tidak dikonfigurasi', async () => {
+      configMock.get = jest.fn((key: string) => {
+        if (key === 'OFFICE_LATITUDE') return OFFICE_LATITUDE;
+        if (key === 'OFFICE_LONGITUDE') return OFFICE_LONGITUDE;
+        if (key === 'OFFICE_RADIUS_METERS') return undefined;
+        return undefined;
+      });
+      prismaMock.attendance.findFirst.mockResolvedValue(null);
+      const dto: ClockInDto = {
+        latitude: VALID_LATITUDE,
+        longitude: VALID_LONGITUDE,
+      };
+      await expect(service.clockIn(USER_ID, dto, '127.0.0.1')).rejects.toThrow(
+        'OFFICE_RADIUS_METERS not configured in environment variables',
+      );
+    });
+
     /**
      * Gagal clock-in jika lokasi user di luar radius kantor.
      */
@@ -443,6 +477,19 @@ describe('AttendancesService', () => {
       expect(buffer).toBeInstanceOf(Buffer);
       expect(buffer.length).toBeGreaterThan(0);
     });
+
+    /**
+     * Menghasilkan tabel status kosong jika tidak ada data (admin).
+     */
+    it('exportAllAttendancesPdf menghasilkan tabel status kosong jika tidak ada data', async () => {
+      prismaMock.attendance.findMany.mockResolvedValueOnce([]);
+      prismaMock.attendance.count.mockResolvedValueOnce(0);
+      const buffer = await service.exportAllAttendancesPdf(
+        { startDate: '2025-07-01', endDate: '2025-07-31', institution: 'ITS' },
+        ADMIN_NAME,
+      );
+      expect(buffer).toBeInstanceOf(Buffer);
+    });
   });
 
   /**
@@ -473,6 +520,19 @@ describe('AttendancesService', () => {
           }),
         }),
       );
+    });
+  });
+
+  /**
+   * Pengujian fitur private method: formatAttendanceDate
+   */
+  describe('formatAttendanceDate', () => {
+    /**
+     * Mengembalikan "-" jika semua tanggal null.
+     */
+    it('formatAttendanceDate mengembalikan "-" jika semua tanggal null', () => {
+      const result = service['formatAttendanceDate']({});
+      expect(result).toBe('-');
     });
   });
 });

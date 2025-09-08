@@ -273,6 +273,26 @@ describe('LogbooksService', () => {
         service.update(DUMMY_USER_ID, DUMMY_LOGBOOK_ID, { content: 'Baru' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    /**
+     * Pengujian gagal update jika status tidak valid.
+     */
+    it('gagal update jika status tidak valid', async () => {
+      prisma.logbook.findUnique.mockResolvedValue({
+        id: DUMMY_LOGBOOK_ID,
+        userId: DUMMY_USER_ID,
+      });
+      // Prisma akan error jika status tidak valid, kita mock agar error dilempar
+      prisma.logbook.update.mockImplementation(() => {
+        throw new Error('Invalid enum value');
+      });
+
+      await expect(
+        service.update(DUMMY_USER_ID, DUMMY_LOGBOOK_ID, {
+          status: 'invalid',
+        } as any),
+      ).rejects.toThrow('Invalid enum value');
+    });
   });
 
   /**
@@ -401,6 +421,59 @@ describe('LogbooksService', () => {
         'Admin',
       );
       expect(buffer).toBeInstanceOf(Buffer);
+    });
+
+    /**
+     * Pengujian gagal export PDF jika user tidak ditemukan.
+     */
+    it('gagal export PDF jika user tidak ditemukan', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.exportUserLogbookReport(
+          DUMMY_USER_ID,
+          { startDate: DUMMY_DATE, endDate: '2025-07-31' },
+          'Admin',
+        ),
+      ).rejects.toThrow('User dengan ID 1 tidak ditemukan.');
+    });
+
+    /**
+     * Pengujian gagal export PDF jika terjadi error pada stream.
+     */
+    it('gagal export PDF jika terjadi error pada stream', async () => {
+      prisma.logbook.findMany.mockResolvedValue([
+        {
+          id: DUMMY_LOGBOOK_ID,
+          logDate: new Date(DUMMY_DATE),
+          status: 'submitted',
+          content: 'Aktivitas',
+        },
+      ]);
+      prisma.user.findUnique.mockResolvedValue(DUMMY_USER);
+
+      // Mock PdfPrinter agar pdfDoc emit error
+      const PdfPrinter = require('pdfmake');
+      const createPdfKitDocumentMock = jest.fn(() => {
+        const EventEmitter = require('events');
+        const fakePdf = new EventEmitter();
+        (fakePdf as any).end = jest.fn();
+        setTimeout(() => {
+          fakePdf.emit('error', new Error('PDF error'));
+        }, 10);
+        return fakePdf;
+      });
+      PdfPrinter.mockImplementation(() => ({
+        createPdfKitDocument: createPdfKitDocumentMock,
+      }));
+
+      await expect(
+        service.exportUserLogbookReport(
+          DUMMY_USER_ID,
+          { startDate: DUMMY_DATE, endDate: '2025-07-31' },
+          'Admin',
+        ),
+      ).rejects.toThrow('PDF error');
     });
   });
 });

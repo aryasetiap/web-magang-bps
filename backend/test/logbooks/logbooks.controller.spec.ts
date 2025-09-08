@@ -141,58 +141,12 @@ describe('LogbooksController', () => {
   });
 
   /**
-   * Pengujian endpoint getAllLogbooks (admin)
-   * -----------------------------------------------
-   * Menguji pengambilan seluruh logbook untuk admin (dengan pagination).
-   */
-  describe('getAllLogbooks', () => {
-    /**
-     * Pengujian berhasil mengambil seluruh logbook untuk admin.
-     */
-    it('berhasil mengambil seluruh logbook untuk admin', async () => {
-      /**
-       * Tujuan: Memastikan admin dapat mengambil seluruh logbook dengan pagination.
-       */
-      const dummyResult = {
-        data: [{ id: 1 }],
-        total: 1,
-        page: 1,
-        lastPage: 1,
-      };
-      service.findAllForAdmin.mockResolvedValue(dummyResult);
-
-      const result = await controller.getAllLogbooks(1, 10);
-
-      expect(result).toEqual(dummyResult);
-      expect(service.findAllForAdmin).toBeCalledWith(1, 10);
-    });
-
-    /**
-     * Pengujian gagal mengambil logbook admin jika terjadi error pada service.
-     */
-    it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
-      service.findAllForAdmin.mockRejectedValue(new Error('error'));
-
-      await expect(controller.getAllLogbooks(1, 10)).rejects.toThrow('error');
-    });
-  });
-
-  /**
    * Pengujian endpoint findOne
    * -----------------------------------------------
    * Menguji pengambilan detail logbook tertentu milik user.
    */
   describe('findOne', () => {
-    /**
-     * Pengujian berhasil mengambil detail logbook.
-     */
     it('berhasil mengambil detail logbook', async () => {
-      /**
-       * Tujuan: Memastikan detail logbook dapat diambil sesuai user dan id logbook.
-       */
       const req = { user: { userId: 3 } };
       const dummyLogbook = { id: 1, userId: 3 };
       service.findOne.mockResolvedValue(dummyLogbook);
@@ -203,13 +157,7 @@ describe('LogbooksController', () => {
       expect(service.findOne).toBeCalledWith(3, 1);
     });
 
-    /**
-     * Pengujian gagal mengambil detail logbook jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { userId: 3 } };
       service.findOne.mockRejectedValue(new Error('error'));
 
@@ -223,13 +171,7 @@ describe('LogbooksController', () => {
    * Menguji update logbook milik user.
    */
   describe('update', () => {
-    /**
-     * Pengujian berhasil update logbook.
-     */
     it('berhasil update logbook', async () => {
-      /**
-       * Tujuan: Memastikan logbook dapat diupdate dengan data baru.
-       */
       const req = { user: { userId: 4 } };
       const updatedLogbook = { id: 1, ...DUMMY_UPDATE_DTO };
       service.update.mockResolvedValue(updatedLogbook);
@@ -240,13 +182,7 @@ describe('LogbooksController', () => {
       expect(service.update).toBeCalledWith(4, 1, DUMMY_UPDATE_DTO);
     });
 
-    /**
-     * Pengujian gagal update logbook jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { userId: 4 } };
       service.update.mockRejectedValue(new Error('error'));
 
@@ -262,13 +198,7 @@ describe('LogbooksController', () => {
    * Menguji penghapusan logbook milik user.
    */
   describe('remove', () => {
-    /**
-     * Pengujian berhasil menghapus logbook.
-     */
     it('berhasil menghapus logbook', async () => {
-      /**
-       * Tujuan: Memastikan logbook dapat dihapus oleh user yang bersangkutan.
-       */
       const req = { user: { userId: 5 } };
       const deletedLogbook = { id: 1 };
       service.remove.mockResolvedValue(deletedLogbook);
@@ -279,17 +209,39 @@ describe('LogbooksController', () => {
       expect(service.remove).toBeCalledWith(5, 1);
     });
 
-    /**
-     * Pengujian gagal menghapus logbook jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar.
-       */
       const req = { user: { userId: 5 } };
       service.remove.mockRejectedValue(new Error('error'));
 
       await expect(controller.remove(req as any, 1)).rejects.toThrow('error');
+    });
+  });
+
+  /**
+   * Pengujian endpoint getAllLogbooks (admin)
+   * -----------------------------------------------
+   * Menguji pengambilan seluruh logbook untuk admin (dengan pagination).
+   */
+  describe('getAllLogbooks', () => {
+    it('berhasil mengambil seluruh logbook untuk admin', async () => {
+      const dummyResult = {
+        data: [{ id: 1 }],
+        total: 1,
+        page: 1,
+        lastPage: 1,
+      };
+      service.findAllForAdmin.mockResolvedValue(dummyResult);
+
+      const result = await controller.getAllLogbooks(1, 10);
+
+      expect(result).toEqual(dummyResult);
+      expect(service.findAllForAdmin).toBeCalledWith(1, 10);
+    });
+
+    it('gagal jika service error', async () => {
+      service.findAllForAdmin.mockRejectedValue(new Error('error'));
+
+      await expect(controller.getAllLogbooks(1, 10)).rejects.toThrow('error');
     });
   });
 
@@ -299,13 +251,7 @@ describe('LogbooksController', () => {
    * Menguji ekspor laporan logbook user dalam format PDF oleh admin.
    */
   describe('exportUserLogbookReport', () => {
-    /**
-     * Pengujian berhasil ekspor PDF logbook.
-     */
     it('berhasil ekspor PDF logbook', async () => {
-      /**
-       * Tujuan: Memastikan admin dapat mengekspor logbook user dalam format PDF.
-       */
       const req = { user: { name: DUMMY_ADMIN_NAME } };
       const res = { set: jest.fn(), end: jest.fn() };
       service.exportUserLogbookReport.mockResolvedValue(DUMMY_PDF_BUFFER);
@@ -330,13 +276,7 @@ describe('LogbooksController', () => {
       expect(res.end).toBeCalledWith(DUMMY_PDF_BUFFER);
     });
 
-    /**
-     * Pengujian gagal ekspor PDF logbook jika terjadi error pada service.
-     */
     it('gagal jika service error', async () => {
-      /**
-       * Tujuan: Memastikan error dari service diteruskan dengan benar saat ekspor PDF.
-       */
       const req = { user: { name: DUMMY_ADMIN_NAME } };
       const res = { set: jest.fn(), end: jest.fn() };
       service.exportUserLogbookReport.mockRejectedValue(new Error('error'));
