@@ -135,7 +135,6 @@ function AdminFinalReviewsPage() {
         peserta.
       </p>
 
-      {/* Pencarian dan Filter */}
       {/* Search & Filter */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <input

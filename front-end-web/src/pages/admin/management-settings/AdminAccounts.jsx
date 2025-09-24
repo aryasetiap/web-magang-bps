@@ -309,12 +309,11 @@ function AdminAccountsPage() {
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(1); // Reset ke halaman 1 saat search
+              setCurrentPage(1);
             }}
             className="border rounded-lg px-3 py-2 w-full md:w-64"
           />
         </div>
-        {/* Tombol Buat Akun */}
         {/* Tombol Buat Akun Baru */}
         <div className="text-right">
           <button

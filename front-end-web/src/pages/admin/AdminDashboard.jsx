@@ -135,7 +135,7 @@ function AdminDashboard() {
     <div className="min-h-screen bg-white shadow-md rounded-lg p-6 p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-bps-blue mb-8 text-left">
-          Dashboard Admin Sistem Magang Kabupaten Pringsewu
+          Dashboard Admin Sistem Magang BPS Kabupaten Pringsewu
         </h1>
 
         {/* Statistik Gambaran Umum */}
