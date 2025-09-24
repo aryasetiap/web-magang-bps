@@ -1,3 +1,9 @@
+/**
+ * Modul utama aplikasi yang mengatur seluruh dependensi dan konfigurasi global.
+ *
+ * @module AppModule
+ */
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express';
@@ -17,33 +23,94 @@ import { FinalProjectsModule } from './final-projects/final-projects.module';
 import { CertificatesModule } from './certificates/certificates.module';
 
 /**
- * AppModule adalah modul utama aplikasi yang mengatur seluruh dependensi dan konfigurasi global.
- * Modul ini mengimpor seluruh modul fitur, konfigurasi, serta modul-modul pendukung lain yang dibutuhkan aplikasi.
+ * AppModule
+ *
+ * Modul utama yang mengimpor seluruh modul fitur, konfigurasi, serta modul-modul pendukung lain yang dibutuhkan aplikasi.
+ *
+ * @class
  */
 @Module({
   imports: [
-    // Menginisialisasi modul konfigurasi agar dapat digunakan secara global di seluruh aplikasi
+    /**
+     * Menginisialisasi modul konfigurasi agar dapat digunakan secara global di seluruh aplikasi.
+     */
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
+    /**
+     * Modul database Prisma untuk akses data.
+     */
     PrismaModule,
+
+    /**
+     * Modul autentikasi pengguna.
+     */
     AuthModule,
+
+    /**
+     * Modul manajemen pengguna.
+     */
     UsersModule,
+
+    /**
+     * Modul aplikasi magang.
+     */
     InternshipApplicationsModule,
+
+    /**
+     * Modul absensi peserta magang.
+     */
     AttendancesModule,
+
+    /**
+     * Modul logbook peserta magang.
+     */
     LogbooksModule,
+
+    /**
+     * Modul tugas peserta magang.
+     */
     TasksModule,
+
+    /**
+     * Modul pengumpulan tugas.
+     */
     SubmissionsModule,
+
+    /**
+     * Modul proyek akhir peserta magang.
+     */
     FinalProjectsModule,
+
+    /**
+     * Modul sertifikat peserta magang.
+     */
     CertificatesModule,
-    // Mengatur Multer untuk penyimpanan file upload pada direktori './uploads'
+
+    /**
+     * Mengatur Multer untuk penyimpanan file upload pada direktori './uploads'.
+     */
     MulterModule.register({
       dest: './uploads',
     }),
-    // Mengaktifkan modul penjadwalan tugas (cron jobs)
+
+    /**
+     * Mengaktifkan modul penjadwalan tugas (cron jobs).
+     */
     ScheduleModule.forRoot(),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [
+    /**
+     * Controller utama aplikasi.
+     */
+    AppController,
+  ],
+  providers: [
+    /**
+     * Service utama aplikasi.
+     */
+    AppService,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

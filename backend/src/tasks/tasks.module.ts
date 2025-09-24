@@ -1,13 +1,34 @@
 import { Module } from '@nestjs/common';
-import { TasksService } from './tasks.service';
-import { TasksController } from './tasks.controller';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
+import { TasksService } from './tasks.service';
+import { TasksController } from './tasks.controller';
+
+/**
+ * Menghasilkan nama file unik dengan ekstensi asli file.
+ *
+ * @param req - Objek request dari Express
+ * @param file - Objek file yang di-upload
+ * @param callback - Fungsi callback untuk mengembalikan nama file
+ * @returns void
+ */
+function generateUniqueFilename(
+  req: Express.Request,
+  file: Express.Multer.File,
+  callback: (error: Error | null, filename: string) => void,
+): void {
+  const randomName = Array.from({ length: 32 }, () =>
+    Math.floor(Math.random() * 16).toString(16),
+  ).join('');
+  const fileExtension = extname(file.originalname);
+  callback(null, `${randomName}${fileExtension}`);
+}
+
 /**
  * Modul Tasks
- * 
+ *
  * Modul ini bertanggung jawab untuk mengelola fitur terkait tugas (tasks),
  * termasuk konfigurasi upload lampiran menggunakan Multer.
  */
@@ -22,24 +43,18 @@ import { extname } from 'path';
         destination: './uploads/tasks',
         /**
          * Membuat nama file unik untuk setiap file yang di-upload.
-         * Nama file dihasilkan secara acak dan mempertahankan ekstensi aslinya.
-         * 
-         * @param req - Objek request dari Express
-         * @param file - Objek file yang di-upload
-         * @param callback - Fungsi callback untuk mengembalikan nama file
          */
-        filename: (req, file, callback) => {
-          const randomName = Array(32)
-            .fill(null)
-            .map(() => Math.round(Math.random() * 16).toString(16))
-            .join('');
-          const fileExtension = extname(file.originalname);
-          callback(null, `${randomName}${fileExtension}`);
-        },
+        filename: generateUniqueFilename,
       }),
     }),
   ],
   controllers: [TasksController],
   providers: [TasksService],
 })
-export class TasksModule {}
+export class TasksModule {
+  /**
+   * Kelas modul Tasks.
+   *
+   * Bertanggung jawab untuk mengelola dependensi dan konfigurasi terkait fitur tugas.
+   */
+}

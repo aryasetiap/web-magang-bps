@@ -12,6 +12,9 @@ import {
   UseInterceptors,
   UploadedFile,
   ParseIntPipe,
+  ValidationPipe,
+  UsePipes,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FinalProjectsService } from './final-projects.service';
@@ -22,6 +25,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { Response } from 'express';
 
 /**
  * Controller untuk mengelola endpoint terkait Final Project.
@@ -30,7 +34,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 @Controller('final-projects')
 @UseGuards(AuthGuard('jwt'))
 export class FinalProjectsController {
-  constructor(private readonly finalProjectsService: FinalProjectsService) { }
+  constructor(private readonly finalProjectsService: FinalProjectsService) {}
 
   /**
    * Membuat Final Project baru oleh pengguna dengan peran Intern.
@@ -43,13 +47,18 @@ export class FinalProjectsController {
   @Roles('Intern')
   @UseGuards(RolesGuard)
   @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) // Perbaikan: Aktifkan validasi DTO
   create(
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() createFinalProjectDto: CreateFinalProjectDto,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    const userId = req.user.userId;
-    return this.finalProjectsService.create(userId, createFinalProjectDto, file);
+    const userId = Number(req.user.userId);
+    return this.finalProjectsService.create(
+      userId,
+      createFinalProjectDto,
+      file,
+    );
   }
 
   /**
@@ -60,8 +69,8 @@ export class FinalProjectsController {
   @Get()
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  findAllForUser(@Request() req) {
-    const userId = req.user.userId;
+  findAllForUser(@Request() req: { user: { userId: number } }) {
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.findAllForUser(userId);
   }
 
@@ -85,12 +94,15 @@ export class FinalProjectsController {
    * @returns Detail Final Project.
    */
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+  ) {
+    const userId = Number(req.user.userId);
     const userRole = req.user.role;
     return this.finalProjectsService.findOne(
       id,
-      userRole === 'admin' ? undefined : userId,
+      userRole?.toLowerCase() === 'admin' ? undefined : userId,
     );
   }
 
@@ -108,11 +120,11 @@ export class FinalProjectsController {
   @UseInterceptors(FileInterceptor('file'))
   update(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() updateFinalProjectDto: UpdateFinalProjectDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const userId = req.user.userId;
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.update(
       id,
       userId,
@@ -133,10 +145,10 @@ export class FinalProjectsController {
   @Roles('Admin', 'Staff BPS')
   review(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() reviewDto: ReviewFinalProjectDto,
   ) {
-    const reviewerId = req.user.userId;
+    const reviewerId = Number(req.user.userId);
     return this.finalProjectsService.review(id, reviewerId, reviewDto);
   }
 
@@ -149,8 +161,34 @@ export class FinalProjectsController {
   @Delete(':id')
   @Roles('Intern')
   @UseGuards(RolesGuard)
-  remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = req.user.userId;
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number } },
+  ) {
+    const userId = Number(req.user.userId);
     return this.finalProjectsService.remove(id, userId);
+  }
+
+  /**
+   * Mengunduh file Final Project berdasarkan ID.
+   * Hanya dapat diakses oleh Admin dan Intern yang memiliki proyek tersebut.
+   * @param id ID Final Project.
+   * @param req Request yang berisi data user.
+   * @param res Response untuk mengirim file.
+   */
+  @Get(':id/download')
+  @UseGuards(AuthGuard('jwt')) // Perbaikan: Lindungi endpoint download dengan AuthGuard
+  async download(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: { user: { userId: number; role: string } },
+    @Res() res: Response,
+  ): Promise<void> {
+    const userId = Number(req.user.userId);
+    const userRole = req.user.role;
+    await this.finalProjectsService.download(
+      id,
+      userRole?.toLowerCase() === 'admin' ? undefined : userId,
+      res,
+    );
   }
 }

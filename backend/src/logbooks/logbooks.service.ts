@@ -7,9 +7,12 @@ import {
 import { CreateLogbookDto } from './dto/create-logbook.dto';
 import { UpdateLogbookDto } from './dto/update-logbook.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { StatusLogbook } from '@prisma/client';
+import { StatusLogbook, Logbook, User } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+import PdfPrinter = require('pdfmake');
+import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 /**
  * Service untuk mengelola entri logbook.
@@ -107,7 +110,12 @@ export class LogbooksService {
   async update(userId: number, id: number, updateLogbookDto: UpdateLogbookDto) {
     await this.verifyOwnership(userId, id);
 
-    const data: any = {};
+    const data: {
+      logDate?: Date;
+      content?: string;
+      status?: StatusLogbook;
+    } = {};
+
     if (updateLogbookDto.logDate) {
       data.logDate = new Date(updateLogbookDto.logDate);
     }
@@ -156,13 +164,14 @@ export class LogbooksService {
       this.prisma.logbook.count(),
     ]);
     // Menghilangkan field password pada data user
-    const filteredData = data.map((item) => ({
-      ...item,
-      user: {
-        ...item.user,
-        password: undefined,
-      },
-    }));
+    const filteredData = data.map((item) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = item.user;
+      return {
+        ...item,
+        user: userWithoutPassword,
+      };
+    });
     return {
       data: filteredData,
       total,
@@ -183,18 +192,26 @@ export class LogbooksService {
     filter: { startDate?: string; endDate?: string },
     adminName: string,
   ): Promise<Buffer> {
-    const where: any = { userId };
+    // Perbaikan: Validasi apakah user ada sebelum export PDF
+    const user: User | null = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User dengan ID ${userId} tidak ditemukan.`);
+    }
+
+    const where: Record<string, unknown> = { userId };
     if (filter.startDate && filter.endDate) {
       where.logDate = {
         gte: new Date(filter.startDate),
         lte: new Date(filter.endDate),
       };
     }
-    const logbooks = await this.prisma.logbook.findMany({
+    const logbooks: Logbook[] = await this.prisma.logbook.findMany({
       where,
       orderBy: { logDate: 'asc' },
     });
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     const headerImagePath = path.resolve(
       process.cwd(),
@@ -204,7 +221,7 @@ export class LogbooksService {
       ? fs.readFileSync(headerImagePath).toString('base64')
       : null;
 
-    const tableBody = [
+    const tableBody: (string | number)[][] = [
       ['No', 'Tanggal', 'Status', 'Aktivitas'],
       ...logbooks.map((l, i) => [
         i + 1,
@@ -219,15 +236,21 @@ export class LogbooksService {
         text: `Rekap Logbook Intern: ${user?.name || '-'}`,
         style: 'header',
       },
-      { text: `Institusi: ${user?.asalInstitusi || '-'}`, alignment: 'center' },
+      {
+        text: `Institusi: ${user?.asalInstitusi || '-'}`,
+        alignment: 'center',
+        style: 'normal',
+      },
       {
         text: `Periode: ${filter.startDate || '-'} s/d ${filter.endDate || '-'}`,
         alignment: 'center',
+        style: 'normal',
       },
       {
         text: `Dicetak oleh: ${adminName} | Tanggal: ${new Date().toLocaleString('id-ID')}`,
         margin: [0, 0, 0, 20],
         alignment: 'center',
+        style: 'normal',
       },
       {
         table: {
@@ -237,14 +260,18 @@ export class LogbooksService {
         },
         layout: 'lightHorizontalLines',
       },
-    ];
+    ] as Content[];
 
-    const docDefinition = {
-      header: (currentPage, pageCount, pageSize) => {
+    const docDefinition: TDocumentDefinitions = {
+      header: (
+        currentPage: number,
+        pageCount: number,
+        pageSize: { width: number },
+      ) => {
         if (headerImageBase64) {
           return {
             image: `data:image/png;base64,${headerImageBase64}`,
-            fit: [pageSize.width - 80, 80],
+            fit: [pageSize.width - 80, 80] as [number, number],
             alignment: 'center',
             margin: [0, 20, 0, 10],
           };
@@ -272,12 +299,12 @@ export class LogbooksService {
         bolditalics: 'src/assets/fonts/Helvetica-BoldOblique.ttf',
       },
     };
-    const PdfPrinter = require('pdfmake');
     const printer = new PdfPrinter(fonts);
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+    const pdfDoc: PDFKit.PDFDocument =
+      printer.createPdfKitDocument(docDefinition);
     const chunks: Buffer[] = [];
     return new Promise<Buffer>((resolve, reject) => {
-      pdfDoc.on('data', (chunk) => chunks.push(chunk));
+      pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
       pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
       pdfDoc.on('error', reject);
       pdfDoc.end();

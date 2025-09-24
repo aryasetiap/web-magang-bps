@@ -1,3 +1,10 @@
+/**
+ * tasks.service.ts
+ *
+ * Service untuk mengelola tugas, penugasan, pengumpulan, dan penilaian tugas.
+ * Berisi logika utama terkait CRUD tugas, penugasan ke intern, pengumpulan tugas, dan penilaian submission.
+ */
+
 import {
   Injectable,
   NotFoundException,
@@ -10,15 +17,15 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignTaskDto } from './dto/assign-task.dto';
 import { GradeSubmissionDto } from '../submissions/dto/grade-submission.dto';
-import * as path from 'path';
 import * as fs from 'fs';
+import { Prisma } from '@prisma/client';
 
 /**
- * Service untuk mengelola tugas, penugasan, pengumpulan, dan penilaian tugas.
+ * Service utama untuk pengelolaan tugas, penugasan, pengumpulan, dan penilaian.
  */
 @Injectable()
 export class TasksService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Membuat tugas baru dan meng-assign ke intern jika ada.
@@ -33,10 +40,9 @@ export class TasksService {
     file?: Express.Multer.File,
   ) {
     const { title, description, deadline, internIds } = createTaskDto;
-    let filePath: string | undefined = undefined;
-    if (file) {
-      filePath = file.path;
-    }
+    let filePath: string | undefined;
+    if (file) filePath = file.path;
+
     const task = await this.prisma.task.create({
       data: {
         title,
@@ -47,7 +53,7 @@ export class TasksService {
       },
     });
 
-    if (internIds && internIds.length > 0) {
+    if (internIds?.length) {
       const assignmentsData = internIds.map((internId) => ({
         taskId: task.id,
         userId: internId,
@@ -79,20 +85,32 @@ export class TasksService {
    */
   async assignTask(taskId: number, assignTaskDto: AssignTaskDto) {
     const { internIds } = assignTaskDto;
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-    });
-    if (!task) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task)
       throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
-    }
+
     const assignmentsData = internIds.map((internId) => ({
-      taskId: taskId,
+      taskId,
       userId: internId,
     }));
-    return this.prisma.taskAssignment.createMany({
-      data: assignmentsData,
-      skipDuplicates: true,
-    });
+
+    try {
+      return await this.prisma.taskAssignment.createMany({
+        data: assignmentsData,
+        skipDuplicates: true,
+      });
+    } catch (err) {
+      // Perbaikan: Tangani error Prisma P2003 (foreign key violation)
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2003'
+      ) {
+        throw new BadRequestException(
+          'Salah satu ID intern tidak valid atau tidak ditemukan.',
+        );
+      }
+      throw err;
+    }
   }
 
   /**
@@ -109,35 +127,16 @@ export class TasksService {
     file?: Express.Multer.File,
     description?: string,
   ) {
-    if (!file && (!description || description.trim() === '')) {
+    if (!file && (!description || !description.trim())) {
       throw new BadRequestException('Minimal file atau deskripsi harus diisi.');
     }
 
     if (file) {
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      ];
-      if (!allowedTypes.includes(file.mimetype)) {
-        fs.unlinkSync(file.path);
-        throw new BadRequestException(
-          'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
-        );
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        fs.unlinkSync(file.path);
-        throw new BadRequestException('Ukuran file melebihi 5MB.');
-      }
+      this.validateSubmissionFile(file);
     }
 
     const assignment = await this.prisma.taskAssignment.findUnique({
-      where: {
-        taskId_userId: {
-          taskId: taskId,
-          userId: userId,
-        },
-      },
+      where: { taskId_userId: { taskId, userId } },
     });
     if (!assignment) {
       if (file) fs.unlinkSync(file.path);
@@ -145,6 +144,7 @@ export class TasksService {
         'Anda tidak ditugaskan untuk mengerjakan tugas ini.',
       );
     }
+
     const existingSubmission = await this.prisma.submission.findFirst({
       where: { taskId, userId },
     });
@@ -152,13 +152,15 @@ export class TasksService {
       if (file) fs.unlinkSync(file.path);
       throw new ConflictException('Anda sudah pernah mengumpulkan tugas ini.');
     }
+
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     const isLate = !!(task && new Date() > task.deadline);
+
     return this.prisma.submission.create({
       data: {
         filePath: file ? file.path : null,
-        taskId: taskId,
-        userId: userId,
+        taskId,
+        userId,
         status: 'submitted',
         isLate,
         description,
@@ -167,21 +169,39 @@ export class TasksService {
   }
 
   /**
+   * Validasi file submission (tipe dan ukuran).
+   * @param file File yang diupload
+   */
+  private validateSubmissionFile(file: Express.Multer.File) {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    if (!allowedTypes.includes(file.mimetype)) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException(
+        'Tipe file tidak didukung. Hanya PDF/DOC/DOCX.',
+      );
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      fs.unlinkSync(file.path);
+      throw new BadRequestException('Ukuran file melebihi 5MB.');
+    }
+  }
+
+  /**
    * Mengambil semua submission untuk suatu tugas.
    * @param taskId ID tugas
    * @returns Daftar submission beserta data user
    */
   async findSubmissionsForTask(taskId: number) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-    });
-    if (!task) {
+    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
+    if (!task)
       throw new NotFoundException(`Tugas dengan ID ${taskId} tidak ditemukan.`);
-    }
+
     return this.prisma.submission.findMany({
-      where: {
-        taskId: taskId,
-      },
+      where: { taskId },
       include: {
         user: {
           select: {
@@ -218,6 +238,7 @@ export class TasksService {
         'Submission hanya bisa dinilai jika status submitted/revisi.',
       );
     }
+
     if (gradeSubmissionDto.status === 'revisi') {
       const updated = await this.prisma.submission.update({
         where: { id: submissionId },
@@ -236,6 +257,7 @@ export class TasksService {
       });
       return updated;
     }
+
     const updated = await this.prisma.submission.update({
       where: { id: submissionId },
       data: {
@@ -246,12 +268,14 @@ export class TasksService {
         gradedAt: new Date(),
       },
     });
+
     await this.prisma.notification.create({
       data: {
         userId: updated.userId,
         message: 'Submission Anda telah dinilai.',
       },
     });
+
     await this.prisma.auditLog.create({
       data: {
         action: 'grade',
@@ -261,6 +285,7 @@ export class TasksService {
         description: `Submission dinilai dengan status ${gradeSubmissionDto.status || 'reviewed'}`,
       },
     });
+
     return updated;
   }
 
@@ -271,44 +296,40 @@ export class TasksService {
    * @param limit Jumlah per halaman (opsional)
    * @returns Daftar tugas beserta submission terakhir
    */
-  findTasksForUser(userId: number, page = 1, limit = 10) {
+  async findTasksForUser(userId: number, page = 1, limit = 10) {
     const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-    return this.prisma.task
-      .findMany({
-        where: {
-          assignments: {
-            some: { userId },
-          },
-          deletedAt: null,
-        },
-        include: {
-          creator: { select: { name: true } },
-          submissions: {
-            where: { userId },
-            select: {
-              id: true,
-              status: true,
-              grade: true,
-              feedback: true,
-              isLate: true,
-            },
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        assignments: { some: { userId } },
+        deletedAt: null,
+      },
+      include: {
+        creator: { select: { name: true } },
+        submissions: {
+          where: { userId },
+          select: {
+            id: true,
+            status: true,
+            grade: true,
+            feedback: true,
+            isLate: true,
           },
         },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { deadline: 'asc' },
-      })
-      .then((tasks) =>
-        tasks.map((task) => ({
-          ...task,
-          submission: task.submissions.length
-            ? task.submissions.sort((a, b) => b.id - a.id)[0]
-            : null,
-          fileUrl: task.filePath
-            ? `${baseUrl}/${task.filePath.replace(/\\/g, '/')}`
-            : null,
-        })),
-      );
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { deadline: 'asc' },
+    });
+
+    return tasks.map((task) => ({
+      ...task,
+      submission: task.submissions.length
+        ? task.submissions.sort((a, b) => b.id - a.id)[0]
+        : null,
+      fileUrl: task.filePath
+        ? `${baseUrl}/${task.filePath.replace(/\\/g, '/')}`
+        : null,
+    }));
   }
 
   /**
@@ -328,6 +349,7 @@ export class TasksService {
         filePath: true,
       },
     });
+
     return {
       data: tasks.map((task) => ({
         ...task,
@@ -390,6 +412,7 @@ export class TasksService {
         'Task sudah melewati deadline dan tidak bisa diubah.',
       );
     }
+
     const updated = await this.prisma.task.update({
       where: { id },
       data: {
@@ -399,6 +422,7 @@ export class TasksService {
           : undefined,
       },
     });
+
     await this.prisma.auditLog.create({
       data: {
         action: 'update',
@@ -408,6 +432,7 @@ export class TasksService {
         description: `Update tugas "${updated.title}"`,
       },
     });
+
     return updated;
   }
 
@@ -417,20 +442,33 @@ export class TasksService {
    * @returns Data tugas yang sudah dihapus
    */
   async remove(id: number) {
-    const deleted = await this.prisma.task.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-    await this.prisma.auditLog.create({
-      data: {
-        action: 'delete',
-        entity: 'task',
-        entityId: id,
-        userId: deleted.createdBy,
-        description: `Soft delete tugas "${deleted.title}"`,
-      },
-    });
-    return deleted;
+    try {
+      const deleted = await this.prisma.task.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          action: 'delete',
+          entity: 'task',
+          entityId: id,
+          userId: deleted.createdBy,
+          description: `Soft delete tugas "${deleted.title}"`,
+        },
+      });
+
+      return deleted;
+    } catch (err) {
+      // Perbaikan: Tangani error Prisma P2025 (task tidak ditemukan)
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new NotFoundException('Task tidak ditemukan');
+      }
+      throw err;
+    }
   }
 
   /**
@@ -439,7 +477,7 @@ export class TasksService {
    * @param userId ID user
    * @returns True jika user sudah diassign, false jika tidak
    */
-  async isUserAssignedToTask(taskId: number, userId: number) {
+  async isUserAssignedToTask(taskId: number, userId: number): Promise<boolean> {
     const assignment = await this.prisma.taskAssignment.findUnique({
       where: { taskId_userId: { taskId, userId } },
     });

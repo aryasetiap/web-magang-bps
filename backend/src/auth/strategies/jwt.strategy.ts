@@ -1,20 +1,27 @@
+/**
+ * Modul strategi JWT untuk autentikasi pada aplikasi menggunakan Passport dan NestJS.
+ * Mengambil token JWT dari header Authorization dan memverifikasi menggunakan secret dari environment.
+ *
+ * @module JwtStrategy
+ */
+
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
 /**
- * Strategi JWT untuk autentikasi menggunakan Passport.
- * Mengambil token JWT dari header Authorization dan memverifikasi menggunakan secret dari environment.
+ * Kelas strategi JWT untuk autentikasi.
+ * Bertugas mengambil dan memverifikasi token JWT dari request.
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   /**
-   * Konstruktor JwtStrategy.
+   * Membuat instance JwtStrategy.
    * @param configService Service untuk mengambil konfigurasi environment.
    * @throws Error jika JWT_SECRET tidak ditemukan di environment.
    */
-  constructor(private configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
       throw new Error('JWT_SECRET tidak ditemukan di environment variables');
@@ -31,11 +38,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @param payload Payload hasil decode JWT.
    * @returns Object berisi userId, email, dan role.
    */
-  async validate(payload: any) {
+  validate(payload: JwtPayload): {
+    userId: string;
+    email: string;
+    role: string;
+  } {
     return {
       userId: payload.sub,
       email: payload.email,
       role: payload.role,
     };
   }
+}
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
 }

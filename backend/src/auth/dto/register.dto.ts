@@ -1,14 +1,25 @@
+/**
+ * @module RegisterDto
+ * Modul ini mendefinisikan Data Transfer Object (DTO) untuk proses registrasi user baru.
+ * DTO ini berisi validasi dan dokumentasi Swagger untuk setiap field yang diperlukan saat registrasi.
+ */
+
 import { IsEmail, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * Data Transfer Object untuk registrasi user baru.
- * Berisi validasi dan dokumentasi Swagger untuk setiap field.
+ * RegisterDto
+ *
+ * DTO untuk menerima data registrasi user baru.
+ *
+ * @property {string} name - Nama lengkap user.
+ * @property {string} email - Alamat email user.
+ * @property {string} password - Password user (minimal 6 karakter).
  */
 export class RegisterDto {
   /**
    * Nama lengkap user.
-   * Contoh: "John Doe"
+   * @example "John Doe"
    */
   @ApiProperty({
     description: 'Nama lengkap user',
@@ -19,7 +30,7 @@ export class RegisterDto {
 
   /**
    * Email user.
-   * Contoh: "john@example.com"
+   * @example "john@example.com"
    */
   @ApiProperty({
     description: 'Email user',
@@ -30,7 +41,7 @@ export class RegisterDto {
 
   /**
    * Password user (minimal 6 karakter).
-   * Contoh: "password123"
+   * @example "password123"
    */
   @ApiProperty({
     description: 'Password user (minimal 6 karakter)',

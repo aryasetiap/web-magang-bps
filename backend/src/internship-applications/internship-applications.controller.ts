@@ -1,3 +1,9 @@
+/**
+ * Modul Controller untuk mengelola endpoint aplikasi magang.
+ * Berisi endpoint untuk pembuatan, pengambilan, dan pembaruan status aplikasi magang.
+ * Seluruh endpoint dilindungi oleh mekanisme autentikasi dan otorisasi berbasis peran.
+ */
+
 import {
   Controller,
   Get,
@@ -10,6 +16,8 @@ import {
   UploadedFiles,
   Request,
   Query,
+  ValidationPipe,
+  UsePipes,
 } from '@nestjs/common';
 import { InternshipApplicationsService } from './internship-applications.service';
 import { CreateInternshipApplicationDto } from './dto/create-internship-application.dto';
@@ -23,16 +31,20 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 
 /**
  * Controller untuk mengelola pengajuan magang.
- * Berisi endpoint terkait pembuatan, pengambilan, dan pembaruan status aplikasi magang.
+ * Menyediakan endpoint CRUD dan pembaruan status aplikasi magang.
  */
 @Controller('internship-applications')
 export class InternshipApplicationsController {
+  /**
+   * Konstruktor controller.
+   * @param internshipApplicationsService Service untuk pengelolaan aplikasi magang
+   */
   constructor(
     private readonly internshipApplicationsService: InternshipApplicationsService,
   ) {}
 
   /**
-   * Endpoint untuk membuat pengajuan magang baru.
+   * Membuat pengajuan magang baru.
    * Hanya dapat diakses oleh user yang sudah login.
    * Mendukung upload file CV, transkrip, dan surat permohonan.
    *
@@ -50,6 +62,9 @@ export class InternshipApplicationsController {
       { name: 'requestLetter', maxCount: 1 },
     ]),
   )
+  @UsePipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false }),
+  ) // Perbaikan: Aktifkan validasi DTO
   create(
     @UploadedFiles()
     files: {
@@ -57,7 +72,7 @@ export class InternshipApplicationsController {
       transcript?: Express.Multer.File[];
       requestLetter?: Express.Multer.File[];
     },
-    @Request() req,
+    @Request() req: { user: { userId: number } },
     @Body() createInternshipApplicationDto: CreateInternshipApplicationDto,
   ) {
     const userId = req.user.userId;
@@ -69,8 +84,8 @@ export class InternshipApplicationsController {
   }
 
   /**
-   * Endpoint untuk mengambil seluruh data pengajuan magang.
-   * Hanya dapat diakses oleh Admin.
+   * Mengambil seluruh data pengajuan magang.
+   * Hanya dapat diakses oleh Admin dan Staff BPS.
    * Mendukung fitur paginasi.
    *
    * @param paginationQuery Parameter paginasi
@@ -84,7 +99,7 @@ export class InternshipApplicationsController {
   }
 
   /**
-   * Endpoint untuk mengambil data pengajuan magang milik user yang sedang login.
+   * Mengambil data pengajuan magang milik user yang sedang login.
    * Hanya dapat diakses oleh user dengan peran Intern.
    *
    * @param req Request object yang berisi data user
@@ -93,7 +108,7 @@ export class InternshipApplicationsController {
   @Get('me')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Intern')
-  async getMyApplication(@Request() req) {
+  async getMyApplication(@Request() req: { user: { userId: number } }) {
     const userId = req.user.userId;
     return {
       data: await this.internshipApplicationsService.findByUser(userId),
@@ -101,8 +116,8 @@ export class InternshipApplicationsController {
   }
 
   /**
-   * Endpoint untuk mengambil detail pengajuan magang berdasarkan ID.
-   * Hanya dapat diakses oleh Admin.
+   * Mengambil detail pengajuan magang berdasarkan ID.
+   * Hanya dapat diakses oleh Admin dan Staff BPS.
    *
    * @param id ID pengajuan magang
    * @returns Detail pengajuan magang
@@ -111,12 +126,12 @@ export class InternshipApplicationsController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('Admin', 'Staff BPS')
   findOne(@Param('id') id: string) {
-    return this.internshipApplicationsService.findOne(+id);
+    return this.internshipApplicationsService.findOne(Number(id));
   }
 
   /**
-   * Endpoint untuk memperbarui status pengajuan magang.
-   * Hanya dapat diakses oleh Admin.
+   * Memperbarui status pengajuan magang.
+   * Hanya dapat diakses oleh Admin dan Staff BPS.
    *
    * @param id ID pengajuan magang
    * @param updateApplicationStatusDto Data status baru
@@ -129,13 +144,38 @@ export class InternshipApplicationsController {
   updateStatus(
     @Param('id') id: string,
     @Body() updateApplicationStatusDto: UpdateApplicationStatusDto,
-    @Request() req,
+    @Request() req: { user: { userId: number } },
   ) {
     const adminId = req.user.userId;
     return this.internshipApplicationsService.updateStatus(
-      +id,
+      Number(id),
       adminId,
       updateApplicationStatusDto,
+    );
+  }
+
+  /**
+   * Memperbarui data aplikasi magang (partial update).
+   * Hanya dapat diakses oleh user Intern.
+   *
+   * @param id ID aplikasi magang
+   * @param updateInternshipApplicationDto Data yang akan diupdate
+   * @param req Request object yang berisi data user
+   * @returns Data aplikasi magang yang telah diupdate
+   */
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('Intern')
+  update(
+    @Param('id') id: string,
+    @Body() updateInternshipApplicationDto: UpdateInternshipApplicationDto,
+    @Request() req: { user: { userId: number } },
+  ) {
+    const userId = req.user.userId;
+    return this.internshipApplicationsService.update(
+      Number(id),
+      userId,
+      updateInternshipApplicationDto,
     );
   }
 }

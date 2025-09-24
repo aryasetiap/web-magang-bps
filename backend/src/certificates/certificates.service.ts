@@ -1,3 +1,11 @@
+/**
+ * Modul CertificatesService
+ * -----------------------------------------------
+ * Modul ini menyediakan layanan untuk pembuatan, pengelolaan,
+ * dan penerbitan sertifikat magang berbasis PDF pada aplikasi.
+ * Menggunakan pdf-lib untuk manipulasi PDF dan Prisma untuk akses database.
+ */
+
 import {
   Injectable,
   BadRequestException,
@@ -5,41 +13,37 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
-import { CertificateStatus, StatusInternship, User } from '@prisma/client';
+import { CertificateStatus } from '@prisma/client';
 import * as fs from 'fs';
-import {
-  PDFDocument,
-  PDFFont,
-  PDFPage,
-  rgb,
-  StandardFonts,
-  Color,
-} from 'pdf-lib';
+import { PDFDocument, PDFFont, PDFPage, rgb, Color } from 'pdf-lib';
 import * as path from 'path';
-// Untuk CommonJS, pastikan @pdf-lib/fontkit terinstal
-const fontkit = require('@pdf-lib/fontkit');
+import fontkit from '@pdf-lib/fontkit';
 
 /**
  * Interface untuk opsi pada fungsi helper drawTextCentered.
- * Ini membuat pemanggilan fungsi lebih rapi.
+ * Membantu styling dan penempatan teks pada PDF.
  */
 interface DrawTextOptions {
   font: PDFFont;
   size: number;
   color?: Color;
-  y: number; // Posisi Y dari atas halaman
+  y: number;
   maxWidth?: number;
 }
 
+/**
+ * Service untuk pengelolaan sertifikat magang.
+ * Menyediakan fitur generate, upload, issue, dan query sertifikat.
+ */
 @Injectable()
 export class CertificatesService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * Fungsi helper untuk menggambar teks di tengah halaman secara horizontal.
-   * @param page Objek halaman PDF dari pdf-lib.
-   * @param text Teks yang akan ditulis.
-   * @param options Opsi untuk styling dan posisi (font, size, color, y, maxWidth).
+   * Menggambar teks secara horizontal rata tengah pada halaman PDF.
+   * @param page Halaman PDF target.
+   * @param text Teks yang akan digambar.
+   * @param options Opsi styling dan posisi teks.
    */
   private drawTextCentered(
     page: PDFPage,
@@ -65,6 +69,58 @@ export class CertificatesService {
     });
   }
 
+  /**
+   * Membagi teks panjang menjadi beberapa baris agar tidak melebihi lebar maksimum.
+   * @param text Teks yang akan dibagi.
+   * @param font Font yang digunakan.
+   * @param size Ukuran font.
+   * @param maxWidth Lebar maksimum per baris.
+   * @returns Array string, masing-masing adalah satu baris.
+   */
+  private splitTextToLines(
+    text: string,
+    font: PDFFont,
+    size: number,
+    maxWidth: number,
+  ): string[] {
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testLineWidth = font.widthOfTextAtSize(testLine, size);
+      if (testLineWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  /**
+   * Mengubah string menjadi Title Case (huruf pertama tiap kata kapital).
+   * @param str String yang akan diubah.
+   * @returns String dalam format Title Case.
+   */
+  private toTitleCase(str: string): string {
+    return str.replace(
+      /\w\S*/g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase(),
+    );
+  }
+
+  /**
+   * Membuat dan menyimpan sertifikat magang dalam bentuk PDF,
+   * serta menyimpan metadata ke database.
+   * @param dto Data transfer object untuk pembuatan sertifikat.
+   * @param adminId ID admin yang membuat sertifikat.
+   * @returns Data sertifikat yang telah dibuat.
+   * @throws BadRequestException, NotFoundException jika validasi gagal.
+   */
   async generateCertificate(dto: CreateCertificateDto, adminId: number) {
     const existing = await this.prisma.certificate.findUnique({
       where: { userId: dto.userId },
@@ -101,9 +157,7 @@ export class CertificatesService {
       } else {
         activityPeriod = `${startDate.getDate()} ${startDate.toLocaleString(
           'id-ID',
-          {
-            month: 'long',
-          },
+          { month: 'long' },
         )} - ${endDate.getDate()} ${endDate.toLocaleString('id-ID', {
           month: 'long',
           year: 'numeric',
@@ -113,7 +167,7 @@ export class CertificatesService {
 
     // Sanitize certificateNumber untuk nama file
     const safeCertificateNumber = dto.certificateNumber.replace(
-      /[\/\\:*?"<>|]/g,
+      /[/:*?"<>|\\]/g,
       '-',
     );
     const outputDir = 'uploads/certificates/generated';
@@ -156,10 +210,7 @@ export class CertificatesService {
     const loraFont = await pdfDoc.embedFont(fontLora);
     const notoSerifGeorgianFont = await pdfDoc.embedFont(fontNotoSerifGeorgian);
 
-    // =======================================================================
-    // KOORDINAT BARU BERDASARKAN TEMPLATE VISUAL
-    // Posisi 'y' diukur dari ATAS halaman.
-    // =======================================================================
+    // ===================== PENEMPATAN TEKS PADA TEMPLATE =====================
 
     this.drawTextCentered(page, `Nomor: ${dto.certificateNumber}`, {
       y: 140,
@@ -174,45 +225,16 @@ export class CertificatesService {
       color: rgb(8 / 255, 36 / 255, 75 / 255),
     });
 
-    // Helper function to capitalize the first letter of each word
-    function toTitleCase(str: string): string {
-      return str.replace(
-        /\w\S*/g,
-        (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase(),
-      );
-    }
-
-    // Fungsi untuk membagi teks menjadi beberapa baris agar rata tengah
-    function splitTextToLines(
-      text: string,
-      font: PDFFont,
-      size: number,
-      maxWidth: number,
-    ): string[] {
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testLineWidth = font.widthOfTextAtSize(testLine, size);
-        if (testLineWidth > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-      return lines;
-    }
-
-    const descriptiveText = `${toTitleCase(user.educationStatus ?? '')} dari ${user.asalInstitusi ?? ''}, telah menyelesaikan kegiatan ${toTitleCase(
+    const descriptiveText = `${this.toTitleCase(user.educationStatus ?? '')} dari ${user.asalInstitusi ?? ''}, telah menyelesaikan kegiatan ${this.toTitleCase(
       user.activityType ?? '',
     )} di Badan Pusat Statistik Kabupaten Pringsewu yang dilaksanakan pada periode ${activityPeriod}, dengan predikat kelulusan:`;
 
-    const lines = splitTextToLines(descriptiveText, sourceSerif4Font, 14, 530);
-    // Mulai dari y: 290, setiap baris turun 18px
+    const lines = this.splitTextToLines(
+      descriptiveText,
+      sourceSerif4Font,
+      14,
+      530,
+    );
     lines.forEach((line, idx) => {
       this.drawTextCentered(page, line, {
         y: 290 + idx * 18,
@@ -227,7 +249,7 @@ export class CertificatesService {
       y: 368,
       font: loraFont,
       size: 16,
-      color: rgb(1, 1, 1), // Warna putih agar kontras
+      color: rgb(1, 1, 1),
     });
 
     // Tanggal sertifikat, di atas nama kepala
@@ -241,7 +263,7 @@ export class CertificatesService {
       size: 14,
     });
 
-    // Nama Kepala BPS. Teks "Kepala Badan..." sudah ada di template.
+    // Nama Kepala BPS
     this.drawTextCentered(page, dto.namaKepalaBPS, {
       y: 530,
       font: loraFont,
@@ -255,7 +277,7 @@ export class CertificatesService {
       size: 14,
     });
 
-    // Save PDF
+    // Simpan PDF ke file
     const pdfBytes = await pdfDoc.save();
     fs.writeFileSync(outputPath, pdfBytes);
 
@@ -281,7 +303,14 @@ export class CertificatesService {
     });
   }
 
-  // ... (Sisa dari service tidak berubah)
+  /**
+   * Mengunggah file sertifikat yang telah ditandatangani dan memperbarui status sertifikat.
+   * @param id ID sertifikat.
+   * @param filePath Path file sertifikat yang diunggah.
+   * @param adminId ID admin yang mengunggah.
+   * @returns Data sertifikat yang telah diperbarui.
+   * @throws NotFoundException, BadRequestException jika validasi gagal.
+   */
   async uploadSignedCertificate(id: number, filePath: string, adminId: number) {
     const cert = await this.prisma.certificate.findUnique({ where: { id } });
     if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan.');
@@ -299,6 +328,13 @@ export class CertificatesService {
     });
   }
 
+  /**
+   * Menerbitkan sertifikat yang sudah ditandatangani dan memperbarui status user.
+   * @param id ID sertifikat.
+   * @param adminId ID admin yang menerbitkan.
+   * @returns Data sertifikat yang telah diterbitkan.
+   * @throws NotFoundException, BadRequestException jika validasi gagal.
+   */
   async issueCertificate(id: number, adminId: number) {
     const cert = await this.prisma.certificate.findUnique({ where: { id } });
     if (!cert) throw new NotFoundException('Sertifikat tidak ditemukan.');
@@ -324,14 +360,28 @@ export class CertificatesService {
     return updatedCert;
   }
 
+  /**
+   * Mengambil data sertifikat berdasarkan userId.
+   * @param userId ID user.
+   * @returns Data sertifikat atau null jika tidak ditemukan.
+   */
   async getCertificateByUser(userId: number) {
     return await this.prisma.certificate.findUnique({ where: { userId } });
   }
 
+  /**
+   * Mengambil data sertifikat berdasarkan id sertifikat.
+   * @param id ID sertifikat.
+   * @returns Data sertifikat atau null jika tidak ditemukan.
+   */
   async getCertificateById(id: number) {
     return await this.prisma.certificate.findUnique({ where: { id } });
   }
 
+  /**
+   * Mengambil seluruh data sertifikat beserta data user terkait.
+   * @returns Array data sertifikat.
+   */
   async getAllCertificates() {
     return this.prisma.certificate.findMany({
       include: {
