@@ -57,7 +57,7 @@ function AdminAccountsPage() {
     }
 
     try {
-      const res = await fetch(`${baseUrl}/users`, {
+      const res = await fetch(`${baseUrl}/users?limit=1000`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -161,15 +161,18 @@ function AdminAccountsPage() {
     let bodyData = {
       name: formName,
       email: formEmail,
-      roleName: formRoleName,
     };
 
+    if (!editingAccount) {
+      bodyData.roleName = formRoleName;
+    }
+
     if (!editingAccount || formPassword) {
-      if (formPassword.length < 6) {
+      if (formPassword.length < 8) {
         setAlert({
           isOpen: true,
           title: "Validasi Password",
-          message: "Password minimal 6 karakter.",
+          message: "Password minimal 8 karakter.",
           type: "error",
         });
         return;

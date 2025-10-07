@@ -9,6 +9,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
+import AlertDialog from "../../../components/AlertDialog";
 
 function PresencesRecap() {
   const baseUrl = process.env.REACT_APP_BASE_URL;
@@ -27,6 +28,20 @@ function PresencesRecap() {
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 5; // Jumlah item per halaman
   const token = localStorage.getItem("authToken");
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,15 +89,33 @@ function PresencesRecap() {
         )
       );
       closeModal();
-      alert("Status kehadiran berhasil diperbarui.");
+      // alert("Status kehadiran berhasil diperbarui.");
+      setAlert({
+        isOpen: true,
+        title: "Berhasil!",
+        message: "Status kehadiran berhasil diperbarui.",
+        type: "success",
+      });
     } catch (err) {
-      alert("Gagal memperbarui status kehadiran: " + err.message);
+      // alert("Gagal memperbarui status kehadiran: " + err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Gagal memperbarui status kehadiran: " + err.message,
+        type: "error",
+      });
     }
   };
 
   const handlePrintAll = async () => {
     if (!startDate || !endDate) {
-      alert("Harap isi tanggal awal dan akhir.");
+      // alert("Harap isi tanggal awal dan akhir.");
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Harap isi tanggal awal dan akhir terlebih dahulu.",
+        type: "error",
+      });
       return;
     }
 
@@ -119,13 +152,25 @@ function PresencesRecap() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert("Gagal mencetak PDF: " + err.message);
+      // alert("Gagal mencetak PDF: " + err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Gagal mencetak PDF: " + err.message,
+        type: "error",
+      });
     }
   };
 
   const handlePrintIndividual = async (userId) => {
     if (!startDate || !endDate) {
-      alert("Harap isi tanggal awal dan akhir.");
+      // alert("Harap isi tanggal awal dan akhir.");
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Harap isi tanggal awal dan akhir terlebih dahulu.",
+        type: "error",
+      });
       return;
     }
 
@@ -154,7 +199,13 @@ function PresencesRecap() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert("Gagal mencetak PDF: " + err.message);
+      // alert("Gagal mencetak PDF: " + err.message);
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Gagal mencetak PDF: " + err.message,
+        type: "error",
+      });
     }
   };
 
@@ -497,6 +548,16 @@ function PresencesRecap() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+      />
     </div>
   );
 }

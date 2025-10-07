@@ -5,6 +5,7 @@ import {
   ChevronRightIcon,
   EyeIcon,
 } from "@heroicons/react/24/outline";
+import AlertDialog from "../../components/AlertDialog";
 
 function AdminFinalReviewsPage() {
   const baseUrl = process.env.REACT_APP_BASE_URL;
@@ -19,6 +20,20 @@ function AdminFinalReviewsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const token = localStorage.getItem("authToken");
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // Fetch laporan akhir peserta
   useEffect(() => {
@@ -115,13 +130,32 @@ function AdminFinalReviewsPage() {
             report.id === reviewingReport.id ? { ...report, ...data } : report
           )
         );
-        alert(`Status laporan "${reviewingReport.title}" berhasil diubah.`);
+        // alert(`Status laporan "${reviewingReport.title}" berhasil diubah.`);
+        setAlert({
+          isOpen: true,
+          title: "Sukses!",
+          message: `Status laporan "${reviewingReport.title}" berhasil diubah.`,
+          type: "success",
+        });
         closeReviewModal();
       } else {
-        alert(data.message || "Gagal menyimpan review.");
+        // alert(data.message || "Gagal menyimpan review.");
+        setAlert({
+          isOpen: true,
+          title: "Gagal!",
+          message: data.message || "Gagal menyimpan review.",
+          type: "error",
+        });
       }
     } catch (err) {
-      alert("Terjadi kesalahan saat menyimpan review.");
+      // alert("Terjadi kesalahan saat menyimpan review.");
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Terjadi kesalahan saat menyimpan review.",
+        type: "error",
+      });
+      console.error("Error submitting review:", err);
     }
   };
 
@@ -415,6 +449,16 @@ function AdminFinalReviewsPage() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+      />
     </div>
   );
 }

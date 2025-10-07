@@ -7,7 +7,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
-import { formatDate } from "../../utils/formatDateTime"; // Assuming you have a utility for formatting dates
+import { formatDate } from "../../utils/formatDateTime";
+import AlertDialog from "../../components/AlertDialog";
 
 function AdminApplicantsPage() {
   const baseUrl = process.env.REACT_APP_BASE_URL;
@@ -19,6 +20,20 @@ function AdminApplicantsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const [alert, setAlert] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "",
+    autoCloseDelay: 0,
+    onConfirm: null,
+    showCancelButton: false,
+  });
+
+  const closeAlert = () => {
+    setAlert((prev) => ({ ...prev, isOpen: false }));
+  };
 
   const token = localStorage.getItem("authToken");
 
@@ -122,12 +137,6 @@ function AdminApplicantsPage() {
   const handleUpdateApplicantStatus = async (status) => {
     if (!reviewingApplicant) return;
 
-    const confirm = window.confirm(
-      `Apakah Anda yakin ingin mengubah status pendaftar ${reviewingApplicant.name} menjadi ${status}?`
-    );
-
-    if (!confirm) return;
-
     // Konversi status ke format backend
     const statusMap = {
       Accepted: "diterima",
@@ -161,9 +170,15 @@ function AdminApplicantsPage() {
               : app
           )
         );
-        alert(
-          `Status pendaftar ${reviewingApplicant.name} berhasil diubah menjadi ${status}.`
-        );
+        // alert(
+        //   `Status pendaftar ${reviewingApplicant.name} berhasil diubah menjadi ${status}.`
+        // );
+        setAlert({
+          isOpen: true,
+          title: "Berhasil!",
+          message: `Status pendaftar ${reviewingApplicant.name} berhasil diubah menjadi ${status}.`,
+          type: "success",
+        });
         closeReviewModal();
       } else {
         throw new Error(
@@ -172,9 +187,48 @@ function AdminApplicantsPage() {
       }
     } catch (error) {
       console.error("PATCH error:", error);
-      alert("Terjadi kesalahan saat mengubah status. Coba lagi nanti.");
+      // alert("Terjadi kesalahan saat mengubah status. Coba lagi nanti.");
+      setAlert({
+        isOpen: true,
+        title: "Gagal!",
+        message: "Terjadi kesalahan saat mengubah status. Coba lagi nanti.",
+        type: "error",
+      });
+      closeReviewModal();
     }
   };
+
+  // Fungsi untuk membuka AlertDialog konfirmasi
+  function openConfirmAlert(action) {
+    setAlert({
+      isOpen: true,
+      title: "Konfirmasi Aksi",
+      message: (
+        <>
+          Apakah Anda yakin ingin{" "}
+          <span
+            className={
+              action === "Accepted"
+                ? "text-green-600 font-semibold"
+                : "text-red-600 font-semibold"
+            }
+          >
+            {action === "Accepted" ? "menerima" : "menolak"}
+          </span>{" "}
+          pendaftar{" "}
+          <span className="font-semibold">{reviewingApplicant?.name}</span>?
+        </>
+      ),
+      type: "confirm",
+      showCancelButton: true,
+      confirmButtonText: "Ya",
+      cancelButtonText: "Batal",
+      onConfirm: () => {
+        closeAlert();
+        handleUpdateApplicantStatus(action);
+      },
+    });
+  }
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
@@ -471,18 +525,14 @@ function AdminApplicantsPage() {
                         <button
                           type="button"
                           className="inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
-                          onClick={() =>
-                            handleUpdateApplicantStatus("Rejected")
-                          }
+                          onClick={() => openConfirmAlert("Rejected")}
                         >
                           <XCircleIcon className="h-5 w-5 mr-2" /> Tolak
                         </button>
                         <button
                           type="button"
                           className="inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
-                          onClick={() =>
-                            handleUpdateApplicantStatus("Accepted")
-                          }
+                          onClick={() => openConfirmAlert("Accepted")}
                         >
                           <CheckCircleIcon className="h-5 w-5 mr-2" /> Terima
                         </button>
@@ -502,6 +552,16 @@ function AdminApplicantsPage() {
           </div>
         </Dialog>
       </Transition>
+      <AlertDialog
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        title={alert.title}
+        message={alert.message}
+        type={alert.type}
+        autoCloseDelay={alert.autoCloseDelay}
+        onConfirm={alert.onConfirm}
+        showCancelButton={alert.showCancelButton}
+      />
     </div>
   );
 }
