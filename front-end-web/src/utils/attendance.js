@@ -79,7 +79,7 @@ export const postCheckIn = async (token, location) => {
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal presensi masuk.");
-  return data.attendance;
+  return data;
 };
 
 // Kirim presensi keluar (intern)
